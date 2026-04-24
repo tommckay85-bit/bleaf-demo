@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Cannexa — Pricing</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="cannexa.css"/>
+
+<style>
+.pricing-hero{background:#1F3A28;color:var(--cream);padding:110px 0 96px;position:relative;overflow:hidden;}
+.pricing-hero::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 80% 120% at 70% 50%,rgba(74,90,58,.55) 0%,transparent 65%),radial-gradient(ellipse 50% 80% at 20% 80%,rgba(200,90,43,.08) 0%,transparent 60%);}
+.pricing-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,rgba(31,58,40,.0) 0%,rgba(31,58,40,.0) 100%);}
+.pricing-hero .kicker{color:var(--sage);}
+.pricing-hero h1{font-family:"Cormorant Garamond",serif;font-weight:300;font-size:88px;line-height:1.02;letter-spacing:-.025em;color:var(--cream);margin:28px 0 24px;max-width:880px;}
+.pricing-hero h1 em{font-style:italic;font-weight:400;}
+.pricing-hero .sub{font-family:"Cormorant Garamond",serif;font-style:italic;font-size:22px;color:#DCE0D4;max-width:560px;line-height:1.4;margin:0;}
+
+.price-cards{background:var(--cream);padding:100px 0;}
+.pc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--sage);border:1px solid var(--sage);}
+.pc{background:var(--paper);padding:48px 40px;display:flex;flex-direction:column;gap:24px;min-height:560px;position:relative;}
+.pc.featured{background:var(--ink);color:var(--cream);}
+.pc.featured .pc-tier,.pc.featured .pc-meta,.pc.featured .pc-list li{color:var(--sage-2);}
+.pc.featured .pc-hair{background:rgba(207,212,198,.2);}
+.pc.featured .pc-price{color:var(--cream);}
+.pc.featured .pc-price .ccy{color:var(--sage-2);}
+.pc.featured .pc-name{color:var(--cream);}
+
+.pc-tier{font-family:"Inter";font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--mute);font-weight:500;}
+.pc-badge{position:absolute;top:20px;right:20px;font-family:"Inter";font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--ember);font-weight:500;padding:6px 10px;border:1px solid var(--ember);border-radius:999px;}
+.pc-name{font-family:"Cormorant Garamond",serif;font-weight:400;font-size:32px;line-height:1.1;color:var(--ink);letter-spacing:-.015em;margin:0;}
+.pc-price{display:flex;align-items:baseline;gap:8px;color:var(--ink);}
+.pc-price .ccy{font-family:"Cormorant Garamond",serif;font-size:22px;color:var(--mute);}
+.pc-price .amt{font-family:"Cormorant Garamond",serif;font-weight:300;font-size:68px;line-height:1;letter-spacing:-.02em;}
+.pc-price .unit{font-family:"Inter";font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--mute);font-weight:500;}
+.pc-meta{font-family:"Cormorant Garamond",serif;font-style:italic;font-size:15px;color:var(--mute);line-height:1.45;}
+.pc-hair{height:1px;background:var(--sage);width:100%;}
+.pc-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:12px;}
+.pc-list li{font-size:13.5px;line-height:1.55;color:#3C4B40;display:grid;grid-template-columns:14px 1fr;gap:12px;align-items:baseline;}
+.pc-list li::before{content:"—";color:var(--mute);}
+.pc.featured .pc-list li{color:#C9D3C2;}
+.pc.featured .pc-list li::before{color:var(--ember);}
+.pc-cta{margin-top:auto;display:inline-flex;align-items:center;gap:12px;padding:16px 22px;border:1px solid var(--ink);border-radius:999px;font-family:"Inter";font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink);font-weight:500;justify-content:center;transition:background .2s,color .2s;}
+.pc-cta:hover{background:var(--ink);color:var(--cream);}
+.pc.featured .pc-cta{background:var(--cream);color:var(--ink);border-color:var(--cream);}
+.pc.featured .pc-cta:hover{background:transparent;color:var(--cream);}
+
+/* Medicine table */
+.med-table-section{background:var(--paper);padding:100px 0;border-top:1px solid var(--sage);border-bottom:1px solid var(--sage);}
+.med-table{border:1px solid var(--sage);background:var(--cream);}
+.med-head,.med-row{display:grid;grid-template-columns:1.4fr .9fr .9fr .9fr 120px;gap:24px;padding:18px 28px;align-items:center;}
+.med-head{background:var(--ink);color:var(--cream);font-family:"Inter";font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;font-weight:500;}
+.med-row{border-top:1px solid var(--sage);}
+.med-row .name{font-family:"Cormorant Garamond",serif;font-size:19px;color:var(--ink);letter-spacing:-.005em;}
+.med-row .name small{display:block;font-family:"Inter";font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--mute);font-weight:500;margin-top:4px;}
+.med-row .num{font-family:"Cormorant Garamond",serif;font-size:20px;color:var(--ink);letter-spacing:-.005em;}
+.med-row .ppg{font-family:"Cormorant Garamond",serif;font-style:italic;font-size:15px;color:var(--mute);}
+.med-row .cat{font-family:"Inter";font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--mute);font-weight:500;padding:6px 10px;border:1px solid var(--sage);border-radius:999px;display:inline-block;text-align:center;}
+
+/* Summary calculator */
+.calc{background:var(--cream);padding:100px 0;}
+.calc-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:0;border:1px solid var(--sage);background:var(--paper);}
+.calc-text{padding:56px 48px;border-right:1px solid var(--sage);display:flex;flex-direction:column;gap:28px;background:url("img/cultivation.jpg") center/cover no-repeat;color:var(--cream);position:relative;}
+.calc-text::before{content:"";position:absolute;inset:0;background:linear-gradient(135deg,rgba(31,58,40,.92) 0%,rgba(31,58,40,.82) 60%,rgba(31,58,40,.70) 100%);}
+.calc-text > *{position:relative;z-index:1;}
+.calc-text h3{color:var(--cream);}
+.calc-text p{color:#D8DDD0;}
+.calc-text .kicker{color:var(--sage-2);}
+.calc-text .btn-primary{background:var(--cream);color:var(--ink);}
+.calc-text .btn-primary .arrow{background:var(--ink);}
+.calc-text .btn-primary .arrow::after{border-color:var(--ink);}
+
+/* Editorial image band */
+.editorial-band{background:var(--ink);}
+.eb-inner{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--ink);}
+.eb-img{margin:0;aspect-ratio:4/5;position:relative;overflow:hidden;background-size:cover;background-position:center;}
+.eb-img::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 50%,rgba(31,58,40,.75) 100%);}
+.eb-img figcaption{position:absolute;bottom:22px;left:22px;right:22px;font-family:"Inter";font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:rgba(239,235,226,.95);font-weight:500;z-index:1;line-height:1.5;}
+.eb-a{background-image:url("img/cultivation.jpg");}
+.eb-b{background-image:url("img/lab-quality.jpg");}
+.eb-c{background-image:url("img/clinical.jpg");}
+@media (max-width:900px){.eb-inner{grid-template-columns:1fr;}}
+.calc-text h3{font-family:"Cormorant Garamond",serif;font-weight:300;font-size:42px;line-height:1.1;color:var(--ink);margin:0;letter-spacing:-.018em;}
+.calc-text h3 em{font-style:italic;font-weight:400;}
+.calc-text p{font-size:15px;line-height:1.6;color:#3C4B40;margin:0;max-width:440px;}
+.calc-side{background:var(--ink);color:var(--cream);padding:56px 48px;display:flex;flex-direction:column;gap:14px;}
+.calc-side .k{font-family:"Inter";font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--sage-2);font-weight:500;margin-bottom:8px;}
+.calc-line{display:flex;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(207,212,198,.18);}
+.calc-line .l{font-family:"Cormorant Garamond",serif;font-size:16px;color:#D8DDD0;}
+.calc-line .v{font-family:"Cormorant Garamond",serif;font-size:18px;color:var(--cream);letter-spacing:-.005em;}
+.calc-total{margin-top:14px;padding-top:20px;border-top:1px solid var(--sage-2);display:flex;justify-content:space-between;align-items:baseline;}
+.calc-total .l{font-family:"Inter";font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--sage-2);font-weight:500;}
+.calc-total .v{font-family:"Cormorant Garamond",serif;font-weight:300;font-size:56px;color:var(--cream);letter-spacing:-.02em;line-height:1;}
+
+/* Comparison */
+.compare{padding:100px 0;background:var(--paper);border-top:1px solid var(--sage);}
+.compare-grid{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:1px;background:var(--sage);border:1px solid var(--sage);}
+.compare-cell{background:var(--cream);padding:22px 24px;}
+.compare-cell.head{background:var(--paper);font-family:"Inter";font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--mute);font-weight:500;}
+.compare-cell.head.us{color:var(--ink);}
+.compare-cell .l{font-family:"Cormorant Garamond",serif;font-size:17px;color:var(--ink);letter-spacing:-.005em;}
+.compare-cell .v{font-family:"Cormorant Garamond",serif;font-size:17px;color:var(--ink);}
+.compare-cell .v.dim{color:var(--mute);font-style:italic;}
+
+/* FAQ */
+.p-faq{padding:100px 0;}
+
+/* CTA band reuse from css */
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-row">
+    <div class="nav-links">
+      <a href="Cannexa Home Page.html">Home</a>
+      <a href="#">Treatment</a>
+      <a href="#">Clinicians</a>
+      <a href="#">Journal</a>
+    </div>
+    <a href="Cannexa Home Page.html" class="wm">cannexa</a>
+    <div class="nav-links r">
+      <a href="#">Patient login</a>
+      <a href="Cannexa Eligibility.html" class="cta-pill">Start consultation</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="pricing-hero">
+  <div class="container" style="position:relative;">
+    <span class="kicker">Pricing · transparent</span>
+    <h1>Clinical care, priced <em>the way it should be.</em></h1>
+    <p class="sub">No hidden fees. No prescription markups. A fixed consultation, clear medicine pricing, and unlimited follow-up included.</p>
+  </div>
+</header>
+
+<!-- PRICE CARDS -->
+<section class="price-cards">
+  <div class="container">
+    <div class="section-head">
+      <div class="meta">
+        <span class="kicker">01 · The plan</span>
+        <hr class="hairline-thick"/>
+      </div>
+      <h2>Pay for the consultation. Pay for the medicine. <em>Nothing else.</em></h2>
+    </div>
+
+    <div class="pc-grid">
+      <div class="pc">
+        <span class="pc-tier">Initial</span>
+        <h3 class="pc-name">First consultation</h3>
+        <div class="pc-price"><span class="ccy">£</span><span class="amt">95</span><span class="unit">one-off</span></div>
+        <p class="pc-meta">A 30-minute video appointment with a GMC-registered consultant.</p>
+        <div class="pc-hair"></div>
+        <ul class="pc-list">
+          <li>Full eligibility review against NICE guidance</li>
+          <li>Discussion of treatment goals and risks</li>
+          <li>Written treatment plan if appropriate</li>
+          <li>Issued prescription where clinically indicated</li>
+          <li>Refund if not deemed eligible</li>
+        </ul>
+        <a href="Cannexa Eligibility.html" class="pc-cta">Start eligibility →</a>
+      </div>
+
+      <div class="pc featured">
+        <span class="pc-badge">Most patients</span>
+        <span class="pc-tier">Ongoing</span>
+        <h3 class="pc-name">Care membership</h3>
+        <div class="pc-price"><span class="ccy">£</span><span class="amt">19</span><span class="unit">per month</span></div>
+        <p class="pc-meta">Unlimited follow-up, titration review, and 24/7 clinical messaging — for as long as you’re in treatment.</p>
+        <div class="pc-hair"></div>
+        <ul class="pc-list">
+          <li>Quarterly structured review with your consultant</li>
+          <li>24/7 messaging with the clinical team</li>
+          <li>Free prescription re-issue and dose adjustments</li>
+          <li>Priority dispensing (2–3 working days)</li>
+          <li>Cancel at any time · first month included</li>
+        </ul>
+        <a href="Cannexa Eligibility.html" class="pc-cta">Start eligibility →</a>
+      </div>
+
+      <div class="pc">
+        <span class="pc-tier">Medicine</span>
+        <h3 class="pc-name">Prescription only</h3>
+        <div class="pc-price"><span class="ccy">from £</span><span class="amt">7</span><span class="unit">per gram</span></div>
+        <p class="pc-meta">Dispensed by a GPhC-registered pharmacy, sourced from EU-GMP Canadian growers.</p>
+        <div class="pc-hair"></div>
+        <ul class="pc-list">
+          <li>Per-gram pricing · see table below</li>
+          <li>Batch-specific Certificate of Analysis</li>
+          <li>Cold-chain handled, signed-for delivery</li>
+          <li>No prescription markup, no dispensing fee</li>
+          <li>Repeat issued as clinically indicated</li>
+        </ul>
+        <a href="#medicines" class="pc-cta">See medicines ↓</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MEDICINE TABLE -->
+<section class="med-table-section" id="medicines">
+  <div class="container">
+    <div class="section-head">
+      <div class="meta">
+        <span class="kicker">02 · Medicines</span>
+        <hr class="hairline-thick"/>
+      </div>
+      <h2>Transparent per-gram pricing, <em>sourced from Canada.</em></h2>
+    </div>
+
+    <div class="med-table">
+      <div class="med-head">
+        <span>Product</span>
+        <span>THC / CBD</span>
+        <span>Presentation</span>
+        <span>Price per gram</span>
+        <span style="text-align:right;">Category</span>
+      </div>
+      <div class="med-row">
+        <div class="name">Terra Verde T20<small>Full-spectrum flower</small></div>
+        <div class="num">20% / &lt;1%</div>
+        <div class="ppg">5 g tin</div>
+        <div class="num">£8.50</div>
+        <div style="text-align:right;"><span class="cat">Balanced</span></div>
+      </div>
+      <div class="med-row">
+        <div class="name">Terra Verde T22<small>High-THC flower</small></div>
+        <div class="num">22% / &lt;1%</div>
+        <div class="ppg">5 g tin</div>
+        <div class="num">£9.20</div>
+        <div style="text-align:right;"><span class="cat">Sedating</span></div>
+      </div>
+      <div class="med-row">
+        <div class="name">Terra Verde T18 CBD<small>1:1 flower</small></div>
+        <div class="num">9% / 9%</div>
+        <div class="ppg">5 g tin</div>
+        <div class="num">£9.80</div>
+        <div style="text-align:right;"><span class="cat">Balanced</span></div>
+      </div>
+      <div class="med-row">
+        <div class="name">Cannexa Solace Oil<small>THC-dominant tincture</small></div>
+        <div class="num">20 mg/ml THC</div>
+        <div class="ppg">30 ml bottle</div>
+        <div class="num">£1.80 /ml</div>
+        <div style="text-align:right;"><span class="cat">Oil</span></div>
+      </div>
+      <div class="med-row">
+        <div class="name">Cannexa Equilibrium Oil<small>1:1 tincture</small></div>
+        <div class="num">10 mg/ml each</div>
+        <div class="ppg">30 ml bottle</div>
+        <div class="num">£1.95 /ml</div>
+        <div style="text-align:right;"><span class="cat">Oil</span></div>
+      </div>
+      <div class="med-row">
+        <div class="name">Cannexa Reflect Oil<small>CBD-dominant tincture</small></div>
+        <div class="num">25 mg/ml CBD</div>
+        <div class="ppg">30 ml bottle</div>
+        <div class="num">£1.60 /ml</div>
+        <div style="text-align:right;"><span class="cat">Oil</span></div>
+      </div>
+    </div>
+
+    <p style="margin-top:28px;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:15px;color:var(--mute);max-width:720px;">
+      Prices reflect medicine only. Dispensed by GPhC-registered partner pharmacies. Prescription is required and quantity is determined by your consultant. Prices reviewed quarterly; current as of April 2026.
+    </p>
+  </div>
+</section>
+
+<!-- EDITORIAL BAND -->
+<section class="editorial-band" style="padding:0;">
+  <div class="eb-inner">
+    <figure class="eb-img eb-a"><figcaption>Terra Verde T20 · partner cultivation, British Columbia</figcaption></figure>
+    <figure class="eb-img eb-b"><figcaption>Batch release · EU-GMP quality lab</figcaption></figure>
+    <figure class="eb-img eb-c"><figcaption>Signed-for dispense · GPhC pharmacy</figcaption></figure>
+  </div>
+</section>
+
+<!-- CALCULATOR / TYPICAL MONTH -->
+<section class="calc">
+  <div class="container">
+    <div class="section-head">
+      <div class="meta">
+        <span class="kicker">03 · A typical month</span>
+        <hr class="hairline-thick"/>
+      </div>
+      <h2>What treatment <em>actually</em> costs, from month one.</h2>
+    </div>
+
+    <div class="calc-grid">
+      <div class="calc-text">
+        <span class="kicker">Example patient</span>
+        <h3>Neuropathic pain · <em>15g flower per month</em></h3>
+        <p>A typical first-month plan for a patient prescribed Terra Verde T20. Every figure is shown — there are no additional fees for prescription, dispensing, or delivery.</p>
+        <p style="font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--mute);font-size:16px;">
+          “We built the pricing the same way we built the pathway: transparent, because trust is earned in ledgers as much as in consulting rooms.”
+        </p>
+        <a href="Cannexa Eligibility.html" class="btn-primary" style="align-self:flex-start;margin-top:12px;">Check my eligibility <span class="arrow"></span></a>
+      </div>
+      <div class="calc-side">
+        <span class="k">First month · itemised</span>
+
+        <div class="calc-line"><span class="l">Initial consultation (30 min)</span><span class="v">£95.00</span></div>
+        <div class="calc-line"><span class="l">Care membership (month 1)</span><span class="v">Included</span></div>
+        <div class="calc-line"><span class="l">Terra Verde T20 · 15 g</span><span class="v">£127.50</span></div>
+        <div class="calc-line"><span class="l">Dispensing &amp; delivery</span><span class="v">£0.00</span></div>
+        <div class="calc-line"><span class="l">Follow-up (week 2)</span><span class="v">Included</span></div>
+
+        <div class="calc-total">
+          <span class="l">First month total</span>
+          <span class="v">£222.50</span>
+        </div>
+
+        <div style="margin-top:24px;padding-top:20px;border-top:1px solid rgba(207,212,198,.2);font-family:'Cormorant Garamond',serif;font-style:italic;font-size:14px;color:#C9D3C2;line-height:1.55;">
+          Subsequent months: £19 membership + medicine at listed per-gram price. No other fees.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARISON -->
+<section class="compare">
+  <div class="container">
+    <div class="section-head">
+      <div class="meta">
+        <span class="kicker">04 · Against the market</span>
+        <hr class="hairline-thick"/>
+      </div>
+      <h2>We read the small print so <em>you don’t have to.</em></h2>
+    </div>
+
+    <div class="compare-grid">
+      <div class="compare-cell head"></div>
+      <div class="compare-cell head us">Cannexa</div>
+      <div class="compare-cell head">Typical UK clinic</div>
+
+      <div class="compare-cell"><span class="l">Initial consultation</span></div>
+      <div class="compare-cell"><span class="v">£95 · refunded if ineligible</span></div>
+      <div class="compare-cell"><span class="v dim">£150 – £250 · non-refundable</span></div>
+
+      <div class="compare-cell"><span class="l">Follow-ups</span></div>
+      <div class="compare-cell"><span class="v">Included in £19/mo membership</span></div>
+      <div class="compare-cell"><span class="v dim">£50 – £90 each</span></div>
+
+      <div class="compare-cell"><span class="l">Prescription issuing fee</span></div>
+      <div class="compare-cell"><span class="v">None</span></div>
+      <div class="compare-cell"><span class="v dim">£20 – £35 per prescription</span></div>
+
+      <div class="compare-cell"><span class="l">Medicine markup</span></div>
+      <div class="compare-cell"><span class="v">None · at-cost from enua</span></div>
+      <div class="compare-cell"><span class="v dim">10 – 30% clinic margin typical</span></div>
+
+      <div class="compare-cell"><span class="l">Dispensing &amp; delivery</span></div>
+      <div class="compare-cell"><span class="v">Free · signed-for cold chain</span></div>
+      <div class="compare-cell"><span class="v dim">£8 – £15 per dispense</span></div>
+
+      <div class="compare-cell"><span class="l">Cancel membership</span></div>
+      <div class="compare-cell"><span class="v">Any time · no penalty</span></div>
+      <div class="compare-cell"><span class="v dim">Often annual contracts</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING FAQ -->
+<section class="p-faq">
+  <div class="container">
+    <div class="section-head">
+      <div class="meta">
+        <span class="kicker">05 · Pricing questions</span>
+        <hr class="hairline-thick"/>
+      </div>
+      <h2>Questions we’re <em>glad</em> you’re asking.</h2>
+    </div>
+
+    <div class="faq-list">
+      <div class="faq-item"><span class="n">01</span><span class="q">Is the £95 consultation fee refundable if I’m not eligible?</span><span class="plus">+</span></div>
+      <div class="faq-item"><span class="n">02</span><span class="q">What if I want to pause or cancel my membership?</span><span class="plus">+</span></div>
+      <div class="faq-item"><span class="n">03</span><span class="q">Can I use private health insurance to cover any of the cost?</span><span class="plus">+</span></div>
+      <div class="faq-item"><span class="n">04</span><span class="q">How does your pricing compare to self-sourcing?</span><span class="plus">+</span></div>
+      <div class="faq-item"><span class="n">05</span><span class="q">Why are prices for oils quoted per-millilitre and flower per-gram?</span><span class="plus">+</span></div>
+      <div class="faq-item"><span class="n">06</span><span class="q">Are there any hidden fees I should know about?</span><span class="plus">+</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA BAND -->
+<section class="ctaband">
+  <div class="inner">
+    <span class="kicker cream" style="letter-spacing:.32em;">Begin</span>
+    <h2 class="h-serif" style="margin-top:28px;">Eligibility is free.<br/>You only pay when <em>treatment begins.</em></h2>
+    <p>The ten-minute screen is confidential, reviewed by a clinician within 48 hours, and carries no obligation to proceed.</p>
+    <div class="row">
+      <a href="Cannexa Eligibility.html" class="btn-primary">Start eligibility screen <span class="arrow"></span></a>
+      <a href="Cannexa Home Page.html" class="cta-pill cream">Back to home</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <span class="wm">cannexa</span>
+        <p>Cannexa Clinical Ltd. is a private provider of specialist medicinal cannabis care in the United Kingdom. Prescription-only. Never recreational.</p>
+        <div class="parent">A sister brand of <em>enua</em></div>
+      </div>
+      <div><h5>Treatment</h5><ul><li><a href="#">Chronic pain</a></li><li><a href="#">Neuropathic pain</a></li><li><a href="#">Palliative care</a></li></ul></div>
+      <div><h5>Clinic</h5><ul><li><a href="#">Our clinicians</a></li><li><a href="Cannexa Pricing.html">Pricing</a></li><li><a href="Cannexa Eligibility.html">Start consultation</a></li></ul></div>
+      <div><h5>Evidence</h5><ul><li><a href="#">Science</a></li><li><a href="#">Quality</a></li><li><a href="#">Journal</a></li></ul></div>
+      <div><h5>Company</h5><ul><li><a href="#">About Cannexa</a></li><li><a href="#">About enua Group</a></li><li><a href="#">Contact</a></li></ul></div>
+    </div>
+    <div class="foot-bottom">
+      <div>© 2026 Cannexa Clinical Ltd. · Registered in England 15208812</div>
+      <div class="legal"><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Regulatory</a><a href="#">Complaints</a></div>
+    </div>
+  </div>
+</footer>
+
+<script>
+document.querySelectorAll('.faq-item').forEach(item => {
+  const answer = document.createElement('div');
+  answer.className = 'faq-answer';
+  const answers = {
+    '01': 'Yes. If our clinician determines you are not eligible for medicinal cannabis treatment, your £95 consultation fee is refunded in full within 5 working days.',
+    '02': 'You can pause or cancel your £19/month membership at any time with no notice period and no penalty. Your prescription access continues until the end of your paid month.',
+    '03': 'Most UK private health insurers do not currently cover medicinal cannabis consultations or prescriptions. We recommend checking your policy directly. We can provide itemised receipts for any submission you wish to make.',
+    '04': 'Unregulated sources carry legal, safety, and dosing risks that prescribed medicine eliminates. Our per-gram pricing is competitive with street prices, and includes a GPhC pharmacy, COA batch testing, cold-chain delivery, and clinical oversight — none of which unlicensed sources provide.',
+    '05': 'Flower is a dried botanical product measured by weight (grams). Oils are liquid preparations measured by volume (millilitres). Both units reflect how the products are dispensed and how doses are titrated clinically.',
+    '06': 'No. The consultation fee, membership, medicine price, dispensing, and delivery are the only charges. There are no prescription-issuing fees, no repeat-prescription fees, and no delivery charges.'
+  };
+  const num = item.querySelector('.n').textContent.trim();
+  answer.textContent = answers[num] || '';
+  answer.style.cssText = 'display:none;padding:0 0 24px 112px;font-size:15px;line-height:1.65;color:#3C4B40;max-width:720px;';
+  item.after(answer);
+
+  item.style.cursor = 'pointer';
+  item.addEventListener('click', () => {
+    const open = answer.style.display === 'block';
+    document.querySelectorAll('.faq-answer').forEach(a => { a.style.display = 'none'; });
+    document.querySelectorAll('.faq-item .plus').forEach(p => { p.textContent = '+'; });
+    if (!open) {
+      answer.style.display = 'block';
+      item.querySelector('.plus').textContent = '−';
+    }
+  });
+});
+</script>
+</body>
+</html>

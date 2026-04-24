@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Cannexa — Logo Explorations</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+<style>
+  :root{
+    --ink:#1F3A28;        /* deeper mossy green, warmer than deck */
+    --ink-2:#2C4A37;      /* secondary moss */
+    --olive:#4A5A3A;      /* olive highlight (enua gradient end) */
+    --cream:#EFEBE2;      /* warm off-white */
+    --cream-2:#E3DDCF;
+    --sage:#CFD4C6;       /* hairline sage */
+    --signal:#C85A2B;     /* signal accent — reserved, not used in primary */
+    --mute:#6B7468;
+  }
+  html,body{background:#1f1d19;color:var(--ink);font-family:"Inter",system-ui,sans-serif;}
+  body{margin:0;}
+  .tag{font-family:"Trebuchet MS","Inter",sans-serif;font-weight:700;letter-spacing:.22em;text-transform:uppercase;font-size:11px;color:var(--orange);}
+  .muted{color:var(--mute);font-size:12px;letter-spacing:.04em;}
+  .hairline{height:1px;background:var(--sage);width:100%;}
+  .row{display:flex;align-items:center;gap:24px;}
+  .col{display:flex;flex-direction:column;gap:14px;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0;}
+  .grid3{display:grid;grid-template-columns:1.15fr .85fr .85fr;gap:0;}
+  .cell{padding:40px;display:flex;align-items:center;justify-content:center;position:relative;}
+  .cell + .cell{border-left:1px solid var(--sage);}
+  .board{background:var(--cream);color:var(--ink);border:1px solid var(--sage);}
+  .ink-bg{background:var(--ink);color:var(--cream);}
+  .ink-bg .muted{color:#A8B5AE;}
+  .ink-bg .hairline{background:#21402F;}
+  .corner{position:absolute;top:16px;left:20px;font-family:"Trebuchet MS";font-weight:700;letter-spacing:.22em;font-size:10px;text-transform:uppercase;color:var(--mute);}
+  .corner.r{left:auto;right:20px;}
+  .corner.b{top:auto;bottom:16px;}
+  .swatch{display:flex;align-items:center;gap:10px;font-family:"JetBrains Mono",ui-monospace,monospace;font-size:11px;color:var(--mute);letter-spacing:.02em;}
+  .chip{width:14px;height:14px;border-radius:3px;border:1px solid rgba(0,0,0,.08);}
+  .legend{display:flex;gap:22px;flex-wrap:wrap;}
+
+  /* Artboard inner padding reset — canvas handles outer framing */
+  .ab{width:100%;height:100%;display:flex;flex-direction:column;}
+  .ab .head{padding:22px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--sage);}
+  .ab .head h3{margin:0;font-family:"Fraunces",serif;font-weight:500;font-size:20px;letter-spacing:-.01em;}
+  .ab .head .kicker{font-family:"Trebuchet MS";font-weight:700;letter-spacing:.22em;font-size:10px;text-transform:uppercase;color:var(--orange);}
+  .ab .body{flex:1;display:grid;grid-template-columns:1.25fr 1fr;}
+  .ab .primary{border-right:1px solid var(--sage);display:flex;align-items:center;justify-content:center;padding:60px;position:relative;}
+  .ab .aux{display:grid;grid-template-rows:1fr 1fr;}
+  .ab .aux > div{padding:32px;display:flex;align-items:center;justify-content:center;position:relative;}
+  .ab .aux > div + div{border-top:1px solid var(--sage);}
+  .ab .foot{border-top:1px solid var(--sage);padding:18px 28px;display:flex;align-items:center;justify-content:space-between;background:#EDE8DC;}
+  .label{position:absolute;bottom:14px;left:18px;font-family:"Trebuchet MS";font-weight:700;letter-spacing:.22em;font-size:9.5px;text-transform:uppercase;color:var(--mute);}
+
+  /* ----- Shared logo typography ----- */
+  .wm-mod{font-family:"Inter",sans-serif;font-weight:300;letter-spacing:-.02em;}
+  .wm-serif{font-family:"Fraunces",serif;font-weight:400;letter-spacing:-.015em;font-variation-settings:"opsz" 144;}
+  .wm-cormorant{font-family:"Cormorant Garamond",serif;font-weight:500;letter-spacing:.005em;}
+  .wm-uc{font-family:"Trebuchet MS",sans-serif;font-weight:700;letter-spacing:.28em;text-transform:uppercase;}
+
+  /* Application mock — bottle */
+  .bottle{width:110px;height:170px;border-radius:14px 14px 10px 10px;background:linear-gradient(180deg,#13321F 0%,#0D2B1E 100%);position:relative;color:var(--cream);display:flex;flex-direction:column;align-items:center;padding:18px 10px 14px;box-shadow:0 20px 40px -20px rgba(0,0,0,.4), inset 0 -60px 50px -40px rgba(255,255,255,.04);}
+  .bottle::before{content:"";position:absolute;top:-10px;width:54px;height:14px;background:#EDE8DC;border-radius:3px 3px 0 0;}
+  .bottle .cap{width:72px;height:22px;background:#EDE8DC;border-radius:3px;margin-top:4px;}
+  .bottle .band{width:100%;margin-top:18px;border-top:1px solid rgba(242,239,232,.2);border-bottom:1px solid rgba(242,239,232,.2);padding:10px 0;display:flex;align-items:center;justify-content:center;}
+  .bottle .rx{margin-top:auto;font-family:"Trebuchet MS";font-weight:700;letter-spacing:.24em;font-size:7px;color:#A8B5AE;text-transform:uppercase;}
+
+  /* Card-on-cream mock */
+  .card{background:var(--cream);border:1px solid var(--sage);padding:22px;width:200px;aspect-ratio:1.6/1;display:flex;flex-direction:column;justify-content:space-between;}
+  .card .top{display:flex;justify-content:space-between;align-items:flex-start;}
+  .card .bot{display:flex;justify-content:space-between;align-items:flex-end;font-family:"Trebuchet MS";font-weight:700;letter-spacing:.2em;font-size:8px;color:var(--mute);text-transform:uppercase;}
+</style>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+
+<body>
+<div id="root"></div>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="logo-marks.jsx"></script>
+<script type="text/babel" src="logo-artboards.jsx"></script>
+<script type="text/babel">
+  const { DesignCanvas, DCSection, DCArtboard } = window;
+  const { HeroBoard, EditorialBoard, SystemBoard, SurfacesBoard } = window;
+
+  function App(){
+    return (
+      <DesignCanvas
+        title="Cannexa — Identity"
+        subtitle="UK medicinal cannabis · sister brand to enua · humanist wordmark system"
+      >
+        <DCSection id="identity" title="Identity">
+          <DCArtboard id="hero" label="01 · Primary wordmark" width={1600} height={900}>
+            <HeroBoard/>
+          </DCArtboard>
+          <DCArtboard id="editorial" label="02 · Editorial pairing" width={1600} height={900}>
+            <EditorialBoard/>
+          </DCArtboard>
+          <DCArtboard id="system" label="03 · System & marks" width={1600} height={900}>
+            <SystemBoard/>
+          </DCArtboard>
+          <DCArtboard id="surfaces" label="04 · In context" width={1600} height={900}>
+            <SurfacesBoard/>
+          </DCArtboard>
+        </DCSection>
+      </DesignCanvas>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

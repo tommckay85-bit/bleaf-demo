@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 875" width="1400" height="875">
+  <defs>
+    <linearGradient id="gA" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#2C4A37"></stop>
+      <stop offset="1" stop-color="#1F3A28"></stop>
+    </linearGradient>
+    <radialGradient id="sun" cx="72%" cy="28%" r="45%">
+      <stop offset="0" stop-color="#E6C89E" stop-opacity=".65"></stop>
+      <stop offset=".5" stop-color="#BFA98A" stop-opacity=".25"></stop>
+      <stop offset="1" stop-color="#1F3A28" stop-opacity="0"></stop>
+    </radialGradient>
+    <linearGradient id="ceramic" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#EFEBE2"></stop>
+      <stop offset="1" stop-color="#C8BDA4"></stop>
+    </linearGradient>
+  </defs>
+  <rect width="1400" height="875" fill="url(#gA)"></rect>
+  <rect width="1400" height="875" fill="url(#sun)"></rect>
+  
+  <polygon points="900,0 1400,0 1400,875 1080,875" fill="#E6C89E" opacity=".08"></polygon>
+  
+  <rect x="0" y="620" width="1400" height="2" fill="#CFD4C6" opacity=".35"></rect>
+  
+  <g transform="translate(720,420)">
+    <path d="M0,0 C0,-8 12,-14 30,-14 L160,-14 C178,-14 190,-8 190,0 L188,200 C188,212 174,220 160,220 L30,220 C16,220 2,212 2,200 Z" fill="url(#ceramic)" opacity=".92"></path>
+    <path d="M190,30 C220,30 238,50 238,80 C238,110 220,130 190,130 L190,115 C208,115 220,100 220,80 C220,60 208,45 190,45 Z" fill="#C8BDA4" opacity=".9"></path>
+    <ellipse cx="95" cy="-8" rx="93" ry="10" fill="#2C4A37" opacity=".7"></ellipse>
+    <path d="M20,20 Q95,36 170,20" fill="none" stroke="#6B7A52" stroke-width="2" opacity=".5"></path>
+    
+    <path d="M60,-40 Q70,-70 50,-100 Q40,-130 60,-150" fill="none" stroke="#EFEBE2" stroke-width="2" opacity=".35"></path>
+    <path d="M110,-40 Q100,-80 120,-110 Q130,-140 110,-170" fill="none" stroke="#EFEBE2" stroke-width="2" opacity=".28"></path>
+    <path d="M150,-30 Q160,-60 140,-90" fill="none" stroke="#EFEBE2" stroke-width="2" opacity=".25"></path>
+  </g>
+  
+  <g transform="translate(240,540)" opacity=".75">
+    <rect x="0" y="0" width="340" height="180" fill="#EFEBE2" opacity=".75"></rect>
+    <rect x="0" y="0" width="340" height="180" fill="#1F3A28" opacity=".1"></rect>
+    <line x1="24" y1="40" x2="280" y2="40" stroke="#6B7468" stroke-width="1" opacity=".5"></line>
+    <line x1="24" y1="66" x2="240" y2="66" stroke="#6B7468" stroke-width="1" opacity=".5"></line>
+    <line x1="24" y1="92" x2="260" y2="92" stroke="#6B7468" stroke-width="1" opacity=".5"></line>
+    <line x1="24" y1="118" x2="220" y2="118" stroke="#6B7468" stroke-width="1" opacity=".5"></line>
+  </g>
+  
+  <g transform="translate(1120,560) rotate(-15)" opacity=".75">
+    <path d="M0,0 Q10,-80 40,-160 Q30,-180 60,-240" fill="none" stroke="#6B7A52" stroke-width="2.5"></path>
+    <ellipse cx="-15" cy="-40" rx="12" ry="28" fill="#6B7A52" transform="rotate(-30 -15 -40)"></ellipse>
+    <ellipse cx="20" cy="-80" rx="14" ry="32" fill="#4A5A3A" transform="rotate(20 20 -80)"></ellipse>
+    <ellipse cx="-5" cy="-120" rx="11" ry="26" fill="#6B7A52" transform="rotate(-40 -5 -120)"></ellipse>
+    <ellipse cx="30" cy="-170" rx="12" ry="28" fill="#4A5A3A" transform="rotate(10 30 -170)"></ellipse>
+    <ellipse cx="18" cy="-210" rx="10" ry="24" fill="#6B7A52" transform="rotate(-20 18 -210)"></ellipse>
+  </g>
+  
+  <rect width="1400" height="875" fill="url(#grain)" opacity=".05"></rect>
+</svg>

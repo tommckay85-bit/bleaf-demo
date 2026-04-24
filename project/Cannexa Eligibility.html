@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Cannexa — Eligibility screen</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="cannexa.css"/>
+
+<style>
+.elig-shell{min-height:calc(100vh - 80px);display:grid;grid-template-columns:360px 1fr;background:var(--cream);}
+.elig-side{background:var(--paper);border-right:1px solid var(--sage);padding:56px 36px;display:flex;flex-direction:column;gap:48px;position:sticky;top:0;align-self:start;height:100vh;}
+.elig-side .wm{font-size:28px;color:var(--ink);}
+.elig-side .title{font-family:"Cormorant Garamond",serif;font-weight:300;font-size:32px;line-height:1.1;letter-spacing:-.015em;color:var(--ink);margin:0;}
+.elig-side .title em{font-style:italic;font-weight:400;}
+.elig-side .intro{font-size:14px;line-height:1.6;color:var(--mute);margin:0;}
+.elig-steps{display:flex;flex-direction:column;gap:4px;margin-top:auto;}
+.elig-step{display:grid;grid-template-columns:28px 1fr auto;gap:14px;align-items:center;padding:14px 12px;border-left:2px solid transparent;transition:all .2s;color:var(--mute);}
+.elig-step.active{background:var(--cream);border-left-color:var(--ink);color:var(--ink);}
+.elig-step.done{color:var(--ink-2);}
+.elig-step .n{font-family:"Inter";font-size:10.5px;letter-spacing:.2em;font-weight:500;}
+.elig-step .lbl{font-family:"Cormorant Garamond",serif;font-size:17px;letter-spacing:-.005em;}
+.elig-step .tick{font-size:14px;color:var(--ember);}
+.elig-foot{padding-top:28px;border-top:1px solid var(--sage);font-family:"Inter";font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--mute);font-weight:500;line-height:1.6;}
+
+.elig-main{padding:72px 80px 120px;max-width:840px;}
+.elig-progress{display:flex;align-items:center;gap:12px;margin-bottom:56px;font-family:"Inter";font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--mute);font-weight:500;}
+.elig-progress .bar{flex:1;height:1px;background:var(--sage);position:relative;max-width:280px;}
+.elig-progress .bar span{position:absolute;left:0;top:-1px;height:3px;background:var(--ink);border-radius:1px;}
+
+.elig-h1{font-family:"Cormorant Garamond",serif;font-weight:300;font-size:52px;line-height:1.05;letter-spacing:-.02em;color:var(--ink);margin:0 0 16px;}
+.elig-h1 em{font-style:italic;font-weight:400;}
+.elig-lede{font-family:"Cormorant Garamond",serif;font-style:italic;font-size:20px;line-height:1.4;color:var(--mute);margin:0 0 48px;max-width:560px;}
+
+.q-block{padding:36px 0;border-top:1px solid var(--sage);}
+.q-block:last-of-type{border-bottom:1px solid var(--sage);}
+.q-num{font-family:"Inter";font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--mute);font-weight:500;}
+.q-title{font-family:"Cormorant Garamond",serif;font-weight:400;font-size:26px;line-height:1.25;letter-spacing:-.01em;color:var(--ink);margin:8px 0 22px;}
+.q-hint{font-family:"Cormorant Garamond",serif;font-style:italic;font-size:14px;color:var(--mute);margin:-14px 0 20px;}
+
+.radio-row{display:flex;flex-direction:column;gap:1px;background:var(--sage);border:1px solid var(--sage);}
+.radio-row label{background:var(--paper);padding:18px 22px;display:flex;align-items:center;gap:16px;cursor:pointer;transition:background .15s;}
+.radio-row label:hover{background:var(--cream);}
+.radio-row input{appearance:none;width:16px;height:16px;border:1px solid var(--mute);border-radius:50%;margin:0;position:relative;flex-shrink:0;transition:border-color .15s;}
+.radio-row input:checked{border-color:var(--ink);border-width:1px;}
+.radio-row input:checked::after{content:"";position:absolute;inset:3px;background:var(--ink);border-radius:50%;}
+.radio-row label:has(input:checked){background:var(--cream);}
+.radio-row .t{font-family:"Cormorant Garamond",serif;font-size:17px;color:var(--ink);letter-spacing:-.005em;}
+.radio-row .sub{font-family:"Inter";font-size:12px;color:var(--mute);margin-left:auto;}
+
+.chips{display:flex;flex-wrap:wrap;gap:8px;}
+.chip{font-family:"Inter";font-size:12px;letter-spacing:.08em;padding:10px 16px;border:1px solid var(--sage);border-radius:999px;color:var(--ink);background:var(--paper);cursor:pointer;transition:all .15s;}
+.chip:hover{border-color:var(--mute);}
+.chip.on{background:var(--ink);color:var(--cream);border-color:var(--ink);}
+
+.scale{display:grid;grid-template-columns:repeat(11,1fr);gap:4px;margin-top:8px;}
+.scale button{font-family:"Cormorant Garamond",serif;font-size:20px;padding:16px 0;background:var(--paper);border:1px solid var(--sage);color:var(--ink);cursor:pointer;transition:all .15s;}
+.scale button:hover{border-color:var(--ink);}
+.scale button.on{background:var(--ink);color:var(--cream);border-color:var(--ink);}
+.scale-ends{display:flex;justify-content:space-between;margin-top:10px;font-family:"Inter";font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--mute);font-weight:500;}
+
+.textarea{width:100%;min-height:120px;background:var(--paper);border:1px solid var(--sage);padding:16px;font-family:"Cormorant Garamond",serif;font-size:16px;color:var(--ink);resize:vertical;outline:none;line-height:1.5;}
+.textarea:focus{border-color:var(--ink);}
+
+.nav-row-cta{display:flex;justify-content:space-between;align-items:center;margin-top:56px;padding-top:32px;border-top:1px solid var(--sage);}
+.nav-row-cta .save{font-family:"Inter";font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--mute);font-weight:500;}
+.nav-row-cta .next{display:inline-flex;align-items:center;gap:14px;padding:16px 26px;background:var(--ink);color:var(--cream);border-radius:999px;font-family:"Inter";font-size:11px;letter-spacing:.24em;text-transform:uppercase;font-weight:500;border:0;cursor:pointer;}
+.nav-row-cta .next .arrow{width:16px;height:1px;background:var(--cream);position:relative;}
+.nav-row-cta .next .arrow::after{content:"";position:absolute;right:-1px;top:-3px;width:7px;height:7px;border-right:1px solid var(--cream);border-top:1px solid var(--cream);transform:rotate(45deg);}
+
+.trust-note{margin-top:32px;padding:20px 22px;background:var(--paper);border:1px solid var(--sage);display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:start;}
+.trust-note .k{font-family:"Inter";font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--ember);font-weight:500;}
+.trust-note .t{font-family:"Cormorant Garamond",serif;font-style:italic;font-size:14px;line-height:1.55;color:var(--ink-2);margin:0;}
+
+@media (max-width:980px){.elig-shell{grid-template-columns:1fr;}.elig-side{position:static;height:auto;}.elig-main{padding:40px 24px 80px;}}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-row">
+    <div class="nav-links">
+      <a href="Cannexa Home Page.html">Home</a>
+      <a href="Cannexa Pricing.html">Pricing</a>
+      <a href="#">Clinicians</a>
+    </div>
+    <a href="Cannexa Home Page.html" class="wm">cannexa</a>
+    <div class="nav-links r">
+      <a href="#">Save &amp; exit</a>
+      <a href="#">Help</a>
+    </div>
+  </div>
+</nav>
+
+<div class="elig-shell">
+  <!-- SIDEBAR -->
+  <aside class="elig-side">
+    <span class="wm">cannexa</span>
+    <div>
+      <h2 class="title">A ten-minute screen — <em>reviewed by a clinician.</em></h2>
+      <p class="intro" style="margin-top:20px;">Your answers are encrypted and reviewed only by a GMC-registered member of our clinical team. We respond within 48 hours.</p>
+    </div>
+
+    <nav class="elig-steps" aria-label="Steps">
+      <div class="elig-step done"><span class="n">01</span><span class="lbl">Your details</span><span class="tick">✓</span></div>
+      <div class="elig-step active"><span class="n">02</span><span class="lbl">Your condition</span><span></span></div>
+      <div class="elig-step"><span class="n">03</span><span class="lbl">Medical history</span><span></span></div>
+      <div class="elig-step"><span class="n">04</span><span class="lbl">Current medications</span><span></span></div>
+      <div class="elig-step"><span class="n">05</span><span class="lbl">Cannabis experience</span><span></span></div>
+      <div class="elig-step"><span class="n">06</span><span class="lbl">Review &amp; submit</span><span></span></div>
+    </nav>
+
+    <div class="elig-foot">Encrypted · Reviewed within 48h<br/>MHRA · CQC · GMC</div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="elig-main">
+    <div class="elig-progress">
+      <span>Step 02 / 06</span>
+      <div class="bar"><span style="width:33%;"></span></div>
+      <span>~ 8 min remaining</span>
+    </div>
+
+    <h1 class="elig-h1">Tell us about the <em>condition</em> you’re seeking treatment for.</h1>
+    <p class="elig-lede">These questions help the reviewing clinician assess whether a specialist consultation is appropriate. There are no right answers — only accurate ones.</p>
+
+    <form>
+      <!-- Q1 -->
+      <div class="q-block">
+        <span class="q-num">Question 01</span>
+        <h3 class="q-title">Which best describes your primary reason for seeking treatment?</h3>
+        <div class="radio-row">
+          <label><input type="radio" name="primary"/><span class="t">Chronic pain (&gt; 3 months)</span><span class="sub">Most common</span></label>
+          <label><input type="radio" name="primary" checked/><span class="t">Neuropathic pain</span><span class="sub"></span></label>
+          <label><input type="radio" name="primary"/><span class="t">Musculoskeletal pain</span><span class="sub"></span></label>
+          <label><input type="radio" name="primary"/><span class="t">Post-surgical pain</span><span class="sub"></span></label>
+          <label><input type="radio" name="primary"/><span class="t">Other — I’ll describe below</span><span class="sub"></span></label>
+        </div>
+      </div>
+
+      <!-- Q2 -->
+      <div class="q-block">
+        <span class="q-num">Question 02</span>
+        <h3 class="q-title">How long have you been experiencing this condition?</h3>
+        <div class="radio-row">
+          <label><input type="radio" name="duration"/><span class="t">Less than 3 months</span><span class="sub"></span></label>
+          <label><input type="radio" name="duration"/><span class="t">3 – 12 months</span><span class="sub"></span></label>
+          <label><input type="radio" name="duration" checked/><span class="t">1 – 5 years</span><span class="sub"></span></label>
+          <label><input type="radio" name="duration"/><span class="t">More than 5 years</span><span class="sub"></span></label>
+        </div>
+      </div>
+
+      <!-- Q3 scale -->
+      <div class="q-block">
+        <span class="q-num">Question 03</span>
+        <h3 class="q-title">On an average day — how would you rate your pain?</h3>
+        <p class="q-hint">0 means no pain at all; 10 is the worst pain you can imagine.</p>
+        <div class="scale">
+          <button type="button">0</button>
+          <button type="button">1</button>
+          <button type="button">2</button>
+          <button type="button">3</button>
+          <button type="button">4</button>
+          <button type="button">5</button>
+          <button type="button">6</button>
+          <button type="button" class="on">7</button>
+          <button type="button">8</button>
+          <button type="button">9</button>
+          <button type="button">10</button>
+        </div>
+        <div class="scale-ends"><span>No pain</span><span>Worst imaginable</span></div>
+      </div>
+
+      <!-- Q4 chips -->
+      <div class="q-block">
+        <span class="q-num">Question 04</span>
+        <h3 class="q-title">Which of the following are affected? Select all that apply.</h3>
+        <div class="chips">
+          <button type="button" class="chip on">Sleep</button>
+          <button type="button" class="chip on">Mood</button>
+          <button type="button" class="chip">Mobility</button>
+          <button type="button" class="chip on">Work or income</button>
+          <button type="button" class="chip">Relationships</button>
+          <button type="button" class="chip">Appetite</button>
+          <button type="button" class="chip">Concentration</button>
+          <button type="button" class="chip">Exercise</button>
+          <button type="button" class="chip">None of these</button>
+        </div>
+      </div>
+
+      <!-- Q5 -->
+      <div class="q-block">
+        <span class="q-num">Question 05</span>
+        <h3 class="q-title">Have you tried first-line treatments already?</h3>
+        <p class="q-hint">NHS guidance asks that cannabis-based medicines be considered after at least two alternatives have been attempted.</p>
+        <div class="radio-row">
+          <label><input type="radio" name="firstline" checked/><span class="t">Yes — two or more alternatives without sufficient relief</span><span class="sub">Eligible</span></label>
+          <label><input type="radio" name="firstline"/><span class="t">Yes — one alternative so far</span><span class="sub"></span></label>
+          <label><input type="radio" name="firstline"/><span class="t">Not yet — I’d like to discuss my options first</span><span class="sub"></span></label>
+        </div>
+      </div>
+
+      <!-- Q6 -->
+      <div class="q-block">
+        <span class="q-num">Question 06</span>
+        <h3 class="q-title">Anything else the clinician should know about your condition?</h3>
+        <p class="q-hint">Optional. Describe anything that affects how your condition shows up — triggers, patterns, what’s helped or not.</p>
+        <textarea class="textarea" placeholder="Your clinician reads this before your consultation."></textarea>
+      </div>
+
+      <div class="trust-note">
+        <span class="k">Private</span>
+        <p class="t">Your responses are encrypted and stored under GDPR and NHS Digital standards. They are reviewed only by a member of Cannexa’s GMC-registered clinical team.</p>
+      </div>
+
+      <div class="nav-row-cta">
+        <span class="save">Progress is saved automatically</span>
+        <button class="next" type="submit">Continue to medical history <span class="arrow"></span></button>
+      </div>
+    </form>
+  </main>
+</div>
+
+<script>
+// tiny interactivity: toggle chip + scale
+document.querySelectorAll('.chip').forEach(b=>b.addEventListener('click',()=>b.classList.toggle('on')));
+document.querySelectorAll('.scale button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.scale button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+}));
+</script>
+</body>
+</html>
