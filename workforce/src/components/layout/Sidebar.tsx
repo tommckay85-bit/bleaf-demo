@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react';
 
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Workforce', icon: '⊞' },
+  { id: 'diary', label: 'Diary', icon: '📅' },
   { id: 'people', label: 'People', icon: '👤' },
   { id: 'rules', label: 'Rules & SLAs', icon: '⚙' },
   { id: 'testdata', label: 'Test Data', icon: '⚗' },

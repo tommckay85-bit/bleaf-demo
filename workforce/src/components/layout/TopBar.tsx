@@ -2,6 +2,7 @@ import { useWorkforce } from '../../store/WorkforceContext';
 
 const VIEW_TITLES: Record<string, { title: string; subtitle: string }> = {
   dashboard: { title: 'Workforce Dashboard', subtitle: 'Allocate prescribers to service categories for today' },
+  diary: { title: 'Appointment Diary', subtitle: 'Full-day appointment schedule across prescribers' },
   people: { title: 'People & Permissions', subtitle: 'Manage prescribers, roles and service access' },
   rules: { title: 'Rules & SLAs', subtitle: 'Configure allocation priorities and service-level agreements' },
   testdata: { title: 'Test Data Generator', subtitle: 'Generate orders and patient messages for testing' },

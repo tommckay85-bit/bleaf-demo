@@ -1,9 +1,17 @@
 import { createContext, useContext, useReducer, type ReactNode } from 'react';
-import type { Prescriber, Order, AllocationRule, SLAConfig, DayAllocation } from '../types';
+import type {
+  Prescriber, Order, AllocationRule, SLAConfig, DayAllocation,
+  NonPrescribingSlot, Appointment, ClinicType, BreakGroup, PatientMessage, ServiceCapacityConfig,
+} from '../types';
 import { INITIAL_PRESCRIBERS } from '../data/prescribers';
 import { INITIAL_ORDERS } from '../data/orders';
 import { INITIAL_RULES, INITIAL_SLAS } from '../data/rules';
 import { SERVICES, SERVICE_CATEGORIES } from '../data/services';
+import { INITIAL_APPOINTMENTS } from '../data/appointments';
+import { INITIAL_CLINIC_TYPES } from '../data/clinicTypes';
+import { INITIAL_BREAK_GROUPS } from '../data/breakGroups';
+import { INITIAL_MESSAGES } from '../data/messages';
+import { INITIAL_CAPACITY_CONFIGS } from '../data/capacityConfigs';
 
 interface State {
   prescribers: Prescriber[];
@@ -11,6 +19,12 @@ interface State {
   allocations: DayAllocation[];
   rules: AllocationRule[];
   slas: SLAConfig[];
+  nonPrescribingSlots: NonPrescribingSlot[];
+  appointments: Appointment[];
+  clinicTypes: ClinicType[];
+  breakGroups: BreakGroup[];
+  messages: PatientMessage[];
+  capacityConfigs: ServiceCapacityConfig[];
 }
 
 type Action =
@@ -25,7 +39,20 @@ type Action =
   | { type: 'UPDATE_ORDER_STATUS'; orderId: string; status: Order['status'] }
   | { type: 'SET_PRESCRIBER_STATUS'; prescriberId: string; status: Prescriber['status'] }
   | { type: 'ADD_ORDERS'; orders: Order[] }
-  | { type: 'CLEAR_GENERATED_ORDERS' };
+  | { type: 'CLEAR_GENERATED_ORDERS' }
+  | { type: 'ADD_NON_PRESCRIBING'; slot: NonPrescribingSlot }
+  | { type: 'REMOVE_NON_PRESCRIBING'; prescriberId: string }
+  | { type: 'ADD_APPOINTMENT'; appointment: Appointment }
+  | { type: 'UPDATE_APPOINTMENT'; appointment: Appointment }
+  | { type: 'DELETE_APPOINTMENT'; appointmentId: string }
+  | { type: 'UPDATE_CLINIC_TYPE'; clinicType: ClinicType }
+  | { type: 'ADD_CLINIC_TYPE'; clinicType: ClinicType }
+  | { type: 'UPDATE_BREAK_GROUP'; breakGroup: BreakGroup }
+  | { type: 'ADD_BREAK_GROUP'; breakGroup: BreakGroup }
+  | { type: 'APPLY_BREAKS' }
+  | { type: 'UPDATE_CAPACITY_CONFIG'; config: ServiceCapacityConfig }
+  | { type: 'ADD_MESSAGES'; messages: PatientMessage[] }
+  | { type: 'CLEAR_GENERATED_MESSAGES' };
 
 function computePriorityScore(order: Order, rules: AllocationRule[], slas: SLAConfig[]): number {
   const service = SERVICES.find(s => s.id === order.serviceId);
@@ -106,6 +133,11 @@ function autoAllocate(state: State): State {
   return { ...state, allocations: newAllocations, prescribers: newPrescribers, orders: updatedOrders };
 }
 
+function timeToMins(t: string): number {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+
 function reducer(state: State, action: Action): State {
   switch (action.type) {
     case 'ALLOCATE_PRESCRIBER': {
@@ -152,7 +184,10 @@ function reducer(state: State, action: Action): State {
     case 'AUTO_ALLOCATE':
       return autoAllocate(state);
     case 'UPDATE_PRESCRIBER': {
-      const newPrescribers = state.prescribers.map(p => p.id === action.prescriber.id ? action.prescriber : p);
+      const exists = state.prescribers.some(p => p.id === action.prescriber.id);
+      const newPrescribers = exists
+        ? state.prescribers.map(p => p.id === action.prescriber.id ? action.prescriber : p)
+        : [...state.prescribers, action.prescriber];
       return { ...state, prescribers: newPrescribers };
     }
     case 'UPDATE_RULE': {
@@ -192,6 +227,97 @@ function reducer(state: State, action: Action): State {
       const cleared = state.orders.filter(o => !o.id.startsWith('gen-'));
       return { ...state, orders: cleared };
     }
+    case 'ADD_NON_PRESCRIBING': {
+      // Remove from allocations, set status to non-prescribing
+      const newAllocations = state.allocations.map(a => ({
+        ...a,
+        prescriberIds: a.prescriberIds.filter(id => id !== action.slot.prescriberId),
+      }));
+      const newPrescribers = state.prescribers.map(p =>
+        p.id === action.slot.prescriberId
+          ? { ...p, status: 'non-prescribing' as const, allocatedCategoryId: undefined }
+          : p
+      );
+      const newSlots = [
+        ...state.nonPrescribingSlots.filter(s => s.prescriberId !== action.slot.prescriberId),
+        action.slot,
+      ];
+      return { ...state, allocations: newAllocations, prescribers: newPrescribers, nonPrescribingSlots: newSlots };
+    }
+    case 'REMOVE_NON_PRESCRIBING': {
+      const newSlots = state.nonPrescribingSlots.filter(s => s.prescriberId !== action.prescriberId);
+      const newPrescribers = state.prescribers.map(p =>
+        p.id === action.prescriberId ? { ...p, status: 'online' as const } : p
+      );
+      return { ...state, nonPrescribingSlots: newSlots, prescribers: newPrescribers };
+    }
+    case 'ADD_APPOINTMENT': {
+      return { ...state, appointments: [...state.appointments, action.appointment] };
+    }
+    case 'UPDATE_APPOINTMENT': {
+      const newAppts = state.appointments.map(a => a.id === action.appointment.id ? action.appointment : a);
+      return { ...state, appointments: newAppts };
+    }
+    case 'DELETE_APPOINTMENT': {
+      return { ...state, appointments: state.appointments.filter(a => a.id !== action.appointmentId) };
+    }
+    case 'UPDATE_CLINIC_TYPE': {
+      const newTypes = state.clinicTypes.map(ct => ct.id === action.clinicType.id ? action.clinicType : ct);
+      return { ...state, clinicTypes: newTypes };
+    }
+    case 'ADD_CLINIC_TYPE': {
+      return { ...state, clinicTypes: [...state.clinicTypes, action.clinicType] };
+    }
+    case 'UPDATE_BREAK_GROUP': {
+      const newGroups = state.breakGroups.map(bg => bg.id === action.breakGroup.id ? action.breakGroup : bg);
+      return { ...state, breakGroups: newGroups };
+    }
+    case 'ADD_BREAK_GROUP': {
+      return { ...state, breakGroups: [...state.breakGroups, action.breakGroup] };
+    }
+    case 'APPLY_BREAKS': {
+      const now = new Date();
+      const nowMins = now.getHours() * 60 + now.getMinutes();
+      const activeBreaks = state.breakGroups.filter(bg => {
+        if (!bg.enabled) return false;
+        const start = timeToMins(bg.startTime);
+        const end = timeToMins(bg.endTime);
+        return nowMins >= start && nowMins < end;
+      });
+      if (activeBreaks.length === 0) return state;
+
+      const prescriberIdsToBreak = new Set<string>();
+      for (const bg of activeBreaks) {
+        for (const pid of bg.prescriberIds) {
+          prescriberIdsToBreak.add(pid);
+        }
+      }
+
+      const newAllocations = state.allocations.map(a => ({
+        ...a,
+        prescriberIds: a.prescriberIds.filter(id => !prescriberIdsToBreak.has(id)),
+      }));
+      const newPrescribers = state.prescribers.map(p =>
+        prescriberIdsToBreak.has(p.id) && p.status === 'allocated'
+          ? { ...p, status: 'on-break' as const, allocatedCategoryId: undefined }
+          : p
+      );
+      return { ...state, allocations: newAllocations, prescribers: newPrescribers };
+    }
+    case 'UPDATE_CAPACITY_CONFIG': {
+      const exists = state.capacityConfigs.some(c => c.categoryId === action.config.categoryId);
+      const newConfigs = exists
+        ? state.capacityConfigs.map(c => c.categoryId === action.config.categoryId ? action.config : c)
+        : [...state.capacityConfigs, action.config];
+      return { ...state, capacityConfigs: newConfigs };
+    }
+    case 'ADD_MESSAGES': {
+      return { ...state, messages: [...state.messages, ...action.messages] };
+    }
+    case 'CLEAR_GENERATED_MESSAGES': {
+      const cleared = state.messages.filter(m => !m.id.startsWith('gmsg-'));
+      return { ...state, messages: cleared };
+    }
     default:
       return state;
   }
@@ -203,6 +329,12 @@ const initialState: State = {
   allocations: SERVICE_CATEGORIES.map(c => ({ categoryId: c.id, prescriberIds: [] })),
   rules: INITIAL_RULES,
   slas: INITIAL_SLAS,
+  nonPrescribingSlots: [],
+  appointments: INITIAL_APPOINTMENTS,
+  clinicTypes: INITIAL_CLINIC_TYPES,
+  breakGroups: INITIAL_BREAK_GROUPS,
+  messages: INITIAL_MESSAGES,
+  capacityConfigs: INITIAL_CAPACITY_CONFIGS,
 };
 
 interface WorkforceContextValue extends State {
