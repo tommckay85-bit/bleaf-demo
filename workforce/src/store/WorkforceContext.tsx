@@ -2,6 +2,7 @@ import { createContext, useContext, useReducer, type ReactNode } from 'react';
 import type {
   Prescriber, Order, AllocationRule, SLAConfig, DayAllocation,
   NonPrescribingSlot, Appointment, ClinicType, BreakGroup, PatientMessage, ServiceCapacityConfig,
+  PrescriberActivityEvent, PerformanceMonitorConfig,
 } from '../types';
 import { INITIAL_PRESCRIBERS } from '../data/prescribers';
 import { INITIAL_ORDERS } from '../data/orders';
@@ -25,6 +26,8 @@ interface State {
   breakGroups: BreakGroup[];
   messages: PatientMessage[];
   capacityConfigs: ServiceCapacityConfig[];
+  prescriberActivity: PrescriberActivityEvent[];
+  performanceConfig: PerformanceMonitorConfig;
 }
 
 type Action =
@@ -52,7 +55,11 @@ type Action =
   | { type: 'APPLY_BREAKS' }
   | { type: 'UPDATE_CAPACITY_CONFIG'; config: ServiceCapacityConfig }
   | { type: 'ADD_MESSAGES'; messages: PatientMessage[] }
-  | { type: 'CLEAR_GENERATED_MESSAGES' };
+  | { type: 'CLEAR_GENERATED_MESSAGES' }
+  | { type: 'ADD_ACTIVITY_EVENTS'; events: PrescriberActivityEvent[] }
+  | { type: 'LOG_ACTIVITY'; prescriberId: string; activityType: 'order' | 'message' }
+  | { type: 'CLEAR_ACTIVITY_EVENTS' }
+  | { type: 'UPDATE_PERFORMANCE_CONFIG'; config: PerformanceMonitorConfig };
 
 function computePriorityScore(order: Order, rules: AllocationRule[], slas: SLAConfig[]): number {
   const service = SERVICES.find(s => s.id === order.serviceId);
@@ -102,15 +109,22 @@ function autoAllocate(state: State): State {
   const newAllocations: DayAllocation[] = SERVICE_CATEGORIES.map(cat => ({ categoryId: cat.id, prescriberIds: [] }));
   const newPrescribers: Prescriber[] = state.prescribers.map(p => ({ ...p, allocatedCategoryId: undefined as string | undefined }));
 
-  const categoryOrderCounts = SERVICE_CATEGORIES.map(cat => {
+  // Compute workload per category and how many prescribers are needed
+  const categoryWorkload = SERVICE_CATEGORIES.map(cat => {
     const catServiceIds = cat.serviceIds;
     const pendingCount = state.orders.filter(o => catServiceIds.includes(o.serviceId) && (o.status === 'pending' || o.status === 'escalated')).length;
-    return { categoryId: cat.id, count: pendingCount };
+    const msgCount = state.messages.filter(m => m.categoryId === cat.id && m.status === 'pending').length;
+    const cfg = state.capacityConfigs.find(c => c.categoryId === cat.id);
+    const reqMins = cfg ? pendingCount * cfg.orderAHTMins + msgCount * cfg.messageAHTMins : pendingCount * 10;
+    // Target: 1 prescriber per 480 mins of work, minimum 1 if any pending
+    const prescribersNeeded = pendingCount + msgCount > 0 ? Math.max(1, Math.ceil(reqMins / 480)) : 0;
+    return { categoryId: cat.id, count: pendingCount + msgCount, prescribersNeeded };
   }).filter(c => c.count > 0).sort((a, b) => b.count - a.count);
 
   const assigned = new Set<string>();
 
-  for (const catEntry of categoryOrderCounts) {
+  // First pass: assign at least one prescriber to each category with work
+  for (const catEntry of categoryWorkload) {
     const cat = SERVICE_CATEGORIES.find(c => c.id === catEntry.categoryId)!;
     const eligible = onlinePrescribers.filter(p =>
       !assigned.has(p.id) &&
@@ -125,10 +139,32 @@ function autoAllocate(state: State): State {
     newPrescribers[idx] = { ...newPrescribers[idx], status: 'allocated', allocatedCategoryId: catEntry.categoryId };
   }
 
-  const updatedOrders = state.orders.map(o => {
-    const score = computePriorityScore(o, state.rules, state.slas);
-    return { ...o, priorityScore: score };
-  });
+  // Second pass: add extra prescribers where needed (proportional to workload)
+  const remaining = onlinePrescribers.filter(p => !assigned.has(p.id));
+  for (const catEntry of categoryWorkload) {
+    if (assigned.size >= onlinePrescribers.length) break;
+    const alreadyAssigned = newAllocations.find(a => a.categoryId === catEntry.categoryId)!.prescriberIds.length;
+    const extra = catEntry.prescribersNeeded - alreadyAssigned;
+    if (extra <= 0) continue;
+    const cat = SERVICE_CATEGORIES.find(c => c.id === catEntry.categoryId)!;
+    const eligible = remaining.filter(p =>
+      !assigned.has(p.id) &&
+      cat.serviceIds.some(sId => p.serviceIds.includes(sId))
+    );
+    for (let i = 0; i < Math.min(extra, eligible.length); i++) {
+      const prescriber = eligible[i];
+      assigned.add(prescriber.id);
+      const alloc = newAllocations.find(a => a.categoryId === catEntry.categoryId)!;
+      alloc.prescriberIds.push(prescriber.id);
+      const idx = newPrescribers.findIndex(p => p.id === prescriber.id);
+      newPrescribers[idx] = { ...newPrescribers[idx], status: 'allocated', allocatedCategoryId: catEntry.categoryId };
+    }
+  }
+
+  const updatedOrders = state.orders.map(o => ({
+    ...o,
+    priorityScore: computePriorityScore(o, state.rules, state.slas),
+  }));
 
   return { ...state, allocations: newAllocations, prescribers: newPrescribers, orders: updatedOrders };
 }
@@ -318,6 +354,21 @@ function reducer(state: State, action: Action): State {
       const cleared = state.messages.filter(m => !m.id.startsWith('gmsg-'));
       return { ...state, messages: cleared };
     }
+    case 'ADD_ACTIVITY_EVENTS':
+      return { ...state, prescriberActivity: [...state.prescriberActivity, ...action.events] };
+    case 'LOG_ACTIVITY': {
+      const event: PrescriberActivityEvent = {
+        id: `act-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        prescriberId: action.prescriberId,
+        type: action.activityType,
+        timestamp: new Date().toISOString(),
+      };
+      return { ...state, prescriberActivity: [...state.prescriberActivity, event] };
+    }
+    case 'CLEAR_ACTIVITY_EVENTS':
+      return { ...state, prescriberActivity: [] };
+    case 'UPDATE_PERFORMANCE_CONFIG':
+      return { ...state, performanceConfig: action.config };
     default:
       return state;
   }
@@ -335,6 +386,13 @@ const initialState: State = {
   breakGroups: INITIAL_BREAK_GROUPS,
   messages: INITIAL_MESSAGES,
   capacityConfigs: INITIAL_CAPACITY_CONFIGS,
+  prescriberActivity: [],
+  performanceConfig: {
+    slowRateThresholdPct: 20,
+    watchHours: 1,
+    actionHours: 2,
+    idleMinutes: 20,
+  },
 };
 
 interface WorkforceContextValue extends State {

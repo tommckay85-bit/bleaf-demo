@@ -3,7 +3,7 @@ import { useWorkforce } from '../../store/WorkforceContext';
 import { SERVICE_CATEGORIES, SERVICES } from '../../data/services';
 import { Button } from '../common/Button';
 import { Badge } from '../common/Badge';
-import type { Order, Urgency, PatientMessage } from '../../types';
+import type { Order, Urgency, PatientMessage, PrescriberActivityEvent } from '../../types';
 
 const URGENCY_WEIGHTS = { routine: 60, urgent: 30, critical: 10 };
 const VALUE_RANGES = {
@@ -80,6 +80,91 @@ function generateMessages(
   });
 }
 
+// Simulate prescriber activity history for performance monitoring demo.
+// Assigns some allocatedIds to 'action' (slow for full actionHours),
+// some to 'watch' (slow only in recent watchHours), one to 'idle'.
+function simulateActivityHistory(
+  allocatedIds: string[],
+  watchHours: number,
+  actionHours: number,
+  idleMinutes: number,
+  thresholdPct: number,
+): { events: PrescriberActivityEvent[]; actionCount: number; watchCount: number; idleCount: number } {
+  const now = Date.now();
+  const watchMs = watchHours * 3_600_000;
+  const actionMs = actionHours * 3_600_000;
+  const idleMs = idleMinutes * 60_000;
+  const NORMAL_RATE = 5; // events per hour for a normal prescriber
+  const HISTORY_MS = actionMs + 30 * 60_000;
+
+  const shuffled = [...allocatedIds].sort(() => Math.random() - 0.5);
+  const n = shuffled.length;
+  const numAction = n >= 4 ? 2 : n >= 2 ? 1 : 0;
+  const numWatch  = n >= 6 ? 2 : n >= 4 ? 1 : 0;
+  const numIdle   = n >= 5 ? 1 : 0;
+
+  const actionSet = new Set(shuffled.slice(0, numAction));
+  const watchSet  = new Set(shuffled.slice(numAction, numAction + numWatch));
+  const idleSet   = new Set(shuffled.slice(numAction + numWatch, numAction + numWatch + numIdle));
+
+  const events: PrescriberActivityEvent[] = [];
+  let seq = 0;
+
+  function add(pId: string, ts: number) {
+    events.push({
+      id: `sim-${now}-${seq++}`,
+      prescriberId: pId,
+      type: Math.random() > 0.3 ? 'order' : 'message',
+      timestamp: new Date(Math.max(0, ts)).toISOString(),
+    });
+  }
+  function jitter(ts: number, rangeMs: number) {
+    return ts + (Math.random() * 2 - 1) * rangeMs;
+  }
+
+  const slowTarget = Math.max(1, Math.floor(NORMAL_RATE * thresholdPct / 100 * 0.5)); // well below flag threshold
+
+  for (const pId of allocatedIds) {
+    if (actionSet.has(pId)) {
+      // Slow for both windows: ~2 in watch window, ~4 in action window total
+      const inAction = Math.max(slowTarget, 2);
+      for (let i = 0; i < inAction; i++) {
+        add(pId, jitter(now - (i + 1) * (actionMs / (inAction + 1)), 4 * 60_000));
+      }
+      // One event close to now so not flagged idle too
+      add(pId, jitter(now - 6 * 60_000, 2 * 60_000));
+
+    } else if (watchSet.has(pId)) {
+      // Slow in watch window only: 2 recent + dense earlier period
+      add(pId, jitter(now - 8 * 60_000, 2 * 60_000));
+      add(pId, jitter(now - 45 * 60_000, 5 * 60_000));
+      // Dense events in [now-actionMs, now-watchMs]
+      const earlyCount = Math.round(NORMAL_RATE * (actionHours - watchHours) * 1.5);
+      for (let i = 0; i < earlyCount; i++) {
+        const earlyWindow = actionMs - watchMs;
+        add(pId, jitter(now - watchMs - (i + 0.5) * (earlyWindow / (earlyCount + 1)), 3 * 60_000));
+      }
+
+    } else if (idleSet.has(pId)) {
+      // Normal before idleMinutes+buffer, nothing recent
+      const idleBuffer = idleMs + 8 * 60_000;
+      const preIdle = Math.round(NORMAL_RATE * (HISTORY_MS - idleBuffer) / 3_600_000);
+      for (let i = 0; i < Math.max(preIdle, 3); i++) {
+        add(pId, jitter(now - idleBuffer - (i + 0.5) * ((HISTORY_MS - idleBuffer) / (preIdle + 1)), 3 * 60_000));
+      }
+
+    } else {
+      // Normal: evenly distributed over history window
+      const count = Math.round(NORMAL_RATE * HISTORY_MS / 3_600_000);
+      for (let i = 0; i < count; i++) {
+        add(pId, jitter(now - (i + 0.5) * (HISTORY_MS / count), 3 * 60_000));
+      }
+    }
+  }
+
+  return { events, actionCount: numAction, watchCount: numWatch, idleCount: numIdle };
+}
+
 interface GeneratorConfig {
   mode: 'category' | 'service';
   categoryId: string;
@@ -100,8 +185,8 @@ interface MessageConfig {
 }
 
 export function TestDataGenerator() {
-  const { orders, messages, dispatch } = useWorkforce();
-  const [activeTab, setActiveTab] = useState<'orders' | 'messages'>('orders');
+  const { orders, messages, prescribers, prescriberActivity, performanceConfig, dispatch } = useWorkforce();
+  const [activeTab, setActiveTab] = useState<'orders' | 'messages' | 'activity'>('orders');
   const [cfg, setCfg] = useState<GeneratorConfig>({
     mode: 'category',
     categoryId: 'womens-health',
@@ -121,6 +206,7 @@ export function TestDataGenerator() {
   });
   const [lastGenCount, setLastGenCount] = useState<number | null>(null);
   const [lastMsgCount, setLastMsgCount] = useState<number | null>(null);
+  const [lastActivityResult, setLastActivityResult] = useState<{ actionCount: number; watchCount: number; idleCount: number; total: number } | null>(null);
 
   const cat = SERVICE_CATEGORIES.find(c => c.id === cfg.categoryId)!;
   const catServices = SERVICES.filter(s => s.categoryId === cfg.categoryId);
@@ -190,10 +276,14 @@ export function TestDataGenerator() {
           borderRadius: 'var(--r-md)', width: 'fit-content',
           border: '1px solid var(--border)',
         }}>
-          {(['orders', 'messages'] as const).map(tab => (
+          {([
+            { id: 'orders', label: 'Orders' },
+            { id: 'messages', label: 'Messages' },
+            { id: 'activity', label: '📊 Activity' },
+          ] as const).map(tab => (
             <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
               style={{
                 padding: '6px 20px',
                 border: 'none',
@@ -201,12 +291,12 @@ export function TestDataGenerator() {
                 cursor: 'pointer',
                 fontWeight: 600,
                 fontSize: 'var(--fs-small)',
-                background: activeTab === tab ? 'var(--boots-blue)' : 'transparent',
-                color: activeTab === tab ? '#fff' : 'var(--fg3)',
+                background: activeTab === tab.id ? 'var(--boots-blue)' : 'transparent',
+                color: activeTab === tab.id ? '#fff' : 'var(--fg3)',
                 transition: 'all 0.15s ease',
               }}
             >
-              {tab === 'orders' ? 'Orders' : 'Messages'}
+              {tab.label}
             </button>
           ))}
         </div>
@@ -509,6 +599,95 @@ export function TestDataGenerator() {
             </div>
           </div>
         )}
+
+        {activeTab === 'activity' && (() => {
+          const allocatedPrescribers = prescribers.filter(p => p.status === 'allocated');
+          const cfg = performanceConfig;
+          const preview = allocatedPrescribers.length >= 2
+            ? simulateActivityHistory(allocatedPrescribers.map(p => p.id), cfg.watchHours, cfg.actionHours, cfg.idleMinutes, cfg.slowRateThresholdPct)
+            : null;
+
+          return (
+            <div style={{
+              background: 'var(--surface)', borderRadius: 'var(--r-lg)',
+              padding: 'var(--space-5)', boxShadow: 'var(--shadow-1)',
+              border: '1px solid var(--border)',
+            }}>
+              <h2 style={{ fontSize: 'var(--fs-h3)', fontWeight: 700, marginBottom: 8 }}>
+                Simulate Prescriber Activity
+              </h2>
+              <p style={{ fontSize: 'var(--fs-small)', color: 'var(--fg3)', marginBottom: 'var(--space-4)', lineHeight: 1.6 }}>
+                Generates a realistic activity history for all allocated prescribers, including some who will trigger
+                performance flags in the left-hand monitor panel on the Dashboard.
+                Thresholds follow the current Performance Monitor settings.
+              </p>
+
+              {allocatedPrescribers.length === 0 ? (
+                <div style={{ padding: 'var(--space-4)', background: '#FFF7ED', border: '1px solid #EA580C', borderRadius: 'var(--r-md)', fontSize: 'var(--fs-small)', color: '#92400E' }}>
+                  No prescribers are currently allocated. Go to the Dashboard and allocate some (or use ⚡ Auto-allocate) before simulating activity.
+                </div>
+              ) : (
+                <>
+                  {/* Config summary */}
+                  <div style={{ padding: 'var(--space-3) var(--space-4)', background: 'var(--surface-alt)', borderRadius: 'var(--r-md)', border: '1px solid var(--border)', marginBottom: 'var(--space-4)', fontSize: 'var(--fs-small)', color: 'var(--fg2)' }}>
+                    <strong>Current thresholds:</strong> flag if &gt;{cfg.slowRateThresholdPct}% below avg — Watch after {cfg.watchHours}h, Action after {cfg.actionHours}h, Idle after {cfg.idleMinutes}m.
+                    <span style={{ color: 'var(--fg3)', marginLeft: 4 }}>(Change via ⚙ on the Performance panel.)</span>
+                  </div>
+
+                  {/* Simulation preview */}
+                  {preview && (
+                    <div style={{ marginBottom: 'var(--space-4)', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-3)' }}>
+                      <SimPreviewStat label="Normal" value={allocatedPrescribers.length - preview.actionCount - preview.watchCount - preview.idleCount} color="#16A34A" />
+                      <SimPreviewStat label="Watch" value={preview.watchCount} color="#D97706" />
+                      <SimPreviewStat label="Take Action" value={preview.actionCount} color="#DC2626" />
+                      <SimPreviewStat label="Idle" value={preview.idleCount} color="#7C3AED" />
+                    </div>
+                  )}
+
+                  <div style={{ fontSize: 'var(--fs-micro)', color: 'var(--fg3)', marginBottom: 'var(--space-4)', lineHeight: 1.6 }}>
+                    Simulation covers the past {cfg.actionHours + 0.5}h.
+                    Normal prescribers process ~5 items/h. Slow prescribers are set well below the
+                    {cfg.slowRateThresholdPct}% threshold to make flags clearly visible.
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <Button variant="primary" size="md" onClick={() => {
+                      if (!preview) return;
+                      dispatch({ type: 'CLEAR_ACTIVITY_EVENTS' });
+                      dispatch({ type: 'ADD_ACTIVITY_EVENTS', events: preview.events });
+                      setLastActivityResult({ ...preview, total: preview.events.length });
+                    }}>
+                      ▶ Simulate {allocatedPrescribers.length} prescriber{allocatedPrescribers.length !== 1 ? 's' : ''}
+                    </Button>
+                    {prescriberActivity.length > 0 && (
+                      <Button variant="ghost" size="md" onClick={() => {
+                        dispatch({ type: 'CLEAR_ACTIVITY_EVENTS' });
+                        setLastActivityResult(null);
+                      }}>
+                        Clear activity
+                      </Button>
+                    )}
+                    {prescriberActivity.length > 0 && (
+                      <span style={{ fontSize: 'var(--fs-micro)', color: 'var(--fg3)' }}>
+                        {prescriberActivity.length} events currently in log
+                      </span>
+                    )}
+                  </div>
+
+                  {lastActivityResult && (
+                    <div style={{ marginTop: 'var(--space-4)', padding: 'var(--space-3) var(--space-4)', background: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: 'var(--r-md)', fontSize: 'var(--fs-small)' }}>
+                      ✓ Generated {lastActivityResult.total} events —{' '}
+                      {lastActivityResult.actionCount > 0 && <span style={{ color: '#DC2626', fontWeight: 600 }}>{lastActivityResult.actionCount} Take Action </span>}
+                      {lastActivityResult.watchCount > 0 && <span style={{ color: '#D97706', fontWeight: 600 }}>{lastActivityResult.watchCount} Watch </span>}
+                      {lastActivityResult.idleCount > 0 && <span style={{ color: '#7C3AED', fontWeight: 600 }}>{lastActivityResult.idleCount} Idle </span>}
+                      flags should now appear on the Dashboard.
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          );
+        })()}
       </div>
 
       {/* Right: current queue summary */}
@@ -611,6 +790,19 @@ function StatBox({ label, value, color }: { label: string; value: number; color:
     <div style={{ textAlign: 'center' }}>
       <div style={{ fontSize: 'var(--fs-h2)', fontWeight: 700, color }}>{value}</div>
       <div style={{ fontSize: 'var(--fs-micro)', color: 'var(--fg3)' }}>{label}</div>
+    </div>
+  );
+}
+
+function SimPreviewStat({ label, value, color }: { label: string; value: number; color: string }) {
+  return (
+    <div style={{
+      textAlign: 'center', padding: 'var(--space-3)',
+      borderRadius: 'var(--r-md)', border: `1.5px solid ${color}20`,
+      background: `${color}10`,
+    }}>
+      <div style={{ fontSize: 22, fontWeight: 700, color, lineHeight: 1 }}>{value}</div>
+      <div style={{ fontSize: 10, color: 'var(--fg3)', marginTop: 3 }}>{label}</div>
     </div>
   );
 }

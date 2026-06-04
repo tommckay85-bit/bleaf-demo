@@ -123,3 +123,17 @@ export interface ServiceCapacityConfig {
   orderAHTMins: number;
   messageAHTMins: number;
 }
+
+export interface PrescriberActivityEvent {
+  id: string;
+  prescriberId: string;
+  type: 'order' | 'message';
+  timestamp: string; // ISO 8601
+}
+
+export interface PerformanceMonitorConfig {
+  slowRateThresholdPct: number; // % below team average to trigger flag (default 20)
+  watchHours: number;            // hours below threshold → Watch flag (default 1)
+  actionHours: number;           // hours below threshold → Take Action flag (default 2)
+  idleMinutes: number;           // minutes with no activity → Idle flag (default 20)
+}

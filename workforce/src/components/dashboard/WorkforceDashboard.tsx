@@ -6,6 +6,7 @@ import { Badge } from '../common/Badge';
 import { Avatar, ROLE_COLORS } from '../common/Avatar';
 import { Modal } from '../common/Modal';
 import { BodconBanner } from './BodconBanner';
+import { PerformanceMonitor } from './PerformanceMonitor';
 import type { Prescriber, ServiceCategory, NonPrescribingReason } from '../../types';
 
 const DAYS_MINS = 480; // effective prescriber minutes per day
@@ -137,6 +138,8 @@ export function WorkforceDashboard() {
       <BodconBanner />
 
       <div style={{ display: 'flex', gap: 'var(--space-5)', flex: 1, minHeight: 0 }}>
+      {/* Left panel: performance monitor */}
+      <PerformanceMonitor />
       {/* Main grid area */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', minWidth: 0, overflowY: 'auto' }}>
         {/* Toolbar */}
