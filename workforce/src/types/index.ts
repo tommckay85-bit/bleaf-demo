@@ -1,5 +1,5 @@
 export type PrescriberRole = 'pharmacist' | 'nurse' | 'gp' | 'specialist';
-export type PrescriberStatus = 'online' | 'allocated' | 'scheduled' | 'offline';
+export type PrescriberStatus = 'online' | 'allocated' | 'scheduled' | 'offline' | 'on-break' | 'in-appointment' | 'non-prescribing';
 export type OrderStatus = 'pending' | 'allocated' | 'in-progress' | 'complete' | 'escalated';
 export type Urgency = 'routine' | 'urgent' | 'critical';
 
@@ -66,4 +66,60 @@ export interface SLAConfig {
 export interface DayAllocation {
   categoryId: string;
   prescriberIds: string[];
+}
+
+export type NonPrescribingReason = 'admin' | 'training' | 'meeting' | 'lunch' | 'other';
+
+export interface NonPrescribingSlot {
+  prescriberId: string;
+  reason: NonPrescribingReason;
+  note?: string;
+}
+
+export interface ClinicType {
+  id: string;
+  name: string;
+  color: string;
+  defaultDurationMins: number;
+  requiredRoles: PrescriberRole[];
+}
+
+export interface Appointment {
+  id: string;
+  patientRef: string;
+  clinicTypeId: string;
+  prescriberId: string;
+  startTime: string; // "HH:MM" 24h
+  durationMins: number;
+  notes?: string;
+  status: 'scheduled' | 'in-progress' | 'complete' | 'cancelled';
+}
+
+export interface BreakGroup {
+  id: string;
+  name: string;
+  startTime: string; // "HH:MM"
+  endTime: string;   // "HH:MM"
+  prescriberIds: string[];
+  enabled: boolean;
+  color: string;
+}
+
+export interface PatientMessage {
+  id: string;
+  serviceId?: string;
+  categoryId?: string;
+  patientRef: string;
+  urgency: Urgency;
+  ageHours: number;
+  status: 'pending' | 'allocated' | 'complete';
+  isGeneral: boolean;
+  prescriberId?: string;
+  priorityScore?: number;
+}
+
+export interface ServiceCapacityConfig {
+  categoryId: string;
+  orderAHTMins: number;
+  messageAHTMins: number;
 }
