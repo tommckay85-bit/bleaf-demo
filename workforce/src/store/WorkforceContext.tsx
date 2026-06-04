@@ -105,60 +105,77 @@ function computePriorityScore(order: Order, rules: AllocationRule[], slas: SLACo
 }
 
 function autoAllocate(state: State): State {
-  const onlinePrescribers = state.prescribers.filter(p => p.status === 'online' || p.status === 'scheduled');
-  const newAllocations: DayAllocation[] = SERVICE_CATEGORIES.map(cat => ({ categoryId: cat.id, prescriberIds: [] }));
+  const available = state.prescribers.filter(p => p.status === 'online' || p.status === 'scheduled');
+  const newAllocations: DayAllocation[] = SERVICE_CATEGORIES.map(cat => ({ categoryId: cat.id, prescriberIds: [] as string[] }));
   const newPrescribers: Prescriber[] = state.prescribers.map(p => ({ ...p, allocatedCategoryId: undefined as string | undefined }));
-
-  // Compute workload per category and how many prescribers are needed
-  const categoryWorkload = SERVICE_CATEGORIES.map(cat => {
-    const catServiceIds = cat.serviceIds;
-    const pendingCount = state.orders.filter(o => catServiceIds.includes(o.serviceId) && (o.status === 'pending' || o.status === 'escalated')).length;
-    const msgCount = state.messages.filter(m => m.categoryId === cat.id && m.status === 'pending').length;
-    const cfg = state.capacityConfigs.find(c => c.categoryId === cat.id);
-    const reqMins = cfg ? pendingCount * cfg.orderAHTMins + msgCount * cfg.messageAHTMins : pendingCount * 10;
-    // Target: 1 prescriber per 480 mins of work, minimum 1 if any pending
-    const prescribersNeeded = pendingCount + msgCount > 0 ? Math.max(1, Math.ceil(reqMins / 480)) : 0;
-    return { categoryId: cat.id, count: pendingCount + msgCount, prescribersNeeded };
-  }).filter(c => c.count > 0).sort((a, b) => b.count - a.count);
-
   const assigned = new Set<string>();
 
-  // First pass: assign at least one prescriber to each category with work
-  for (const catEntry of categoryWorkload) {
-    const cat = SERVICE_CATEGORIES.find(c => c.id === catEntry.categoryId)!;
-    const eligible = onlinePrescribers.filter(p =>
-      !assigned.has(p.id) &&
-      cat.serviceIds.some(sId => p.serviceIds.includes(sId))
-    );
-    if (eligible.length === 0) continue;
-    const prescriber = eligible[0];
-    assigned.add(prescriber.id);
-    const alloc = newAllocations.find(a => a.categoryId === catEntry.categoryId)!;
-    alloc.prescriberIds.push(prescriber.id);
-    const idx = newPrescribers.findIndex(p => p.id === prescriber.id);
-    newPrescribers[idx] = { ...newPrescribers[idx], status: 'allocated', allocatedCategoryId: catEntry.categoryId };
+  function assignTo(prescriberId: string, categoryId: string) {
+    assigned.add(prescriberId);
+    newAllocations.find(a => a.categoryId === categoryId)!.prescriberIds.push(prescriberId);
+    const idx = newPrescribers.findIndex(p => p.id === prescriberId);
+    newPrescribers[idx] = { ...newPrescribers[idx], status: 'allocated', allocatedCategoryId: categoryId };
   }
 
-  // Second pass: add extra prescribers where needed (proportional to workload)
-  const remaining = onlinePrescribers.filter(p => !assigned.has(p.id));
-  for (const catEntry of categoryWorkload) {
-    if (assigned.size >= onlinePrescribers.length) break;
-    const alreadyAssigned = newAllocations.find(a => a.categoryId === catEntry.categoryId)!.prescriberIds.length;
-    const extra = catEntry.prescribersNeeded - alreadyAssigned;
-    if (extra <= 0) continue;
-    const cat = SERVICE_CATEGORIES.find(c => c.id === catEntry.categoryId)!;
-    const eligible = remaining.filter(p =>
-      !assigned.has(p.id) &&
-      cat.serviceIds.some(sId => p.serviceIds.includes(sId))
-    );
-    for (let i = 0; i < Math.min(extra, eligible.length); i++) {
-      const prescriber = eligible[i];
-      assigned.add(prescriber.id);
-      const alloc = newAllocations.find(a => a.categoryId === catEntry.categoryId)!;
-      alloc.prescriberIds.push(prescriber.id);
-      const idx = newPrescribers.findIndex(p => p.id === prescriber.id);
-      newPrescribers[idx] = { ...newPrescribers[idx], status: 'allocated', allocatedCategoryId: catEntry.categoryId };
+  // Compute workload per category
+  const workload = SERVICE_CATEGORIES.map(cat => {
+    const pending = state.orders.filter(o =>
+      cat.serviceIds.includes(o.serviceId) && (o.status === 'pending' || o.status === 'escalated')
+    ).length;
+    const msgs = state.messages.filter(m => m.categoryId === cat.id && m.status === 'pending').length;
+    const cfg = state.capacityConfigs.find(c => c.categoryId === cat.id);
+    const reqMins = cfg ? pending * cfg.orderAHTMins + msgs * cfg.messageAHTMins : (pending + msgs) * 10;
+    return { categoryId: cat.id, reqMins, total: pending + msgs };
+  });
+
+  const totalReqMins = workload.reduce((s, w) => s + w.reqMins, 0);
+  const n = available.length;
+
+  if (totalReqMins > 0 && n > 0) {
+    // Compute proportional targets — every prescriber should be allocated
+    const targets = workload.map(w => ({
+      categoryId: w.categoryId,
+      // Proportional share, min 1 for categories with work
+      target: w.reqMins > 0 ? Math.max(1, Math.round(n * w.reqMins / totalReqMins)) : 0,
+    }));
+
+    // Normalise: total targets must equal n exactly
+    let total = targets.reduce((s, t) => s + t.target, 0);
+    // Trim over-count from least important categories first
+    const withWork = targets.filter(t => t.target > 0).sort((a, b) => a.target - b.target);
+    while (total > n && withWork.length > 0) {
+      const t = withWork.find(t => t.target > 1);
+      if (!t) break;
+      t.target--;
+      total--;
     }
+    // Add under-count to busiest category
+    if (total < n) {
+      const busiest = targets.reduce((best, t) => t.target > best.target ? t : best, targets[0]);
+      busiest.target += (n - total);
+    }
+
+    // Assign by target, largest-first so busiest categories are filled first
+    const sorted = [...targets].sort((a, b) => b.target - a.target);
+    for (const { categoryId, target } of sorted) {
+      if (target <= 0) continue;
+      const cat = SERVICE_CATEGORIES.find(c => c.id === categoryId)!;
+      const eligible = available.filter(p => !assigned.has(p.id) && cat.serviceIds.some(sId => p.serviceIds.includes(sId)));
+      for (let i = 0; i < Math.min(target, eligible.length); i++) {
+        assignTo(eligible[i].id, categoryId);
+      }
+    }
+  }
+
+  // Assign any remaining unallocated prescribers (specialty mismatch or no-work scenario)
+  // Use the category with the most workload they're eligible for; fallback to any eligible category
+  const sortedByWorkload = [...workload].sort((a, b) => b.reqMins - a.reqMins);
+  for (const p of available.filter(p => !assigned.has(p.id))) {
+    const best = sortedByWorkload.find(w => {
+      const cat = SERVICE_CATEGORIES.find(c => c.id === w.categoryId)!;
+      return cat.serviceIds.some(sId => p.serviceIds.includes(sId));
+    });
+    if (best) assignTo(p.id, best.categoryId);
   }
 
   const updatedOrders = state.orders.map(o => ({
