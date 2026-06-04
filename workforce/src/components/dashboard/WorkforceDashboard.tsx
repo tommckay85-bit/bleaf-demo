@@ -5,6 +5,7 @@ import { Button } from '../common/Button';
 import { Badge } from '../common/Badge';
 import { Avatar, ROLE_COLORS } from '../common/Avatar';
 import { Modal } from '../common/Modal';
+import { BodconBanner } from './BodconBanner';
 import type { Prescriber, ServiceCategory, NonPrescribingReason } from '../../types';
 
 const DAYS_MINS = 480; // effective prescriber minutes per day
@@ -131,9 +132,13 @@ export function WorkforceDashboard() {
   const draggingPrescriber = dragPrescriberId ? prescribers.find(p => p.id === dragPrescriberId) : null;
 
   return (
-    <div style={{ display: 'flex', gap: 'var(--space-5)', height: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', height: '100%' }}>
+      {/* BODCON banner */}
+      <BodconBanner />
+
+      <div style={{ display: 'flex', gap: 'var(--space-5)', flex: 1, minHeight: 0 }}>
       {/* Main grid area */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', minWidth: 0 }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', minWidth: 0, overflowY: 'auto' }}>
         {/* Toolbar */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -429,6 +434,8 @@ export function WorkforceDashboard() {
           </div>
         )}
       </div>
+
+      </div>{/* end flex row */}
 
       {/* Non-prescribing modal */}
       <Modal

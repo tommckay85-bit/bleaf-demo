@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { useWorkforce } from '../../store/WorkforceContext';
 import { Button } from '../common/Button';
-import { Badge } from '../common/Badge';
+import { Avatar } from '../common/Avatar';
 import { Modal } from '../common/Modal';
 import type { Appointment, ClinicType, PrescriberRole } from '../../types';
 
-// Time grid: 08:00 to 20:00 in 30-min slots = 24 rows
 const START_HOUR = 8;
 const END_HOUR = 20;
 const SLOT_MINS = 30;
@@ -23,19 +22,7 @@ function slotToTime(slot: number): string {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
-function durationToSlots(mins: number): number {
-  return mins / SLOT_MINS;
-}
-
-const STATUS_COLORS: Record<Appointment['status'], string> = {
-  scheduled: '#1565C0',
-  'in-progress': '#2E7D32',
-  complete: '#6B7280',
-  cancelled: '#DC2626',
-};
-
-const PRESET_COLORS = ['#00838F', '#1565C0', '#6A1B9A', '#2E7D32', '#C2185B', '#E65100'];
-
+const PRESET_COLORS = ['#00838F', '#1565C0', '#6A1B9A', '#2E7D32', '#C2185B', '#E65100', '#D97706', '#0067B2'];
 const ROLES: { value: PrescriberRole; label: string }[] = [
   { value: 'pharmacist', label: 'Pharmacist' },
   { value: 'nurse', label: 'Nurse' },
@@ -44,14 +31,9 @@ const ROLES: { value: PrescriberRole; label: string }[] = [
 ];
 
 const inp: React.CSSProperties = {
-  padding: '8px 12px',
-  border: '1.5px solid var(--border)',
-  borderRadius: 'var(--r-md)',
-  fontSize: 'var(--fs-small)',
-  color: 'var(--fg1)',
-  background: 'var(--surface)',
-  width: '100%',
-  outline: 'none',
+  padding: '8px 12px', border: '1.5px solid var(--border)',
+  borderRadius: 'var(--r-md)', fontSize: 'var(--fs-small)',
+  color: 'var(--fg1)', background: 'var(--surface)', width: '100%', outline: 'none',
 };
 
 function FF({ label, children }: { label: string; children: React.ReactNode }) {
@@ -63,42 +45,45 @@ function FF({ label, children }: { label: string; children: React.ReactNode }) {
   );
 }
 
+// Returns the slots (0-based) that an appointment occupies
+function getAppointmentSlots(startTime: string, durationMins: number): number[] {
+  const startSlot = timeToSlot(startTime);
+  const numSlots = Math.ceil(durationMins / SLOT_MINS);
+  return Array.from({ length: numSlots }, (_, i) => startSlot + i);
+}
+
 export function AppointmentDiary() {
-  const { prescribers, appointments, clinicTypes, breakGroups, nonPrescribingSlots, dispatch } = useWorkforce();
+  const { prescribers, appointments, clinicTypes, breakGroups, dispatch } = useWorkforce();
 
   const [editingAppt, setEditingAppt] = useState<Partial<Appointment> | null>(null);
   const [isNewAppt, setIsNewAppt] = useState(false);
   const [editingClinicType, setEditingClinicType] = useState<Partial<ClinicType> | null>(null);
   const [isNewClinicType, setIsNewClinicType] = useState(false);
+  const [expandedCell, setExpandedCell] = useState<{ clinicTypeId: string; slot: number } | null>(null);
 
-  // Show prescribers who are gp/specialist or have appointments today
-  const diaryPrescribers = prescribers.filter(p => {
-    const hasAppt = appointments.some(a => a.prescriberId === p.id);
-    const isApptRole = p.role === 'gp' || p.role === 'specialist';
-    return (hasAppt || isApptRole) && p.status !== 'offline';
-  });
-
-  function openNewAppt(prescriberId: string, slotIndex: number) {
-    const ct = clinicTypes[0];
+  function openNewAppt(clinicTypeId: string, slotIndex: number) {
+    const ct = clinicTypes.find(c => c.id === clinicTypeId);
     setEditingAppt({
       id: '',
-      prescriberId,
+      clinicTypeId,
+      prescriberId: '',
       startTime: slotToTime(slotIndex),
       durationMins: ct?.defaultDurationMins || 30,
-      clinicTypeId: ct?.id || '',
       patientRef: '',
       status: 'scheduled',
     });
     setIsNewAppt(true);
+    setExpandedCell(null);
   }
 
   function openEditAppt(appt: Appointment) {
     setEditingAppt({ ...appt });
     setIsNewAppt(false);
+    setExpandedCell(null);
   }
 
   function saveAppt() {
-    if (!editingAppt || !editingAppt.patientRef || !editingAppt.prescriberId || !editingAppt.clinicTypeId) return;
+    if (!editingAppt?.patientRef || !editingAppt?.prescriberId || !editingAppt?.clinicTypeId) return;
     if (isNewAppt) {
       dispatch({
         type: 'ADD_APPOINTMENT',
@@ -115,6 +100,13 @@ export function AppointmentDiary() {
       });
     } else {
       dispatch({ type: 'UPDATE_APPOINTMENT', appointment: editingAppt as Appointment });
+    }
+    setEditingAppt(null);
+  }
+
+  function cancelAppt() {
+    if (editingAppt?.id) {
+      dispatch({ type: 'UPDATE_APPOINTMENT', appointment: { ...(editingAppt as Appointment), status: 'cancelled' } });
     }
     setEditingAppt(null);
   }
@@ -145,9 +137,32 @@ export function AppointmentDiary() {
     setEditingClinicType(null);
   }
 
-  const CELL_HEIGHT = 40; // px per 30-min slot
-  const COL_WIDTH = 160;
-  const TIME_COL_WIDTH = 56;
+  const CELL_H = 44;
+  const TIME_W = 56;
+  const COL_W = 180;
+
+  // Build slot groups: for each clinicType × slot, which appointments start there?
+  const slotGroups: Record<string, Appointment[]> = {};
+  for (const appt of appointments) {
+    if (appt.status === 'cancelled') continue;
+    const key = `${appt.clinicTypeId}::${timeToSlot(appt.startTime)}`;
+    if (!slotGroups[key]) slotGroups[key] = [];
+    slotGroups[key].push(appt);
+  }
+
+  // Slots occupied (to show continuation spans)
+  const occupied: Record<string, boolean> = {};
+  for (const appt of appointments) {
+    if (appt.status === 'cancelled') continue;
+    const slots = getAppointmentSlots(appt.startTime, appt.durationMins);
+    for (const s of slots) {
+      occupied[`${appt.clinicTypeId}::${s}`] = true;
+    }
+  }
+
+  const expandedAppts = expandedCell
+    ? (slotGroups[`${expandedCell.clinicTypeId}::${expandedCell.slot}`] || [])
+    : [];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', height: '100%' }}>
@@ -163,11 +178,9 @@ export function AppointmentDiary() {
               key={ct.id}
               onClick={() => { setEditingClinicType({ ...ct }); setIsNewClinicType(false); }}
               style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                padding: '4px 10px', borderRadius: 'var(--r-pill)',
-                border: `1.5px solid ${ct.color}`,
-                background: `${ct.color}15`,
-                color: ct.color,
+                display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px',
+                borderRadius: 'var(--r-pill)', border: `1.5px solid ${ct.color}`,
+                background: `${ct.color}15`, color: ct.color,
                 cursor: 'pointer', fontSize: 'var(--fs-micro)', fontWeight: 600,
               }}
             >
@@ -176,170 +189,150 @@ export function AppointmentDiary() {
             </button>
           ))}
           {breakGroups.filter(bg => bg.enabled).map(bg => (
-            <div
-              key={bg.id}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                padding: '4px 10px', borderRadius: 'var(--r-pill)',
-                border: `1.5px solid ${bg.color}`,
-                background: `${bg.color}15`,
-                color: bg.color,
-                fontSize: 'var(--fs-micro)', fontWeight: 600,
-              }}
-            >
+            <div key={bg.id} style={{
+              display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px',
+              borderRadius: 'var(--r-pill)', border: `1.5px solid ${bg.color}`,
+              background: `${bg.color}15`, color: bg.color,
+              fontSize: 'var(--fs-micro)', fontWeight: 600,
+            }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: bg.color, display: 'inline-block' }} />
               {bg.name} {bg.startTime}–{bg.endTime}
             </div>
           ))}
         </div>
-        <Button variant="ghost" size="sm" onClick={() => { setEditingClinicType({ color: PRESET_COLORS[0], defaultDurationMins: 30, requiredRoles: [] }); setIsNewClinicType(true); }}>
-          + Add Clinic Type
-        </Button>
+        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+          <Button variant="ghost" size="sm" onClick={() => { setEditingClinicType({ color: PRESET_COLORS[clinicTypes.length % PRESET_COLORS.length], defaultDurationMins: 30, requiredRoles: [] }); setIsNewClinicType(true); }}>
+            + Clinic Type
+          </Button>
+        </div>
       </div>
 
       {/* Diary grid */}
       <div style={{ flex: 1, overflow: 'auto', background: 'var(--surface)', borderRadius: 'var(--r-lg)', boxShadow: 'var(--shadow-1)', border: '1px solid var(--border)' }}>
-        <div style={{ display: 'flex', minWidth: TIME_COL_WIDTH + diaryPrescribers.length * COL_WIDTH }}>
+        <div style={{ display: 'flex', minWidth: TIME_W + clinicTypes.length * COL_W }}>
+
           {/* Time column */}
-          <div style={{ width: TIME_COL_WIDTH, flexShrink: 0, position: 'sticky', left: 0, zIndex: 10, background: 'var(--surface)', borderRight: '1px solid var(--border)' }}>
-            {/* Header */}
-            <div style={{ height: 48, borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--surface-alt)' }}>
+          <div style={{ width: TIME_W, flexShrink: 0, position: 'sticky', left: 0, zIndex: 10, background: 'var(--surface)', borderRight: '1px solid var(--border)' }}>
+            <div style={{ height: 56, borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--surface-alt)', position: 'sticky', top: 0, zIndex: 11 }}>
               <span style={{ fontSize: 'var(--fs-micro)', color: 'var(--fg4)', fontWeight: 600 }}>Time</span>
             </div>
             {Array.from({ length: TOTAL_SLOTS }, (_, i) => {
-              const t = slotToTime(i);
               const isHour = i % 2 === 0;
               return (
                 <div key={i} style={{
-                  height: CELL_HEIGHT,
-                  display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
-                  paddingRight: 8,
-                  borderBottom: '1px solid var(--border)',
-                  background: isHour ? 'var(--surface)' : 'transparent',
+                  height: CELL_H, display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
+                  paddingRight: 8, borderBottom: `1px solid ${isHour ? 'var(--border)' : 'var(--border)'}`,
+                  background: isHour ? 'transparent' : 'rgba(0,0,0,0.01)',
                 }}>
-                  {isHour && <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--fg4)' }}>{t}</span>}
+                  {isHour && <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--fg4)' }}>{slotToTime(i)}</span>}
                 </div>
               );
             })}
           </div>
 
-          {/* Prescriber columns */}
-          {diaryPrescribers.map(prescriber => {
-            const prescriberAppts = appointments.filter(a => a.prescriberId === prescriber.id);
-            const npSlot = nonPrescribingSlots.find(s => s.prescriberId === prescriber.id);
+          {/* Clinic type columns */}
+          {clinicTypes.map(ct => {
+            const ctAppointments = appointments.filter(a => a.clinicTypeId === ct.id && a.status !== 'cancelled');
+            const totalToday = ctAppointments.length;
 
             return (
-              <div key={prescriber.id} style={{ width: COL_WIDTH, flexShrink: 0, borderRight: '1px solid var(--border)', position: 'relative' }}>
-                {/* Header */}
+              <div key={ct.id} style={{ width: COL_W, flexShrink: 0, borderRight: '1px solid var(--border)' }}>
+                {/* Column header */}
                 <div style={{
-                  height: 48, borderBottom: '1px solid var(--border)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column',
+                  height: 56, borderBottom: '1px solid var(--border)',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                   background: 'var(--surface-alt)', padding: '0 8px',
                   position: 'sticky', top: 0, zIndex: 5,
+                  borderTop: `3px solid ${ct.color}`,
+                  gap: 2,
                 }}>
-                  <div style={{ fontSize: 'var(--fs-micro)', fontWeight: 700, color: 'var(--fg1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: COL_WIDTH - 16 }}>
-                    {prescriber.name}
-                  </div>
-                  <div style={{ fontSize: 10, color: 'var(--fg3)', textTransform: 'capitalize' }}>{prescriber.role}</div>
+                  <div style={{ fontSize: 'var(--fs-micro)', fontWeight: 700, color: ct.color, whiteSpace: 'nowrap' }}>{ct.name}</div>
+                  <div style={{ fontSize: 10, color: 'var(--fg3)' }}>{totalToday} appt{totalToday !== 1 ? 's' : ''} today · {ct.defaultDurationMins}m</div>
                 </div>
 
-                {/* Grid cells (click to add) */}
+                {/* Cells */}
                 <div style={{ position: 'relative' }}>
-                  {Array.from({ length: TOTAL_SLOTS }, (_, i) => (
-                    <div
-                      key={i}
-                      onClick={() => openNewAppt(prescriber.id, i)}
-                      style={{
-                        height: CELL_HEIGHT,
-                        borderBottom: `1px solid ${i % 2 === 0 ? 'var(--border)' : 'var(--border)'}`,
-                        cursor: 'pointer',
-                        background: i % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.01)',
-                      }}
-                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-alt)')}
-                      onMouseLeave={e => (e.currentTarget.style.background = i % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.01)')}
-                    />
-                  ))}
+                  {Array.from({ length: TOTAL_SLOTS }, (_, slotIdx) => {
+                    const cellKey = `${ct.id}::${slotIdx}`;
+                    const cellAppts = slotGroups[cellKey] || [];
+                    const isOccupiedContinuation = occupied[cellKey] && cellAppts.length === 0;
+                    const isHour = slotIdx % 2 === 0;
+                    const isExpanded = expandedCell?.clinicTypeId === ct.id && expandedCell?.slot === slotIdx;
 
-                  {/* Break group bands */}
-                  {breakGroups.filter(bg => bg.enabled && bg.prescriberIds.includes(prescriber.id)).map(bg => {
-                    const startSlot = timeToSlot(bg.startTime);
-                    const endSlot = timeToSlot(bg.endTime);
-                    if (startSlot < 0 || endSlot > TOTAL_SLOTS) return null;
+                    // Break band
+                    const hasBreak = breakGroups.some(bg => {
+                      if (!bg.enabled) return false;
+                      const start = timeToSlot(bg.startTime);
+                      const end = timeToSlot(bg.endTime);
+                      return slotIdx >= start && slotIdx < end;
+                    });
+                    const breakBg = hasBreak ? breakGroups.find(bg => {
+                      if (!bg.enabled) return false;
+                      const start = timeToSlot(bg.startTime);
+                      const end = timeToSlot(bg.endTime);
+                      return slotIdx >= start && slotIdx < end;
+                    }) : null;
+
                     return (
                       <div
-                        key={bg.id}
+                        key={slotIdx}
+                        onClick={() => {
+                          if (cellAppts.length > 1) {
+                            setExpandedCell(isExpanded ? null : { clinicTypeId: ct.id, slot: slotIdx });
+                          } else if (cellAppts.length === 1) {
+                            openEditAppt(cellAppts[0]);
+                          } else if (!isOccupiedContinuation) {
+                            openNewAppt(ct.id, slotIdx);
+                          }
+                        }}
                         style={{
-                          position: 'absolute',
-                          top: startSlot * CELL_HEIGHT,
-                          height: (endSlot - startSlot) * CELL_HEIGHT,
-                          left: 0, right: 0,
-                          background: `${bg.color}25`,
-                          borderLeft: `3px solid ${bg.color}`,
-                          pointerEvents: 'none',
-                          display: 'flex', alignItems: 'flex-start',
-                          padding: '4px 6px',
+                          height: CELL_H,
+                          borderBottom: `1px solid ${isHour ? 'var(--border)' : 'rgba(0,0,0,0.04)'}`,
+                          cursor: isOccupiedContinuation ? 'default' : 'pointer',
+                          background: breakBg
+                            ? `${breakBg.color}12`
+                            : isOccupiedContinuation
+                              ? 'transparent'
+                              : isHour ? 'transparent' : 'rgba(0,0,0,0.008)',
+                          position: 'relative',
+                          display: 'flex',
+                          alignItems: 'center',
+                          padding: '0 6px',
+                          transition: 'background 0.1s',
+                        }}
+                        onMouseEnter={e => {
+                          if (!isOccupiedContinuation && !breakBg) e.currentTarget.style.background = 'var(--surface-hover)';
+                        }}
+                        onMouseLeave={e => {
+                          e.currentTarget.style.background = breakBg ? `${breakBg.color}12` : isOccupiedContinuation ? 'transparent' : isHour ? 'transparent' : 'rgba(0,0,0,0.008)';
                         }}
                       >
-                        <span style={{ fontSize: 10, color: bg.color, fontWeight: 600 }}>{bg.name}</span>
-                      </div>
-                    );
-                  })}
+                        {/* Break label on first slot */}
+                        {breakBg && slotIdx === timeToSlot(breakBg.startTime) && (
+                          <span style={{ fontSize: 10, color: breakBg.color, fontWeight: 600, opacity: 0.8 }}>{breakBg.name}</span>
+                        )}
 
-                  {/* Non-prescribing band */}
-                  {npSlot && (
-                    <div style={{
-                      position: 'absolute',
-                      top: 0, bottom: 0, left: 0, right: 0,
-                      background: 'repeating-linear-gradient(45deg, rgba(107,114,128,0.05) 0px, rgba(107,114,128,0.05) 4px, transparent 4px, transparent 10px)',
-                      borderLeft: '3px solid #9CA3AF',
-                      pointerEvents: 'none',
-                      display: 'flex', alignItems: 'flex-start',
-                      padding: '4px 6px',
-                    }}>
-                      <span style={{ fontSize: 10, color: '#6B7280', fontWeight: 600 }}>Non-prescribing: {npSlot.reason}</span>
-                    </div>
-                  )}
+                        {/* Single appointment */}
+                        {cellAppts.length === 1 && (
+                          <AppointmentBlock appt={cellAppts[0]} ct={ct} prescribers={prescribers} compact={false} />
+                        )}
 
-                  {/* Appointments */}
-                  {prescriberAppts.map(appt => {
-                    const ct = clinicTypes.find(c => c.id === appt.clinicTypeId);
-                    const startSlot = timeToSlot(appt.startTime);
-                    const slotSpan = durationToSlots(appt.durationMins);
-                    if (startSlot < 0 || startSlot >= TOTAL_SLOTS) return null;
-                    const color = ct?.color || STATUS_COLORS[appt.status];
-                    return (
-                      <div
-                        key={appt.id}
-                        onClick={e => { e.stopPropagation(); openEditAppt(appt); }}
-                        style={{
-                          position: 'absolute',
-                          top: startSlot * CELL_HEIGHT + 2,
-                          height: Math.max(slotSpan * CELL_HEIGHT - 4, 20),
-                          left: 4, right: 4,
-                          background: `${color}22`,
-                          border: `1.5px solid ${color}`,
-                          borderRadius: 6,
-                          cursor: 'pointer',
-                          padding: '3px 6px',
-                          overflow: 'hidden',
-                          zIndex: 2,
-                        }}
-                      >
-                        <div style={{ fontSize: 10, fontWeight: 700, color, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {appt.patientRef}
-                        </div>
-                        {slotSpan >= 1.5 && ct && (
-                          <div style={{ fontSize: 9, color: 'var(--fg3)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {ct.name}
+                        {/* Multiple appointments */}
+                        {cellAppts.length > 1 && (
+                          <div style={{
+                            display: 'flex', alignItems: 'center', gap: 4,
+                            background: `${ct.color}20`, border: `1.5px solid ${ct.color}`,
+                            borderRadius: 6, padding: '4px 8px', width: '100%',
+                          }}>
+                            <div style={{
+                              background: ct.color, color: '#fff',
+                              width: 20, height: 20, borderRadius: '50%',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: 10, fontWeight: 700, flexShrink: 0,
+                            }}>{cellAppts.length}</div>
+                            <span style={{ fontSize: 10, fontWeight: 600, color: ct.color }}>appts · click to expand</span>
                           </div>
                         )}
-                        <Badge
-                          variant={appt.status === 'complete' ? 'muted' : appt.status === 'in-progress' ? 'success' : appt.status === 'cancelled' ? 'danger' : 'info'}
-                          size="sm"
-                          style={{ fontSize: 9, padding: '1px 4px', marginTop: 2 }}
-                        >
-                          {appt.status}
-                        </Badge>
                       </div>
                     );
                   })}
@@ -350,26 +343,86 @@ export function AppointmentDiary() {
         </div>
       </div>
 
+      {/* Expanded slot popover */}
+      {expandedCell && expandedAppts.length > 0 && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'rgba(5,5,75,0.35)', backdropFilter: 'blur(2px)',
+        }} onClick={() => setExpandedCell(null)}>
+          <div
+            style={{
+              background: 'var(--surface)', borderRadius: 'var(--r-xl)',
+              boxShadow: 'var(--shadow-3)', padding: 'var(--space-4)', minWidth: 340, maxWidth: 480,
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            {(() => {
+              const ct = clinicTypes.find(c => c.id === expandedCell.clinicTypeId)!;
+              return (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                    <div>
+                      <div style={{ fontWeight: 700, color: ct?.color }}>{ct?.name}</div>
+                      <div style={{ fontSize: 'var(--fs-micro)', color: 'var(--fg3)' }}>{slotToTime(expandedCell.slot)} · {expandedAppts.length} appointments</div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <Button size="sm" variant="primary" onClick={() => openNewAppt(expandedCell.clinicTypeId, expandedCell.slot)}>+ Add</Button>
+                      <button onClick={() => setExpandedCell(null)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--fg3)' }}>×</button>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {expandedAppts.map(appt => {
+                      const prescriber = prescribers.find(p => p.id === appt.prescriberId);
+                      return (
+                        <div
+                          key={appt.id}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 10,
+                            padding: '8px 10px', borderRadius: 'var(--r-md)',
+                            background: 'var(--surface-alt)', border: '1px solid var(--border)',
+                            cursor: 'pointer',
+                          }}
+                          onClick={() => openEditAppt(appt)}
+                        >
+                          {prescriber && <Avatar initials={prescriber.initials} role={prescriber.role} size={28} />}
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 600, fontSize: 'var(--fs-small)' }}>{appt.patientRef}</div>
+                            <div style={{ fontSize: 'var(--fs-micro)', color: 'var(--fg3)' }}>
+                              {prescriber?.name} · {appt.startTime} · {appt.durationMins}m
+                            </div>
+                          </div>
+                          <StatusBadge status={appt.status} />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+
       {/* Add/Edit appointment modal */}
       <Modal
         open={!!editingAppt}
         onClose={() => setEditingAppt(null)}
         title={isNewAppt ? 'New Appointment' : 'Edit Appointment'}
-        width={480}
+        width={500}
         footer={
           <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-            <div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {!isNewAppt && editingAppt?.status !== 'cancelled' && (
+                <Button variant="ghost" size="sm" onClick={cancelAppt} style={{ color: 'var(--warning)' }}>Cancel appt</Button>
+              )}
               {!isNewAppt && (
                 <Button variant="danger" size="sm" onClick={deleteAppt}>Delete</Button>
               )}
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <Button variant="ghost" size="sm" onClick={() => setEditingAppt(null)}>Cancel</Button>
-              <Button
-                variant="primary" size="sm"
-                onClick={saveAppt}
-                disabled={!editingAppt?.patientRef || !editingAppt?.clinicTypeId || !editingAppt?.prescriberId}
-              >
+              <Button variant="ghost" size="sm" onClick={() => setEditingAppt(null)}>Close</Button>
+              <Button variant="primary" size="sm" onClick={saveAppt} disabled={!editingAppt?.patientRef || !editingAppt?.clinicTypeId || !editingAppt?.prescriberId}>
                 {isNewAppt ? 'Add appointment' : 'Save changes'}
               </Button>
             </div>
@@ -378,23 +431,29 @@ export function AppointmentDiary() {
       >
         {editingAppt && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-            <FF label="Patient reference">
-              <input style={inp} value={editingAppt.patientRef || ''} onChange={e => setEditingAppt(a => ({ ...a!, patientRef: e.target.value }))} placeholder="PT-XXXX" />
-            </FF>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <FF label="Patient reference">
+                <input style={inp} value={editingAppt.patientRef || ''} onChange={e => setEditingAppt(a => ({ ...a!, patientRef: e.target.value }))} placeholder="PT-XXXX" />
+              </FF>
               <FF label="Clinic type">
                 <select style={inp} value={editingAppt.clinicTypeId || ''} onChange={e => {
                   const ct = clinicTypes.find(c => c.id === e.target.value);
                   setEditingAppt(a => ({ ...a!, clinicTypeId: e.target.value, durationMins: ct?.defaultDurationMins || a!.durationMins }));
                 }}>
-                  <option value="">Select type…</option>
+                  <option value="">Select…</option>
                   {clinicTypes.map(ct => <option key={ct.id} value={ct.id}>{ct.name}</option>)}
                 </select>
               </FF>
               <FF label="Prescriber">
                 <select style={inp} value={editingAppt.prescriberId || ''} onChange={e => setEditingAppt(a => ({ ...a!, prescriberId: e.target.value }))}>
                   <option value="">Select…</option>
-                  {prescribers.filter(p => p.status !== 'offline').map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  {(() => {
+                    const ct = clinicTypes.find(c => c.id === editingAppt.clinicTypeId);
+                    const eligible = ct?.requiredRoles.length
+                      ? prescribers.filter(p => ct.requiredRoles.includes(p.role) && p.status !== 'offline')
+                      : prescribers.filter(p => p.status !== 'offline');
+                    return eligible.map(p => <option key={p.id} value={p.id}>{p.name} ({p.role})</option>);
+                  })()}
                 </select>
               </FF>
               <FF label="Start time">
@@ -413,7 +472,7 @@ export function AppointmentDiary() {
               </FF>
             </div>
             <FF label="Notes (optional)">
-              <textarea style={{ ...inp, height: 60, resize: 'vertical' }} value={editingAppt.notes || ''} onChange={e => setEditingAppt(a => ({ ...a!, notes: e.target.value }))} />
+              <textarea style={{ ...inp, height: 56, resize: 'vertical' }} value={editingAppt.notes || ''} onChange={e => setEditingAppt(a => ({ ...a!, notes: e.target.value }))} />
             </FF>
           </div>
         )}
@@ -445,15 +504,12 @@ export function AppointmentDiary() {
             <FF label="Colour">
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {PRESET_COLORS.map(col => (
-                  <button
-                    key={col}
-                    onClick={() => setEditingClinicType(c => ({ ...c!, color: col }))}
-                    style={{
-                      width: 28, height: 28, borderRadius: '50%', background: col, border: `3px solid ${editingClinicType.color === col ? '#fff' : 'transparent'}`,
-                      outline: editingClinicType.color === col ? `2px solid ${col}` : 'none',
-                      cursor: 'pointer',
-                    }}
-                  />
+                  <button key={col} onClick={() => setEditingClinicType(c => ({ ...c!, color: col }))} style={{
+                    width: 28, height: 28, borderRadius: '50%', background: col,
+                    border: `3px solid ${editingClinicType.color === col ? '#fff' : 'transparent'}`,
+                    outline: editingClinicType.color === col ? `2px solid ${col}` : 'none',
+                    cursor: 'pointer',
+                  }} />
                 ))}
               </div>
             </FF>
@@ -462,21 +518,17 @@ export function AppointmentDiary() {
                 {ROLES.map(r => {
                   const selected = (editingClinicType.requiredRoles || []).includes(r.value);
                   return (
-                    <button
-                      key={r.value}
-                      onClick={() => {
-                        const current = editingClinicType.requiredRoles || [];
-                        const next = selected ? current.filter(x => x !== r.value) : [...current, r.value];
-                        setEditingClinicType(c => ({ ...c!, requiredRoles: next }));
-                      }}
-                      style={{
-                        padding: '4px 10px', borderRadius: 'var(--r-pill)',
-                        border: `1.5px solid ${selected ? (editingClinicType.color || '#0067B2') : 'var(--border)'}`,
-                        background: selected ? `${editingClinicType.color || '#0067B2'}15` : 'transparent',
-                        color: selected ? (editingClinicType.color || '#0067B2') : 'var(--fg3)',
-                        cursor: 'pointer', fontSize: 'var(--fs-micro)', fontWeight: selected ? 600 : 400,
-                      }}
-                    >
+                    <button key={r.value} onClick={() => {
+                      const current = editingClinicType.requiredRoles || [];
+                      const next = selected ? current.filter(x => x !== r.value) : [...current, r.value];
+                      setEditingClinicType(c => ({ ...c!, requiredRoles: next }));
+                    }} style={{
+                      padding: '4px 10px', borderRadius: 'var(--r-pill)',
+                      border: `1.5px solid ${selected ? (editingClinicType.color || '#0067B2') : 'var(--border)'}`,
+                      background: selected ? `${editingClinicType.color || '#0067B2'}15` : 'transparent',
+                      color: selected ? (editingClinicType.color || '#0067B2') : 'var(--fg3)',
+                      cursor: 'pointer', fontSize: 'var(--fs-micro)', fontWeight: selected ? 600 : 400,
+                    }}>
                       {r.label}
                     </button>
                   );
@@ -487,5 +539,56 @@ export function AppointmentDiary() {
         )}
       </Modal>
     </div>
+  );
+}
+
+function AppointmentBlock({ appt, ct, prescribers, compact }: {
+  appt: Appointment; ct: ClinicType; prescribers: ReturnType<typeof useWorkforce>['prescribers']; compact: boolean;
+}) {
+  const prescriber = prescribers.find(p => p.id === appt.prescriberId);
+  const color = ct.color;
+  return (
+    <div style={{
+      background: `${color}18`, border: `1.5px solid ${color}`,
+      borderRadius: 6, padding: '3px 6px', width: '100%',
+      overflow: 'hidden',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        {prescriber && <Avatar initials={prescriber.initials} role={prescriber.role} size={16} />}
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {appt.patientRef}
+          </div>
+          {!compact && prescriber && (
+            <div style={{ fontSize: 9, color: 'var(--fg3)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {prescriber.name.split(' ').slice(-1)[0]}
+            </div>
+          )}
+        </div>
+        <StatusBadge status={appt.status} tiny />
+      </div>
+    </div>
+  );
+}
+
+function StatusBadge({ status, tiny }: { status: Appointment['status']; tiny?: boolean }) {
+  const map: Record<string, { label: string; color: string }> = {
+    scheduled: { label: 'Sched', color: '#1565C0' },
+    'in-progress': { label: 'Live', color: '#2E7D32' },
+    complete: { label: 'Done', color: '#6B7280' },
+    cancelled: { label: 'Canc', color: '#DC2626' },
+  };
+  const s = map[status] || map.scheduled;
+  return (
+    <span style={{
+      fontSize: tiny ? 8 : 10,
+      fontWeight: 600,
+      color: s.color,
+      background: `${s.color}18`,
+      padding: tiny ? '1px 3px' : '2px 5px',
+      borderRadius: 3,
+      whiteSpace: 'nowrap',
+      flexShrink: 0,
+    }}>{s.label}</span>
   );
 }
