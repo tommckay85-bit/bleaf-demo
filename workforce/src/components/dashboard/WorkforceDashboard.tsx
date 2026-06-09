@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useWorkforce } from '../../store/WorkforceContext';
 import { SERVICE_CATEGORIES } from '../../data/services';
 import { Button } from '../common/Button';
@@ -37,6 +37,16 @@ export function WorkforceDashboard() {
   const [npSelectedPrescriber, setNpSelectedPrescriber] = useState<string>('');
   const [npReason, setNpReason] = useState<NonPrescribingReason>('admin');
   const [npNote, setNpNote] = useState('');
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; prescriberId: string; fromCategoryId: string } | null>(null);
+  const [poolSearch, setPoolSearch] = useState('');
+
+  // Close context menu on any mousedown outside it
+  useEffect(() => {
+    if (!contextMenu) return;
+    const close = () => setContextMenu(null);
+    window.addEventListener('mousedown', close);
+    return () => window.removeEventListener('mousedown', close);
+  }, [contextMenu]);
 
   const poolPrescribers = prescribers.filter(p => p.status === 'online');
   const scheduledPrescribers = prescribers.filter(p => p.status === 'scheduled');
@@ -215,6 +225,7 @@ export function WorkforceDashboard() {
                 onPrescriberDragStart={(id) => handleDragStart(id, cat.id)}
                 onPrescriberDragEnd={() => setDragPrescriberId(null)}
                 onDeallocate={(id) => dispatch({ type: 'DEALLOCATE_PRESCRIBER', prescriberId: id })}
+                onPrescriberContextMenu={(id, x, y) => setContextMenu({ x, y, prescriberId: id, fromCategoryId: cat.id })}
               />
             );
           })}
@@ -369,56 +380,101 @@ export function WorkforceDashboard() {
           boxShadow: 'var(--shadow-1)',
           border: dropTarget === '__pool__' ? '2px dashed var(--info)' : '1px solid var(--border)',
           overflowY: 'auto',
-          transition: 'all 0.15s ease',
+          transition: 'background 0.15s ease, border-color 0.15s ease',
         }}
         onDragOver={e => { e.preventDefault(); setDropTarget('__pool__'); }}
         onDragLeave={() => setDropTarget(null)}
         onDrop={() => { handleDropPool(); setDropTarget(null); }}
       >
-        <h3 style={{ fontSize: 'var(--fs-small)', fontWeight: 700, color: 'var(--fg1)', marginBottom: 4 }}>
-          Available Pool
+        <h3 style={{ fontSize: 'var(--fs-small)', fontWeight: 700, color: 'var(--fg1)', marginBottom: 0 }}>
+          Prescribers
         </h3>
 
-        {poolPrescribers.length === 0 && (
-          <div style={{ fontSize: 'var(--fs-small)', color: 'var(--fg3)', textAlign: 'center', padding: 'var(--space-4) 0' }}>
-            All online prescribers allocated
-          </div>
-        )}
-
-        {poolPrescribers.map(p => (
-          <PoolPrescriberCard
-            key={p.id}
-            prescriber={p}
-            onDragStart={() => handleDragStart(p.id, null)}
-            onDragEnd={() => setDragPrescriberId(null)}
+        {/* Search */}
+        <div style={{ position: 'relative' }}>
+          <input
+            placeholder="Search by name…"
+            value={poolSearch}
+            onChange={e => setPoolSearch(e.target.value)}
+            style={{
+              width: '100%', padding: '6px 28px 6px 10px',
+              border: '1.5px solid var(--border)', borderRadius: 'var(--r-md)',
+              fontSize: 'var(--fs-micro)', color: 'var(--fg1)', background: 'var(--surface-alt)',
+              outline: 'none', boxSizing: 'border-box',
+            }}
           />
-        ))}
+          {poolSearch && (
+            <button
+              onClick={() => setPoolSearch('')}
+              style={{
+                position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)',
+                border: 'none', background: 'none', cursor: 'pointer', color: 'var(--fg3)', fontSize: 14, lineHeight: 1, padding: 0,
+              }}
+            >×</button>
+          )}
+        </div>
 
-        {scheduledPrescribers.length > 0 && (
+        {/* Search results */}
+        {poolSearch.trim() !== '' ? (
+          <PrescriberSearchResults
+            query={poolSearch}
+            prescribers={prescribers}
+            allocations={allocations}
+            onDragStart={(id) => handleDragStart(id, null)}
+            onDragEnd={() => setDragPrescriberId(null)}
+            onMarkOnline={(id) => dispatch({ type: 'SET_PRESCRIBER_STATUS', prescriberId: id, status: 'online' })}
+          />
+        ) : (
           <>
-            <div style={{ fontSize: 'var(--fs-micro)', fontWeight: 600, color: 'var(--fg4)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 4 }}>
-              Scheduled
-            </div>
-            {scheduledPrescribers.map(p => (
-              <PoolPrescriberCard
-                key={p.id}
-                prescriber={p}
-                onDragStart={() => handleDragStart(p.id, null)}
-                onDragEnd={() => setDragPrescriberId(null)}
-                muted
-              />
-            ))}
-          </>
-        )}
+            {poolPrescribers.length === 0 && scheduledPrescribers.length === 0 && (
+              <div style={{ fontSize: 'var(--fs-small)', color: 'var(--fg3)', textAlign: 'center', padding: 'var(--space-4) 0' }}>
+                All online prescribers allocated
+              </div>
+            )}
 
-        {offlinePrescribers.length > 0 && (
-          <>
-            <div style={{ fontSize: 'var(--fs-micro)', fontWeight: 600, color: 'var(--fg4)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 4 }}>
-              Offline
-            </div>
-            {offlinePrescribers.map(p => (
-              <OfflineCard key={p.id} prescriber={p} onMarkOnline={() => dispatch({ type: 'SET_PRESCRIBER_STATUS', prescriberId: p.id, status: 'online' })} />
-            ))}
+            {poolPrescribers.length > 0 && (
+              <>
+                <div style={{ fontSize: 'var(--fs-micro)', fontWeight: 600, color: 'var(--fg4)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  Available Pool
+                </div>
+                {poolPrescribers.map(p => (
+                  <PoolPrescriberCard
+                    key={p.id}
+                    prescriber={p}
+                    onDragStart={() => handleDragStart(p.id, null)}
+                    onDragEnd={() => setDragPrescriberId(null)}
+                  />
+                ))}
+              </>
+            )}
+
+            {scheduledPrescribers.length > 0 && (
+              <>
+                <div style={{ fontSize: 'var(--fs-micro)', fontWeight: 600, color: 'var(--fg4)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 4 }}>
+                  Scheduled
+                </div>
+                {scheduledPrescribers.map(p => (
+                  <PoolPrescriberCard
+                    key={p.id}
+                    prescriber={p}
+                    onDragStart={() => handleDragStart(p.id, null)}
+                    onDragEnd={() => setDragPrescriberId(null)}
+                    muted
+                  />
+                ))}
+              </>
+            )}
+
+            {offlinePrescribers.length > 0 && (
+              <>
+                <div style={{ fontSize: 'var(--fs-micro)', fontWeight: 600, color: 'var(--fg4)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 4 }}>
+                  Offline
+                </div>
+                {offlinePrescribers.map(p => (
+                  <OfflineCard key={p.id} prescriber={p} onMarkOnline={() => dispatch({ type: 'SET_PRESCRIBER_STATUS', prescriberId: p.id, status: 'online' })} />
+                ))}
+              </>
+            )}
           </>
         )}
 
@@ -439,6 +495,32 @@ export function WorkforceDashboard() {
       </div>
 
       </div>{/* end flex row */}
+
+      {/* Right-click context menu */}
+      {contextMenu && (() => {
+        const p = prescribers.find(pr => pr.id === contextMenu.prescriberId);
+        if (!p) return null;
+        const targets = SERVICE_CATEGORIES.filter(cat =>
+          cat.id !== contextMenu.fromCategoryId &&
+          cat.serviceIds.some(sId => p.serviceIds.includes(sId))
+        );
+        return (
+          <ContextMenu
+            x={contextMenu.x}
+            y={contextMenu.y}
+            prescriber={p}
+            targets={targets}
+            onMove={(toCategoryId) => {
+              dispatch({ type: 'MOVE_PRESCRIBER', prescriberId: p.id, fromCategoryId: contextMenu.fromCategoryId, toCategoryId });
+              setContextMenu(null);
+            }}
+            onReturnToPool={() => {
+              dispatch({ type: 'DEALLOCATE_PRESCRIBER', prescriberId: p.id });
+              setContextMenu(null);
+            }}
+          />
+        );
+      })()}
 
       {/* Non-prescribing modal */}
       <Modal
@@ -527,12 +609,14 @@ interface ServiceTileProps {
   onPrescriberDragStart: (id: string) => void;
   onPrescriberDragEnd: () => void;
   onDeallocate: (id: string) => void;
+  onPrescriberContextMenu: (prescriberId: string, x: number, y: number) => void;
 }
 
 function ServiceTile({
   category, allocatedPrescribers, pendingOrders, pendingMessages, rag, isDropTarget, isDragIncompatible,
-  onDragOver, onDragLeave, onDrop, onPrescriberDragStart, onPrescriberDragEnd, onDeallocate,
+  onDragOver, onDragLeave, onDrop, onPrescriberDragStart, onPrescriberDragEnd, onDeallocate, onPrescriberContextMenu,
 }: ServiceTileProps) {
+  const [expanded, setExpanded] = useState(false);
   const serviceCount = category.serviceIds.length;
 
   let borderColor = 'var(--border)';
@@ -612,27 +696,46 @@ function ServiceTile({
             {isDragIncompatible ? 'Prescriber not qualified' : 'Drop prescriber here'}
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {allocatedPrescribers.map(p => (
-              <AllocatedPrescriberRow
-                key={p.id}
-                prescriber={p}
-                onDragStart={() => onPrescriberDragStart(p.id)}
-                onDragEnd={onPrescriberDragEnd}
-                onRemove={() => onDeallocate(p.id)}
-              />
-            ))}
+          <>
             <div style={{
-              border: '1.5px dashed var(--border)',
-              borderRadius: 'var(--r-md)',
-              padding: '6px',
-              textAlign: 'center',
-              fontSize: 'var(--fs-micro)',
-              color: 'var(--fg4)',
+              display: 'flex', flexDirection: 'column', gap: 6,
+              maxHeight: expanded ? undefined : 224,
+              overflowY: expanded ? 'visible' : 'auto',
             }}>
-              + drop another
+              {allocatedPrescribers.map(p => (
+                <AllocatedPrescriberRow
+                  key={p.id}
+                  prescriber={p}
+                  onDragStart={() => onPrescriberDragStart(p.id)}
+                  onDragEnd={onPrescriberDragEnd}
+                  onRemove={() => onDeallocate(p.id)}
+                  onContextMenu={(x, y) => onPrescriberContextMenu(p.id, x, y)}
+                />
+              ))}
+              <div style={{
+                border: '1.5px dashed var(--border)',
+                borderRadius: 'var(--r-md)',
+                padding: '6px',
+                textAlign: 'center',
+                fontSize: 'var(--fs-micro)',
+                color: 'var(--fg4)',
+              }}>
+                + drop another
+              </div>
             </div>
-          </div>
+            {allocatedPrescribers.length > 4 && (
+              <button
+                onClick={() => setExpanded(e => !e)}
+                style={{
+                  border: 'none', background: 'none', cursor: 'pointer',
+                  fontSize: 'var(--fs-micro)', color: 'var(--boots-blue)',
+                  padding: '2px 0', textAlign: 'left', fontWeight: 600,
+                }}
+              >
+                {expanded ? '▲ Show less' : `▼ Show all ${allocatedPrescribers.length}`}
+              </button>
+            )}
+          </>
         )}
       </div>
     </div>
@@ -640,18 +743,20 @@ function ServiceTile({
 }
 
 function AllocatedPrescriberRow({
-  prescriber, onDragStart, onDragEnd, onRemove,
+  prescriber, onDragStart, onDragEnd, onRemove, onContextMenu,
 }: {
   prescriber: Prescriber;
   onDragStart: () => void;
   onDragEnd: () => void;
   onRemove: () => void;
+  onContextMenu: (x: number, y: number) => void;
 }) {
   return (
     <div
       draggable
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
+      onContextMenu={e => { e.preventDefault(); onContextMenu(e.clientX, e.clientY); }}
       style={{
         display: 'flex', alignItems: 'center', gap: 8,
         padding: '6px 8px',
@@ -755,6 +860,145 @@ function OfflineCard({ prescriber, onMarkOnline }: { prescriber: Prescriber; onM
       >
         Log in
       </button>
+    </div>
+  );
+}
+
+function ContextMenu({ x, y, prescriber, targets, onMove, onReturnToPool }: {
+  x: number;
+  y: number;
+  prescriber: Prescriber;
+  targets: ServiceCategory[];
+  onMove: (toCategoryId: string) => void;
+  onReturnToPool: () => void;
+}) {
+  return (
+    <div
+      onMouseDown={e => e.stopPropagation()}
+      style={{
+        position: 'fixed', top: y, left: x, zIndex: 9999,
+        background: 'var(--surface)', border: '1px solid var(--border)',
+        borderRadius: 'var(--r-md)', boxShadow: '0 4px 24px rgba(0,0,0,0.18)',
+        minWidth: 200, overflow: 'hidden',
+      }}
+    >
+      <div style={{
+        padding: '8px 12px', borderBottom: '1px solid var(--border)',
+        fontWeight: 600, color: 'var(--fg1)', fontSize: 'var(--fs-micro)',
+      }}>
+        {prescriber.name}
+      </div>
+      {targets.length > 0 && (
+        <div style={{ padding: '4px 0' }}>
+          <div style={{ padding: '4px 12px', fontSize: 10, color: 'var(--fg4)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            Move to
+          </div>
+          {targets.map(cat => (
+            <button
+              key={cat.id}
+              onClick={() => onMove(cat.id)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8, width: '100%',
+                padding: '7px 12px', border: 'none', background: 'none',
+                cursor: 'pointer', textAlign: 'left', fontSize: 'var(--fs-small)', color: 'var(--fg1)',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-alt)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+            >
+              <span style={{ fontSize: 13 }}>{cat.icon}</span>
+              <span>{cat.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      <div style={{ borderTop: '1px solid var(--border)', padding: '4px 0' }}>
+        <button
+          onClick={onReturnToPool}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 8, width: '100%',
+            padding: '7px 12px', border: 'none', background: 'none',
+            cursor: 'pointer', textAlign: 'left', fontSize: 'var(--fs-small)', color: '#0067B2',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-alt)')}
+          onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+        >
+          ↩ Return to pool
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function PrescriberSearchResults({ query, prescribers, allocations, onDragStart, onDragEnd, onMarkOnline }: {
+  query: string;
+  prescribers: Prescriber[];
+  allocations: { categoryId: string; prescriberIds: string[] }[];
+  onDragStart: (id: string) => void;
+  onDragEnd: () => void;
+  onMarkOnline: (id: string) => void;
+}) {
+  const q = query.toLowerCase().trim();
+  const matches = prescribers.filter(p => p.name.toLowerCase().includes(q));
+
+  if (matches.length === 0) {
+    return (
+      <div style={{ fontSize: 'var(--fs-micro)', color: 'var(--fg4)', textAlign: 'center', padding: '12px 0' }}>
+        No prescribers found
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      {matches.map(p => {
+        const alloc = allocations.find(a => a.prescriberIds.includes(p.id));
+        const allocCat = alloc ? SERVICE_CATEGORIES.find(c => c.id === alloc.categoryId) : null;
+        const isDraggable = p.status === 'online';
+
+        return (
+          <div
+            key={p.id}
+            draggable={isDraggable}
+            onDragStart={() => onDragStart(p.id)}
+            onDragEnd={onDragEnd}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '7px 10px', borderRadius: 'var(--r-md)',
+              background: 'var(--surface-alt)', border: '1px solid var(--border)',
+              cursor: isDraggable ? 'grab' : 'default',
+              userSelect: 'none',
+            }}
+          >
+            <Avatar
+              initials={p.initials}
+              role={p.role}
+              size={28}
+              style={p.status === 'offline' ? { filter: 'grayscale(1)' } : undefined}
+            />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 'var(--fs-micro)', fontWeight: 600, color: 'var(--fg1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {p.name}
+              </div>
+              <div style={{ fontSize: 10, color: allocCat ? allocCat.color : 'var(--fg4)' }}>
+                {allocCat ? `→ ${allocCat.name}` : p.status.replace(/-/g, ' ')}
+              </div>
+            </div>
+            {p.status === 'offline' && (
+              <button
+                onClick={() => onMarkOnline(p.id)}
+                title="Mark as online"
+                style={{
+                  border: '1px solid var(--border)', background: 'none',
+                  borderRadius: 'var(--r-sm)', cursor: 'pointer',
+                  fontSize: 10, color: 'var(--fg3)', padding: '2px 6px',
+                }}
+              >
+                Log in
+              </button>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

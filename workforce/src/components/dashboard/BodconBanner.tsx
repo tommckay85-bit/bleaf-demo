@@ -147,31 +147,29 @@ export function BodconBanner() {
           <span style={{ fontWeight: 700, color: 'var(--boots-blue)' }}>{allocatedCount}</span> allocated
         </div>
 
-        {/* Projected strain — subtle amber warning */}
-        {projectedStrain.length > 0 && (
+        {/* Projected strain (flex-1) or plain spacer */}
+        {projectedStrain.length > 0 ? (
           <>
             <Sep />
-            <div style={{
-              fontSize: 'var(--fs-micro)', color: '#B45309', flexShrink: 0,
-              display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap',
-            }}>
-              <span style={{ opacity: 0.7 }}>▲</span>
-              Projected pressure:{' '}
-              <span style={{ fontWeight: 600 }}>
-                {projectedStrain.map(d => d.cat.name).join(', ')}
+            <div
+              title={`Projected pressure: ${projectedStrain.map(d => d.cat.name).join(', ')}${hoursRemaining > 0 ? ` (${Math.round(projectedStrain.reduce((s, d) => s + d.projectedRemaining, 0))} orders expected in ${hoursRemaining.toFixed(0)}h)` : ''}`}
+              style={{ flex: 1, minWidth: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', gap: 4 }}
+            >
+              <span style={{ opacity: 0.7, flexShrink: 0, fontSize: 'var(--fs-micro)', color: '#B45309' }}>▲</span>
+              <span style={{
+                fontSize: 'var(--fs-micro)', color: '#B45309',
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }}>
+                Projected pressure: {projectedStrain.map(d => d.cat.name).join(', ')}
+                {hoursRemaining > 0 && ` (${Math.round(projectedStrain.reduce((s, d) => s + d.projectedRemaining, 0))} orders expected in ${hoursRemaining.toFixed(0)}h)`}
               </span>
-              {hoursRemaining > 0 && (
-                <span style={{ opacity: 0.65 }}>
-                  ({Math.round(projectedStrain.reduce((s, d) => s + d.projectedRemaining, 0))} orders expected in {hoursRemaining.toFixed(0)}h)
-                </span>
-              )}
             </div>
           </>
+        ) : (
+          <div style={{ flex: 1 }} />
         )}
 
-        <div style={{ flex: 1 }} />
-
-        {/* Details button */}
+        {/* Details button — always visible */}
         <button
           onClick={() => setDetailOpen(true)}
           style={{
