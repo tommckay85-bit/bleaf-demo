@@ -1,13 +1,21 @@
 import { useState, useEffect } from 'react';
 import { useWorkforce } from '../../store/WorkforceContext';
-import { SERVICE_CATEGORIES } from '../../data/services';
+import { SERVICE_CATEGORIES, SERVICES } from '../../data/services';
 import { Button } from '../common/Button';
 import { Badge } from '../common/Badge';
 import { Avatar, ROLE_COLORS } from '../common/Avatar';
 import { Modal } from '../common/Modal';
 import { BodconBanner } from './BodconBanner';
 import { PerformanceMonitor } from './PerformanceMonitor';
-import type { Prescriber, ServiceCategory, NonPrescribingReason } from '../../types';
+import type { Prescriber, ServiceCategory, NonPrescribingReason, ExceptionalTaskReason } from '../../types';
+
+const EXCEPTIONAL_REASONS: { value: ExceptionalTaskReason; label: string }[] = [
+  { value: 'complexity', label: 'Complex case — taking longer than usual' },
+  { value: 'incident', label: 'Incident logging' },
+  { value: 'safeguarding', label: 'Safeguarding concern' },
+  { value: 'patient-call', label: 'Patient call' },
+  { value: 'other', label: 'Other' },
+];
 
 const DAYS_MINS = 480; // effective prescriber minutes per day
 
@@ -29,7 +37,7 @@ function ragStatus(availableMins: number, requiredMins: number): 'green' | 'ambe
 const RAG_COLORS = { green: '#2E7D32', amber: '#D97706', red: '#DC2626' };
 
 export function WorkforceDashboard() {
-  const { prescribers, orders, allocations, messages, capacityConfigs, nonPrescribingSlots, appointments, clinicTypes, dispatch } = useWorkforce();
+  const { prescribers, orders, allocations, messages, capacityConfigs, nonPrescribingSlots, appointments, clinicTypes, powerHour, dispatch } = useWorkforce();
   const [dragPrescriberId, setDragPrescriberId] = useState<string | null>(null);
   const [dragFromCategory, setDragFromCategory] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<string | null>(null);
@@ -39,6 +47,12 @@ export function WorkforceDashboard() {
   const [npNote, setNpNote] = useState('');
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; prescriberId: string; fromCategoryId: string } | null>(null);
   const [poolSearch, setPoolSearch] = useState('');
+  const [powerHourModal, setPowerHourModal] = useState(false);
+  const [phSelectedServices, setPhSelectedServices] = useState<string[]>([]);
+  const [pauseModal, setPauseModal] = useState(false);
+  const [pausePrescriberId, setPausePrescriberId] = useState<string>('');
+  const [pauseReason, setPauseReason] = useState<ExceptionalTaskReason>('complexity');
+  const [pauseNote, setPauseNote] = useState('');
 
   // Close context menu on any mousedown outside it
   useEffect(() => {
@@ -176,15 +190,49 @@ export function WorkforceDashboard() {
               ☕ Apply Breaks
             </Button>
             <Button variant="ghost" size="sm" onClick={() => {
-              prescribers.filter(p => p.status === 'allocated').forEach(p => dispatch({ type: 'DEALLOCATE_PRESCRIBER', prescriberId: p.id }));
+              prescribers.filter(p => p.status === 'allocated' || p.status === 'paused').forEach(p => dispatch({ type: 'DEALLOCATE_PRESCRIBER', prescriberId: p.id }));
             }}>
               Clear allocations
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => dispatch({ type: 'REALLOCATE' })} title="Re-allocate rotation prescribers to different categories">
+              🔄 Re-Allocate
+            </Button>
+            <Button
+              variant={powerHour ? 'danger' : 'ghost'}
+              size="sm"
+              onClick={() => powerHour ? dispatch({ type: 'CLEAR_POWER_HOUR' }) : setPowerHourModal(true)}
+            >
+              {powerHour ? '⛔ End Power Hour' : '⚡ Power Hour'}
             </Button>
             <Button variant="primary" size="sm" onClick={() => dispatch({ type: 'AUTO_ALLOCATE' })}>
               ⚡ Auto-allocate
             </Button>
           </div>
         </div>
+
+        {/* Power Hour active banner */}
+        {powerHour && (() => {
+          const phServices = powerHour.serviceIds.map(sId => SERVICES.find(s => s.id === sId)).filter(Boolean);
+          const minsActive = Math.floor((Date.now() - new Date(powerHour.startedAt).getTime()) / 60000);
+          return (
+            <div style={{
+              background: '#FEF3C7', border: '2px solid #F59E0B',
+              borderRadius: 'var(--r-lg)', padding: '10px 16px',
+              display: 'flex', alignItems: 'center', gap: 12,
+            }}>
+              <span style={{ fontSize: 20 }}>⚡</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 700, fontSize: 'var(--fs-small)', color: '#92400E' }}>Power Hour active — {minsActive}m</div>
+                <div style={{ fontSize: 'var(--fs-micro)', color: '#B45309', marginTop: 1 }}>
+                  Swarming to: {phServices.map(s => s!.name).join(', ')}
+                </div>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => dispatch({ type: 'CLEAR_POWER_HOUR' })} style={{ borderColor: '#F59E0B', color: '#92400E' }}>
+                End
+              </Button>
+            </div>
+          );
+        })()}
 
         {/* Service category tiles */}
         <div style={{
@@ -518,9 +566,132 @@ export function WorkforceDashboard() {
               dispatch({ type: 'DEALLOCATE_PRESCRIBER', prescriberId: p.id });
               setContextMenu(null);
             }}
+            onMarkExceptional={() => {
+              setPausePrescriberId(p.id);
+              setPauseReason('complexity');
+              setPauseNote('');
+              setContextMenu(null);
+              setPauseModal(true);
+            }}
+            onResume={p.status === 'paused' ? () => {
+              dispatch({ type: 'RESUME_PRESCRIBER', prescriberId: p.id });
+              setContextMenu(null);
+            } : undefined}
           />
         );
       })()}
+
+      {/* Power Hour modal */}
+      <Modal
+        open={powerHourModal}
+        onClose={() => setPowerHourModal(false)}
+        title="⚡ Start Power Hour"
+        width={520}
+        footer={
+          <>
+            <Button variant="ghost" size="sm" onClick={() => setPowerHourModal(false)}>Cancel</Button>
+            <Button
+              variant="primary"
+              size="sm"
+              disabled={phSelectedServices.length === 0}
+              onClick={() => {
+                dispatch({ type: 'SET_POWER_HOUR', config: { serviceIds: phSelectedServices, startedAt: new Date().toISOString() } });
+                setPowerHourModal(false);
+                setPhSelectedServices([]);
+              }}
+            >
+              Start Power Hour
+            </Button>
+          </>
+        }
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+          <p style={{ fontSize: 'var(--fs-small)', color: 'var(--fg2)', margin: 0 }}>
+            Select 1–2 services to focus on. Eligible prescribers will be swarmed to those categories.
+          </p>
+          <div style={{ fontSize: 'var(--fs-micro)', color: 'var(--fg3)', fontWeight: 600 }}>
+            {phSelectedServices.length}/2 selected
+          </div>
+          {SERVICE_CATEGORIES.map(cat => (
+            <div key={cat.id}>
+              <div style={{ fontSize: 'var(--fs-micro)', fontWeight: 700, color: 'var(--fg2)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span>{cat.icon}</span> {cat.name}
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {SERVICES.filter(s => s.categoryId === cat.id).map(svc => {
+                  const selected = phSelectedServices.includes(svc.id);
+                  const disabled = !selected && phSelectedServices.length >= 2;
+                  return (
+                    <button
+                      key={svc.id}
+                      disabled={disabled}
+                      onClick={() => setPhSelectedServices(prev =>
+                        prev.includes(svc.id) ? prev.filter(id => id !== svc.id) : [...prev, svc.id]
+                      )}
+                      style={{
+                        padding: '4px 10px', borderRadius: 'var(--r-pill)',
+                        border: `1.5px solid ${selected ? cat.color : 'var(--border)'}`,
+                        background: selected ? `${cat.color}20` : 'transparent',
+                        color: selected ? cat.color : disabled ? 'var(--fg4)' : 'var(--fg2)',
+                        cursor: disabled ? 'default' : 'pointer',
+                        fontSize: 'var(--fs-micro)', fontWeight: selected ? 700 : 400,
+                        opacity: disabled ? 0.5 : 1,
+                      }}
+                    >
+                      {selected && '✓ '}{svc.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Modal>
+
+      {/* Exceptional task (pause) modal */}
+      <Modal
+        open={pauseModal}
+        onClose={() => setPauseModal(false)}
+        title="⏸ Mark Exceptional Task"
+        width={400}
+        footer={
+          <>
+            <Button variant="ghost" size="sm" onClick={() => setPauseModal(false)}>Cancel</Button>
+            <Button variant="primary" size="sm" onClick={() => {
+              dispatch({
+                type: 'PAUSE_PRESCRIBER',
+                prescriberId: pausePrescriberId,
+                reason: pauseReason,
+                note: pauseNote || undefined,
+                pausedAt: new Date().toISOString(),
+              });
+              setPauseModal(false);
+              setPauseNote('');
+            }}>
+              Confirm pause
+            </Button>
+          </>
+        }
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+          <div>
+            <label style={labelStyle}>Prescriber</label>
+            <div style={{ ...inputStyle, color: 'var(--fg2)', background: 'var(--surface-alt)' }}>
+              {prescribers.find(p => p.id === pausePrescriberId)?.name ?? '—'}
+            </div>
+          </div>
+          <div>
+            <label style={labelStyle}>Reason for pause</label>
+            <select style={inputStyle} value={pauseReason} onChange={e => setPauseReason(e.target.value as ExceptionalTaskReason)}>
+              {EXCEPTIONAL_REASONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={labelStyle}>Note (optional)</label>
+            <input style={inputStyle} value={pauseNote} onChange={e => setPauseNote(e.target.value)} placeholder="e.g. Awaiting senior review" />
+          </div>
+        </div>
+      </Modal>
 
       {/* Non-prescribing modal */}
       <Modal
@@ -751,9 +922,11 @@ function AllocatedPrescriberRow({
   onRemove: () => void;
   onContextMenu: (x: number, y: number) => void;
 }) {
+  const isPaused = prescriber.status === 'paused';
+  const isRotation = prescriber.allocationStyle === 'rotation';
   return (
     <div
-      draggable
+      draggable={!isPaused}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       onContextMenu={e => { e.preventDefault(); onContextMenu(e.clientX, e.clientY); }}
@@ -761,18 +934,25 @@ function AllocatedPrescriberRow({
         display: 'flex', alignItems: 'center', gap: 8,
         padding: '6px 8px',
         borderRadius: 'var(--r-sm)',
-        background: 'var(--surface-alt)',
-        border: '1px solid var(--border)',
-        cursor: 'grab',
+        background: isPaused ? '#FFFBEB' : 'var(--surface-alt)',
+        border: `1px solid ${isPaused ? '#FDE68A' : 'var(--border)'}`,
+        cursor: isPaused ? 'default' : 'grab',
         userSelect: 'none',
+        opacity: isPaused ? 0.85 : 1,
       }}
     >
-      <Avatar initials={prescriber.initials} role={prescriber.role} size={26} />
+      <Avatar initials={prescriber.initials} role={prescriber.role} size={26} style={isPaused ? { filter: 'grayscale(0.5)' } : undefined} />
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 'var(--fs-micro)', fontWeight: 600, color: 'var(--fg1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        <div style={{ fontSize: 'var(--fs-micro)', fontWeight: 600, color: isPaused ? '#92400E' : 'var(--fg1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {isPaused && <span style={{ marginRight: 3 }}>⏸</span>}
           {prescriber.name}
         </div>
-        <div style={{ fontSize: 10, color: 'var(--fg3)', textTransform: 'capitalize' }}>{prescriber.role}</div>
+        <div style={{ fontSize: 10, color: 'var(--fg3)', textTransform: 'capitalize', display: 'flex', alignItems: 'center', gap: 4 }}>
+          {isPaused ? <span style={{ color: '#B45309' }}>Exceptional task</span> : prescriber.role}
+          {!isPaused && isRotation && (
+            <span title={`Rotation: every ${prescriber.rotationIntervalMins ?? 60}m`} style={{ color: '#0067B2', fontWeight: 600, fontSize: 9 }}>↺{prescriber.rotationIntervalMins ?? 60}m</span>
+          )}
+        </div>
       </div>
       <button
         onClick={e => { e.stopPropagation(); onRemove(); }}
@@ -864,14 +1044,21 @@ function OfflineCard({ prescriber, onMarkOnline }: { prescriber: Prescriber; onM
   );
 }
 
-function ContextMenu({ x, y, prescriber, targets, onMove, onReturnToPool }: {
+function ContextMenu({ x, y, prescriber, targets, onMove, onReturnToPool, onMarkExceptional, onResume }: {
   x: number;
   y: number;
   prescriber: Prescriber;
   targets: ServiceCategory[];
   onMove: (toCategoryId: string) => void;
   onReturnToPool: () => void;
+  onMarkExceptional: () => void;
+  onResume?: () => void;
 }) {
+  const menuBtnStyle: React.CSSProperties = {
+    display: 'flex', alignItems: 'center', gap: 8, width: '100%',
+    padding: '7px 12px', border: 'none', background: 'none',
+    cursor: 'pointer', textAlign: 'left', fontSize: 'var(--fs-small)', color: 'var(--fg1)',
+  };
   return (
     <div
       onMouseDown={e => e.stopPropagation()}
@@ -888,7 +1075,7 @@ function ContextMenu({ x, y, prescriber, targets, onMove, onReturnToPool }: {
       }}>
         {prescriber.name}
       </div>
-      {targets.length > 0 && (
+      {targets.length > 0 && !onResume && (
         <div style={{ padding: '4px 0' }}>
           <div style={{ padding: '4px 12px', fontSize: 10, color: 'var(--fg4)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             Move to
@@ -897,11 +1084,7 @@ function ContextMenu({ x, y, prescriber, targets, onMove, onReturnToPool }: {
             <button
               key={cat.id}
               onClick={() => onMove(cat.id)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 8, width: '100%',
-                padding: '7px 12px', border: 'none', background: 'none',
-                cursor: 'pointer', textAlign: 'left', fontSize: 'var(--fs-small)', color: 'var(--fg1)',
-              }}
+              style={menuBtnStyle}
               onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-alt)')}
               onMouseLeave={e => (e.currentTarget.style.background = 'none')}
             >
@@ -911,19 +1094,36 @@ function ContextMenu({ x, y, prescriber, targets, onMove, onReturnToPool }: {
           ))}
         </div>
       )}
-      <div style={{ borderTop: '1px solid var(--border)', padding: '4px 0' }}>
-        <button
-          onClick={onReturnToPool}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 8, width: '100%',
-            padding: '7px 12px', border: 'none', background: 'none',
-            cursor: 'pointer', textAlign: 'left', fontSize: 'var(--fs-small)', color: '#0067B2',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-alt)')}
-          onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-        >
-          ↩ Return to pool
-        </button>
+      <div style={{ borderTop: targets.length > 0 && !onResume ? '1px solid var(--border)' : undefined, padding: '4px 0' }}>
+        {onResume ? (
+          <button
+            onClick={onResume}
+            style={{ ...menuBtnStyle, color: '#2E7D32' }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-alt)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+          >
+            ▶ Resume — return to work
+          </button>
+        ) : (
+          <>
+            <button
+              onClick={onReturnToPool}
+              style={{ ...menuBtnStyle, color: '#0067B2' }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-alt)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+            >
+              ↩ Return to pool
+            </button>
+            <button
+              onClick={onMarkExceptional}
+              style={{ ...menuBtnStyle, color: '#B45309' }}
+              onMouseEnter={e => (e.currentTarget.style.background = '#FFFBEB')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+            >
+              ⏸ Mark exceptional task
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

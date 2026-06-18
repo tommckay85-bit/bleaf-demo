@@ -1,7 +1,8 @@
 export type PrescriberRole = 'pharmacist' | 'nurse' | 'gp' | 'specialist';
-export type PrescriberStatus = 'online' | 'allocated' | 'scheduled' | 'offline' | 'on-break' | 'in-appointment' | 'non-prescribing';
+export type PrescriberStatus = 'online' | 'allocated' | 'scheduled' | 'offline' | 'on-break' | 'in-appointment' | 'non-prescribing' | 'paused';
 export type OrderStatus = 'pending' | 'allocated' | 'in-progress' | 'complete' | 'escalated';
 export type Urgency = 'routine' | 'urgent' | 'critical';
+export type ExceptionalTaskReason = 'complexity' | 'incident' | 'safeguarding' | 'patient-call' | 'other';
 
 export interface ServiceCategory {
   id: string;
@@ -25,9 +26,20 @@ export interface Prescriber {
   initials: string;
   role: PrescriberRole;
   serviceIds: string[];
+  specialistServiceIds?: string[];
   status: PrescriberStatus;
   avatar?: string;
   allocatedCategoryId?: string;
+  allocationStyle?: 'sessional' | 'rotation';
+  rotationIntervalMins?: 30 | 60 | 90 | 120;
+  pauseReason?: ExceptionalTaskReason;
+  pausedAt?: string;
+  pauseNote?: string;
+}
+
+export interface PowerHourConfig {
+  serviceIds: string[];
+  startedAt: string; // ISO timestamp
 }
 
 export interface Order {

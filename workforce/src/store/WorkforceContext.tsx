@@ -2,7 +2,7 @@ import { createContext, useContext, useReducer, type ReactNode } from 'react';
 import type {
   Prescriber, Order, AllocationRule, SLAConfig, DayAllocation,
   NonPrescribingSlot, Appointment, ClinicType, BreakGroup, PatientMessage, ServiceCapacityConfig,
-  PrescriberActivityEvent, PerformanceMonitorConfig,
+  PrescriberActivityEvent, PerformanceMonitorConfig, PowerHourConfig, ExceptionalTaskReason,
 } from '../types';
 import { INITIAL_PRESCRIBERS } from '../data/prescribers';
 import { INITIAL_ORDERS } from '../data/orders';
@@ -13,6 +13,8 @@ import { INITIAL_CLINIC_TYPES } from '../data/clinicTypes';
 import { INITIAL_BREAK_GROUPS } from '../data/breakGroups';
 import { INITIAL_MESSAGES } from '../data/messages';
 import { INITIAL_CAPACITY_CONFIGS } from '../data/capacityConfigs';
+
+const DAYS_MINS = 480;
 
 interface State {
   prescribers: Prescriber[];
@@ -28,6 +30,7 @@ interface State {
   capacityConfigs: ServiceCapacityConfig[];
   prescriberActivity: PrescriberActivityEvent[];
   performanceConfig: PerformanceMonitorConfig;
+  powerHour: PowerHourConfig | null;
 }
 
 type Action =
@@ -59,7 +62,12 @@ type Action =
   | { type: 'ADD_ACTIVITY_EVENTS'; events: PrescriberActivityEvent[] }
   | { type: 'LOG_ACTIVITY'; prescriberId: string; activityType: 'order' | 'message' }
   | { type: 'CLEAR_ACTIVITY_EVENTS' }
-  | { type: 'UPDATE_PERFORMANCE_CONFIG'; config: PerformanceMonitorConfig };
+  | { type: 'UPDATE_PERFORMANCE_CONFIG'; config: PerformanceMonitorConfig }
+  | { type: 'REALLOCATE' }
+  | { type: 'SET_POWER_HOUR'; config: PowerHourConfig }
+  | { type: 'CLEAR_POWER_HOUR' }
+  | { type: 'PAUSE_PRESCRIBER'; prescriberId: string; reason: ExceptionalTaskReason; note?: string; pausedAt: string }
+  | { type: 'RESUME_PRESCRIBER'; prescriberId: string };
 
 function computePriorityScore(order: Order, rules: AllocationRule[], slas: SLAConfig[]): number {
   const service = SERVICES.find(s => s.id === order.serviceId);
@@ -386,6 +394,140 @@ function reducer(state: State, action: Action): State {
       return { ...state, prescriberActivity: [] };
     case 'UPDATE_PERFORMANCE_CONFIG':
       return { ...state, performanceConfig: action.config };
+
+    case 'REALLOCATE': {
+      // Sessional prescribers stay in current categories; rotation prescribers are moved to different categories
+      const sessionalAllocated = state.prescribers.filter(
+        p => (p.allocationStyle !== 'rotation') && p.status === 'allocated'
+      );
+      const rotationAllocated = state.prescribers.filter(
+        p => p.allocationStyle === 'rotation' && p.status === 'allocated'
+      );
+      const rotationOnline = state.prescribers.filter(
+        p => p.allocationStyle === 'rotation' && p.status === 'online'
+      );
+
+      // Seed new allocations with sessional prescribers' current positions
+      const newAllocations: DayAllocation[] = SERVICE_CATEGORIES.map(cat => ({
+        categoryId: cat.id,
+        prescriberIds: sessionalAllocated.filter(p => p.allocatedCategoryId === cat.id).map(p => p.id),
+      }));
+
+      // Free rotation prescribers from their current categories
+      const newPrescribers: Prescriber[] = state.prescribers.map(p => {
+        if (rotationAllocated.some(r => r.id === p.id)) {
+          return { ...p, status: 'online' as const, allocatedCategoryId: undefined };
+        }
+        return p;
+      });
+
+      const workload = SERVICE_CATEGORIES.map(cat => {
+        const pending = state.orders.filter(o =>
+          cat.serviceIds.includes(o.serviceId) && (o.status === 'pending' || o.status === 'escalated')
+        ).length;
+        const msgs = state.messages.filter(m => m.categoryId === cat.id && m.status === 'pending').length;
+        const cfg = state.capacityConfigs.find(c => c.categoryId === cat.id);
+        const reqMins = cfg ? pending * cfg.orderAHTMins + msgs * cfg.messageAHTMins : (pending + msgs) * 10;
+        const sessionalMins = sessionalAllocated.filter(p => p.allocatedCategoryId === cat.id).length * DAYS_MINS;
+        return { categoryId: cat.id, reqMins: Math.max(0, reqMins - sessionalMins) };
+      });
+
+      const toAllocate = [...rotationAllocated, ...rotationOnline];
+      for (const p of toAllocate) {
+        const prevCat = p.allocatedCategoryId;
+        const eligible = workload
+          .filter(w => {
+            const cat = SERVICE_CATEGORIES.find(c => c.id === w.categoryId)!;
+            return cat.serviceIds.some(sId => p.serviceIds.includes(sId));
+          })
+          .sort((a, b) => {
+            // Prefer a different category to the one they were in
+            const aPrev = a.categoryId === prevCat ? 1 : 0;
+            const bPrev = b.categoryId === prevCat ? 1 : 0;
+            if (aPrev !== bPrev) return aPrev - bPrev;
+            return b.reqMins - a.reqMins;
+          });
+        if (eligible.length > 0) {
+          const target = eligible[0].categoryId;
+          newAllocations.find(a => a.categoryId === target)!.prescriberIds.push(p.id);
+          const idx = newPrescribers.findIndex(np => np.id === p.id);
+          newPrescribers[idx] = { ...newPrescribers[idx], status: 'allocated' as const, allocatedCategoryId: target };
+        }
+      }
+
+      return { ...state, allocations: newAllocations, prescribers: newPrescribers };
+    }
+
+    case 'SET_POWER_HOUR': {
+      const targetCategoryIds = [
+        ...new Set(
+          action.config.serviceIds
+            .map(sId => SERVICES.find(s => s.id === sId)?.categoryId)
+            .filter((id): id is string => !!id)
+        ),
+      ];
+
+      const newAllocations: DayAllocation[] = state.allocations.map(a => ({ ...a, prescriberIds: [...a.prescriberIds] }));
+      const newPrescribers: Prescriber[] = [...state.prescribers];
+
+      const eligible = state.prescribers.filter(p =>
+        (p.status === 'allocated' || p.status === 'online') &&
+        targetCategoryIds.some(catId => {
+          const cat = SERVICE_CATEGORIES.find(c => c.id === catId)!;
+          return cat.serviceIds.some(sId => p.serviceIds.includes(sId));
+        })
+      );
+
+      for (const p of eligible) {
+        const bestCat = targetCategoryIds
+          .filter(catId => {
+            const cat = SERVICE_CATEGORIES.find(c => c.id === catId)!;
+            return cat.serviceIds.some(sId => p.serviceIds.includes(sId));
+          })
+          .sort((a, b) => {
+            const wA = newAllocations.find(al => al.categoryId === a)?.prescriberIds.length ?? 0;
+            const wB = newAllocations.find(al => al.categoryId === b)?.prescriberIds.length ?? 0;
+            return wA - wB; // least loaded first for even spread
+          })[0];
+        if (!bestCat) continue;
+
+        if (p.allocatedCategoryId && p.allocatedCategoryId !== bestCat) {
+          const cur = newAllocations.find(a => a.categoryId === p.allocatedCategoryId);
+          if (cur) cur.prescriberIds = cur.prescriberIds.filter(id => id !== p.id);
+        }
+        const target = newAllocations.find(a => a.categoryId === bestCat)!;
+        if (!target.prescriberIds.includes(p.id)) target.prescriberIds.push(p.id);
+
+        const idx = newPrescribers.findIndex(np => np.id === p.id);
+        newPrescribers[idx] = { ...newPrescribers[idx], status: 'allocated' as const, allocatedCategoryId: bestCat };
+      }
+
+      return { ...state, allocations: newAllocations, prescribers: newPrescribers, powerHour: action.config };
+    }
+
+    case 'CLEAR_POWER_HOUR':
+      return { ...state, powerHour: null };
+
+    case 'PAUSE_PRESCRIBER': {
+      const newPrescribers = state.prescribers.map(p =>
+        p.id === action.prescriberId
+          ? { ...p, status: 'paused' as const, pauseReason: action.reason, pausedAt: action.pausedAt, pauseNote: action.note }
+          : p
+      );
+      return { ...state, prescribers: newPrescribers };
+    }
+
+    case 'RESUME_PRESCRIBER': {
+      const target = state.prescribers.find(p => p.id === action.prescriberId);
+      const resumeStatus = target?.allocatedCategoryId ? 'allocated' as const : 'online' as const;
+      const newPrescribers = state.prescribers.map(p =>
+        p.id === action.prescriberId
+          ? { ...p, status: resumeStatus, pauseReason: undefined, pausedAt: undefined, pauseNote: undefined }
+          : p
+      );
+      return { ...state, prescribers: newPrescribers };
+    }
+
     default:
       return state;
   }
@@ -410,6 +552,7 @@ const initialState: State = {
     actionHours: 2,
     idleMinutes: 20,
   },
+  powerHour: null,
 };
 
 interface WorkforceContextValue extends State {

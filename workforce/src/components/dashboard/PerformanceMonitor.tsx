@@ -3,7 +3,15 @@ import { useWorkforce } from '../../store/WorkforceContext';
 import { Avatar } from '../common/Avatar';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
-import type { PerformanceMonitorConfig } from '../../types';
+import type { PerformanceMonitorConfig, ExceptionalTaskReason } from '../../types';
+
+const EXCEPTIONAL_REASON_LABELS: Record<ExceptionalTaskReason, string> = {
+  complexity: 'Complex case',
+  incident: 'Incident logging',
+  safeguarding: 'Safeguarding',
+  'patient-call': 'Patient call',
+  other: 'Other',
+};
 
 type FlagLevel = 'action' | 'idle' | 'watch';
 
@@ -120,6 +128,8 @@ function FlagSection({ level, flags, avgRate }: { level: FlagLevel; flags: Presc
 
 export function PerformanceMonitor() {
   const { prescribers, prescriberActivity, performanceConfig, dispatch } = useWorkforce();
+  const pausedPrescribers = prescribers.filter(p => p.status === 'paused');
+  const onBreakPrescribers = prescribers.filter(p => p.status === 'on-break');
   const [configOpen, setConfigOpen] = useState(false);
   const [editConfig, setEditConfig] = useState<PerformanceMonitorConfig>(performanceConfig);
   const [tick, setTick] = useState(0);
@@ -279,10 +289,108 @@ export function PerformanceMonitor() {
 
         {/* Config hint */}
         {prescriberActivity.length > 0 && flags.length === 0 && (
-          <div style={{ marginTop: 'auto', fontSize: 10, color: 'var(--fg4)', textAlign: 'center' }}>
+          <div style={{ fontSize: 10, color: 'var(--fg4)', textAlign: 'center' }}>
             Threshold: {performanceConfig.slowRateThresholdPct}% below avg
           </div>
         )}
+
+        {/* Exceptional tasks section */}
+        {pausedPrescribers.length > 0 && (
+          <div>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6,
+              paddingBottom: 4, borderBottom: '2px solid #FDE68A',
+            }}>
+              <span style={{ fontSize: 12 }}>⚠️</span>
+              <span style={{ fontSize: 'var(--fs-micro)', fontWeight: 700, color: '#92400E', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Exceptional Tasks
+              </span>
+              <span style={{
+                marginLeft: 'auto', fontSize: 10, fontWeight: 700, color: '#92400E',
+                background: '#FEF3C7', border: '1px solid #FDE68A',
+                borderRadius: 999, padding: '1px 7px',
+              }}>{pausedPrescribers.length}</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {pausedPrescribers.map(p => {
+                const minsAgo = p.pausedAt ? Math.floor((Date.now() - new Date(p.pausedAt).getTime()) / 60000) : null;
+                return (
+                  <div key={p.id} style={{
+                    padding: '8px 10px', borderRadius: 'var(--r-md)',
+                    background: '#FFFBEB', border: '1px solid #FDE68A',
+                    display: 'flex', flexDirection: 'column', gap: 4,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Avatar initials={p.initials} role={p.role} size={28} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 'var(--fs-micro)', fontWeight: 700, color: 'var(--fg1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {p.name}
+                        </div>
+                        <div style={{ fontSize: 10, color: '#92400E', fontWeight: 600 }}>
+                          {p.pauseReason ? EXCEPTIONAL_REASON_LABELS[p.pauseReason] : 'Exceptional task'}
+                          {minsAgo !== null && <span style={{ fontWeight: 400, color: 'var(--fg3)', marginLeft: 4 }}>{minsAgo}m ago</span>}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => dispatch({ type: 'RESUME_PRESCRIBER', prescriberId: p.id })}
+                        title="Resume"
+                        style={{ border: '1px solid #FDE68A', background: 'none', borderRadius: 'var(--r-sm)', cursor: 'pointer', fontSize: 10, color: '#92400E', padding: '2px 6px' }}
+                      >
+                        ▶ Resume
+                      </button>
+                    </div>
+                    {p.pauseNote && (
+                      <div style={{ fontSize: 10, color: 'var(--fg3)', fontStyle: 'italic', paddingLeft: 36 }}>{p.pauseNote}</div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Rest breaks section */}
+        {onBreakPrescribers.length > 0 && (
+          <div>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6,
+              paddingBottom: 4, borderBottom: '2px solid #E0E7FF',
+            }}>
+              <span style={{ fontSize: 12 }}>☕</span>
+              <span style={{ fontSize: 'var(--fs-micro)', fontWeight: 700, color: '#3730A3', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                On Break
+              </span>
+              <span style={{
+                marginLeft: 'auto', fontSize: 10, fontWeight: 700, color: '#3730A3',
+                background: '#EEF2FF', border: '1px solid #C7D2FE',
+                borderRadius: 999, padding: '1px 7px',
+              }}>{onBreakPrescribers.length}</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {onBreakPrescribers.map(p => (
+                <div key={p.id} style={{
+                  padding: '7px 10px', borderRadius: 'var(--r-md)',
+                  background: '#EEF2FF', border: '1px solid #C7D2FE',
+                  display: 'flex', alignItems: 'center', gap: 8,
+                }}>
+                  <Avatar initials={p.initials} role={p.role} size={26} style={{ filter: 'grayscale(0.4)' }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 'var(--fs-micro)', fontWeight: 600, color: 'var(--fg2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
+                    <div style={{ fontSize: 10, color: '#3730A3' }}>Rest break</div>
+                  </div>
+                  <button
+                    onClick={() => dispatch({ type: 'SET_PRESCRIBER_STATUS', prescriberId: p.id, status: 'online' })}
+                    title="Return to pool"
+                    style={{ border: '1px solid #C7D2FE', background: 'none', borderRadius: 'var(--r-sm)', cursor: 'pointer', fontSize: 10, color: '#3730A3', padding: '2px 6px' }}
+                  >
+                    Return
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
       </div>
 
       {/* Config modal */}

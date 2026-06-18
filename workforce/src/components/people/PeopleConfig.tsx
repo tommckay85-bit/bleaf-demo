@@ -7,6 +7,13 @@ import { Avatar, ROLE_COLORS } from '../common/Avatar';
 import { Modal } from '../common/Modal';
 import type { Prescriber, PrescriberRole, PrescriberStatus } from '../../types';
 
+const ROTATION_INTERVALS: { value: 30 | 60 | 90 | 120; label: string }[] = [
+  { value: 30, label: '30 minutes' },
+  { value: 60, label: '60 minutes' },
+  { value: 90, label: '90 minutes' },
+  { value: 120, label: '2 hours' },
+];
+
 const ROLES: { value: PrescriberRole; label: string }[] = [
   { value: 'pharmacist', label: 'Pharmacist' },
   { value: 'nurse', label: 'Nurse' },
@@ -38,7 +45,8 @@ function makeInitials(name: string) {
 }
 
 const emptyPrescriber: Omit<Prescriber, 'id'> = {
-  name: '', initials: '', role: 'pharmacist', status: 'online', serviceIds: [],
+  name: '', initials: '', role: 'pharmacist', status: 'online',
+  serviceIds: [], specialistServiceIds: [], allocationStyle: 'sessional',
 };
 
 export function PeopleConfig() {
@@ -52,7 +60,13 @@ export function PeopleConfig() {
 
   function openEdit(p: Prescriber) {
     setEditingId(p.id);
-    setForm({ name: p.name, initials: p.initials, role: p.role, status: p.status, serviceIds: [...p.serviceIds] });
+    setForm({
+      name: p.name, initials: p.initials, role: p.role, status: p.status,
+      serviceIds: [...p.serviceIds],
+      specialistServiceIds: [...(p.specialistServiceIds ?? [])],
+      allocationStyle: p.allocationStyle ?? 'sessional',
+      rotationIntervalMins: p.rotationIntervalMins,
+    });
     setIsCreating(false);
   }
 
@@ -79,11 +93,27 @@ export function PeopleConfig() {
     closeModal();
   }
 
-  function toggleService(serviceId: string) {
-    const ids = form.serviceIds.includes(serviceId)
-      ? form.serviceIds.filter(id => id !== serviceId)
-      : [...form.serviceIds, serviceId];
-    setForm(f => ({ ...f, serviceIds: ids }));
+  // Three-state cycle per service: none → trained → specialist → none
+  function cycleService(serviceId: string) {
+    const isSpecialist = form.specialistServiceIds?.includes(serviceId);
+    const isTrained = form.serviceIds.includes(serviceId);
+    if (isSpecialist) {
+      // specialist → none
+      setForm(f => ({
+        ...f,
+        serviceIds: f.serviceIds.filter(id => id !== serviceId),
+        specialistServiceIds: (f.specialistServiceIds ?? []).filter(id => id !== serviceId),
+      }));
+    } else if (isTrained) {
+      // trained → specialist
+      setForm(f => ({
+        ...f,
+        specialistServiceIds: [...(f.specialistServiceIds ?? []), serviceId],
+      }));
+    } else {
+      // none → trained
+      setForm(f => ({ ...f, serviceIds: [...f.serviceIds, serviceId] }));
+    }
   }
 
   function selectCategoryServices(categoryId: string, add: boolean) {
@@ -92,7 +122,11 @@ export function PeopleConfig() {
       const merged = Array.from(new Set([...form.serviceIds, ...cat.serviceIds]));
       setForm(f => ({ ...f, serviceIds: merged }));
     } else {
-      setForm(f => ({ ...f, serviceIds: f.serviceIds.filter(id => !cat.serviceIds.includes(id)) }));
+      setForm(f => ({
+        ...f,
+        serviceIds: f.serviceIds.filter(id => !cat.serviceIds.includes(id)),
+        specialistServiceIds: (f.specialistServiceIds ?? []).filter(id => !cat.serviceIds.includes(id)),
+      }));
     }
   }
 
@@ -159,7 +193,7 @@ export function PeopleConfig() {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: 'var(--surface-alt)', borderBottom: '1px solid var(--border)' }}>
-              {['Prescriber', 'Role', 'Status', 'Services', 'Actions'].map(h => (
+              {['Prescriber', 'Role', 'Status', 'Services', 'Work Style', 'Actions'].map(h => (
                 <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 'var(--fs-micro)', fontWeight: 700, color: 'var(--fg3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{h}</th>
               ))}
             </tr>
@@ -190,18 +224,35 @@ export function PeopleConfig() {
                 <td style={{ padding: '12px 16px' }}>
                   <div style={{ fontSize: 'var(--fs-micro)', color: 'var(--fg2)' }}>
                     <span style={{ fontWeight: 700 }}>{p.serviceIds.length}</span>
-                    <span style={{ color: 'var(--fg3)' }}> / 48 services</span>
+                    <span style={{ color: 'var(--fg3)' }}> trained</span>
+                    {(p.specialistServiceIds?.length ?? 0) > 0 && (
+                      <span style={{ color: '#B45309', marginLeft: 4, fontWeight: 600 }}>
+                        · ★ {p.specialistServiceIds!.length} specialist
+                      </span>
+                    )}
                   </div>
                   <div style={{ display: 'flex', gap: 3, marginTop: 4, flexWrap: 'wrap' }}>
                     {SERVICE_CATEGORIES.map(cat => {
+                      const hasSpecialist = cat.serviceIds.some(sid => (p.specialistServiceIds ?? []).includes(sid));
                       const hasAny = cat.serviceIds.some(sid => p.serviceIds.includes(sid));
-                      return hasAny ? (
-                        <div key={cat.id} title={cat.name} style={{
-                          width: 8, height: 8, borderRadius: '50%',
-                          background: cat.color, opacity: 0.85,
+                      if (!hasAny) return null;
+                      return (
+                        <div key={cat.id} title={`${cat.name}${hasSpecialist ? ' (specialist)' : ''}`} style={{
+                          width: 8, height: 8, borderRadius: hasSpecialist ? 2 : '50%',
+                          background: cat.color,
+                          outline: hasSpecialist ? `2px solid ${cat.color}` : 'none',
+                          outlineOffset: 1,
+                          opacity: 0.9,
                         }} />
-                      ) : null;
+                      );
                     })}
+                  </div>
+                </td>
+                <td style={{ padding: '12px 16px' }}>
+                  <div style={{ fontSize: 'var(--fs-micro)', color: p.allocationStyle === 'rotation' ? '#0067B2' : 'var(--fg3)', fontWeight: p.allocationStyle === 'rotation' ? 600 : 400 }}>
+                    {p.allocationStyle === 'rotation'
+                      ? `↺ ${p.rotationIntervalMins ?? 60}m`
+                      : '⏱ Sessional'}
                   </div>
                 </td>
                 <td style={{ padding: '12px 16px' }}>
@@ -258,8 +309,51 @@ export function PeopleConfig() {
             </div>
           </Section>
 
+          {/* Allocation style */}
+          <Section title="Work style preference">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+              <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
+                {(['sessional', 'rotation'] as const).map(style => (
+                  <button
+                    key={style}
+                    onClick={() => setForm(f => ({ ...f, allocationStyle: style, rotationIntervalMins: style === 'rotation' ? (f.rotationIntervalMins ?? 60) : undefined }))}
+                    style={{
+                      flex: 1, padding: '10px 12px', borderRadius: 'var(--r-md)', cursor: 'pointer',
+                      border: `2px solid ${form.allocationStyle === style ? '#05054B' : 'var(--border)'}`,
+                      background: form.allocationStyle === style ? '#F0F4FF' : 'var(--surface)',
+                      textAlign: 'left', transition: 'all 0.1s',
+                    }}
+                  >
+                    <div style={{ fontSize: 'var(--fs-micro)', fontWeight: 700, color: form.allocationStyle === style ? '#05054B' : 'var(--fg2)' }}>
+                      {style === 'sessional' ? '⏱ Sessional' : '↺ Rotation'}
+                    </div>
+                    <div style={{ fontSize: 10, color: 'var(--fg3)', marginTop: 2 }}>
+                      {style === 'sessional'
+                        ? 'Half-day blocks on same activity'
+                        : 'Switches between categories at intervals'}
+                    </div>
+                  </button>
+                ))}
+              </div>
+              {form.allocationStyle === 'rotation' && (
+                <FormField label="Switch interval">
+                  <select
+                    style={selectStyle}
+                    value={form.rotationIntervalMins ?? 60}
+                    onChange={e => setForm(f => ({ ...f, rotationIntervalMins: Number(e.target.value) as 30 | 60 | 90 | 120 }))}
+                  >
+                    {ROTATION_INTERVALS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                  </select>
+                </FormField>
+              )}
+            </div>
+          </Section>
+
           {/* Service permissions */}
-          <Section title={`Service permissions (${form.serviceIds.length} selected)`}>
+          <Section title={`Service permissions — trained: ${form.serviceIds.length} · specialist: ${(form.specialistServiceIds ?? []).length}`}>
+            <div style={{ fontSize: 10, color: 'var(--fg3)', marginBottom: 8 }}>
+              Click once = trained (✓) · click again = specialist (★) · click again = remove
+            </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
               {SERVICE_CATEGORIES.map(cat => {
                 const catServices = SERVICES.filter(s => s.categoryId === cat.id);
@@ -289,23 +383,28 @@ export function PeopleConfig() {
                     </div>
                     <div style={{ padding: 10, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                       {catServices.map(svc => {
-                        const selected = form.serviceIds.includes(svc.id);
+                        const isSpecialist = (form.specialistServiceIds ?? []).includes(svc.id);
+                        const isTrained = form.serviceIds.includes(svc.id);
                         return (
                           <button
                             key={svc.id}
-                            onClick={() => toggleService(svc.id)}
+                            onClick={() => cycleService(svc.id)}
+                            title={isSpecialist ? 'Specialist — click to remove' : isTrained ? 'Trained — click to mark specialist' : 'Click to add as trained'}
                             style={{
                               padding: '4px 10px',
                               borderRadius: 'var(--r-pill)',
-                              border: `1.5px solid ${selected ? cat.color : 'var(--border)'}`,
-                              background: selected ? `${cat.color}15` : 'transparent',
-                              color: selected ? cat.color : 'var(--fg3)',
+                              border: `1.5px solid ${isSpecialist ? '#B45309' : isTrained ? cat.color : 'var(--border)'}`,
+                              background: isSpecialist ? '#FEF3C7' : isTrained ? `${cat.color}15` : 'transparent',
+                              color: isSpecialist ? '#B45309' : isTrained ? cat.color : 'var(--fg3)',
                               cursor: 'pointer',
                               fontSize: 'var(--fs-micro)',
-                              fontWeight: selected ? 600 : 400,
+                              fontWeight: isSpecialist || isTrained ? 600 : 400,
                               transition: 'all 0.1s ease',
+                              display: 'inline-flex', alignItems: 'center', gap: 3,
                             }}
                           >
+                            {isSpecialist && <span>★</span>}
+                            {!isSpecialist && isTrained && <span>✓</span>}
                             {svc.name}
                           </button>
                         );
