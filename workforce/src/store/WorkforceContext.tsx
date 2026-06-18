@@ -3,6 +3,8 @@ import type {
   Prescriber, Order, AllocationRule, SLAConfig, DayAllocation,
   NonPrescribingSlot, Appointment, ClinicType, BreakGroup, PatientMessage, ServiceCapacityConfig,
   PrescriberActivityEvent, PerformanceMonitorConfig, PowerHourConfig, ExceptionalTaskReason,
+  ShiftType, RotaEntry, LeaveRequest, ShiftSwapRequest, RotaTrainingSession,
+  HolidayWorkedRecord, ShiftPreference, RotaPublishState,
 } from '../types';
 import { INITIAL_PRESCRIBERS } from '../data/prescribers';
 import { INITIAL_ORDERS } from '../data/orders';
@@ -13,6 +15,8 @@ import { INITIAL_CLINIC_TYPES } from '../data/clinicTypes';
 import { INITIAL_BREAK_GROUPS } from '../data/breakGroups';
 import { INITIAL_MESSAGES } from '../data/messages';
 import { INITIAL_CAPACITY_CONFIGS } from '../data/capacityConfigs';
+import { DEFAULT_SHIFT_TYPES } from '../data/shiftTypes';
+import { BANK_HOLIDAYS } from '../data/bankHolidays';
 
 const DAYS_MINS = 480;
 
@@ -31,6 +35,14 @@ interface State {
   prescriberActivity: PrescriberActivityEvent[];
   performanceConfig: PerformanceMonitorConfig;
   powerHour: PowerHourConfig | null;
+  shiftTypes: ShiftType[];
+  rotaEntries: RotaEntry[];
+  leaveRequests: LeaveRequest[];
+  swapRequests: ShiftSwapRequest[];
+  rotaTrainingSessions: RotaTrainingSession[];
+  holidayWorkedRecords: HolidayWorkedRecord[];
+  shiftPreferences: ShiftPreference[];
+  rotaPublishStates: RotaPublishState[];
 }
 
 type Action =
@@ -67,7 +79,23 @@ type Action =
   | { type: 'SET_POWER_HOUR'; config: PowerHourConfig }
   | { type: 'CLEAR_POWER_HOUR' }
   | { type: 'PAUSE_PRESCRIBER'; prescriberId: string; reason: ExceptionalTaskReason; note?: string; pausedAt: string }
-  | { type: 'RESUME_PRESCRIBER'; prescriberId: string };
+  | { type: 'RESUME_PRESCRIBER'; prescriberId: string }
+  | { type: 'ADD_ROTA_ENTRY'; entry: RotaEntry }
+  | { type: 'UPDATE_ROTA_ENTRY'; entry: RotaEntry }
+  | { type: 'DELETE_ROTA_ENTRY'; id: string }
+  | { type: 'CLEAR_ROTA_MONTH'; yearMonth: string }
+  | { type: 'GENERATE_ROTA'; yearMonth: string }
+  | { type: 'ADD_LEAVE_REQUEST'; request: LeaveRequest }
+  | { type: 'UPDATE_LEAVE_REQUEST'; request: LeaveRequest }
+  | { type: 'ADD_SWAP_REQUEST'; request: ShiftSwapRequest }
+  | { type: 'UPDATE_SWAP_REQUEST'; request: ShiftSwapRequest }
+  | { type: 'ADD_ROTA_TRAINING_SESSION'; session: RotaTrainingSession }
+  | { type: 'UPDATE_ROTA_TRAINING_SESSION'; session: RotaTrainingSession }
+  | { type: 'DELETE_ROTA_TRAINING_SESSION'; id: string }
+  | { type: 'UPDATE_SHIFT_TYPE'; shiftType: ShiftType }
+  | { type: 'SET_SHIFT_PREFERENCE'; pref: ShiftPreference }
+  | { type: 'RECORD_HOLIDAY_WORKED'; record: HolidayWorkedRecord }
+  | { type: 'SET_ROTA_PUBLISH_STATE'; yearMonth: string; published: boolean };
 
 function computePriorityScore(order: Order, rules: AllocationRule[], slas: SLAConfig[]): number {
   const service = SERVICES.find(s => s.id === order.serviceId);
@@ -197,6 +225,166 @@ function autoAllocate(state: State): State {
 function timeToMins(t: string): number {
   const [h, m] = t.split(':').map(Number);
   return h * 60 + m;
+}
+
+function ymd(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+// Day-count distance from a fixed reference Monday, used to derive 2-week cycle parity.
+const ROTATION_EPOCH = new Date(2024, 0, 1); // Mon 1 Jan 2024
+
+function weekParity(date: Date): 0 | 1 {
+  const days = Math.floor((date.getTime() - ROTATION_EPOCH.getTime()) / 86400000);
+  const weekNo = Math.floor(days / 7);
+  return (weekNo % 2 === 0 ? 0 : 1) as 0 | 1;
+}
+
+// Returns true if a prescriber is scheduled to work on a given date per their working pattern.
+export function isWorkingDay(prescriber: Prescriber, date: Date): boolean {
+  const dow = date.getDay(); // 0=Sun..6=Sat
+  const pattern = prescriber.workingPattern;
+  if (!pattern) {
+    // Default: Mon-Fri
+    return dow >= 1 && dow <= 5;
+  }
+  const isWeekend = dow === 0 || dow === 6;
+  switch (pattern.type) {
+    case 'standard-weekly':
+      return (pattern.weekDays ?? []).includes(dow);
+    case 'two-week-rotation': {
+      const parity = weekParity(date);
+      const days = parity === 0 ? (pattern.week1Days ?? []) : (pattern.week2Days ?? []);
+      return days.includes(dow);
+    }
+    case 'alternate-weekends': {
+      const weekdays = pattern.weekDays ?? [1, 2, 3, 4, 5];
+      if (!isWeekend) return weekdays.includes(dow);
+      // Work every other weekend (parity 0 weekends)
+      return weekParity(date) === 0;
+    }
+    case 'monthly-weekend': {
+      const weekdays = pattern.weekDays ?? [1, 2, 3, 4, 5];
+      if (!isWeekend) return weekdays.includes(dow);
+      // Work the first weekend (first Sat/Sun) of the month
+      return date.getDate() <= 7;
+    }
+    default:
+      return dow >= 1 && dow <= 5;
+  }
+}
+
+function isOnApprovedLeave(prescriberId: string, dateStr: string, leaveRequests: LeaveRequest[]): boolean {
+  return leaveRequests.some(lr =>
+    lr.prescriberId === prescriberId &&
+    lr.status === 'approved' &&
+    dateStr >= lr.startDate &&
+    dateStr <= lr.endDate
+  );
+}
+
+function generateRota(state: State, yearMonth: string): State {
+  const [year, month] = yearMonth.split('-').map(Number);
+  const daysInMonth = new Date(year, month, 0).getDate();
+
+  // Clear existing entries for the month (only auto-generated ones; keep manual swaps/leave-derived statuses)
+  const kept = state.rotaEntries.filter(e => !(e.date.startsWith(yearMonth) && e.id.startsWith('rota-gen-')));
+  const newEntries: RotaEntry[] = [...kept];
+
+  // Track per-prescriber shift counts this month for fairness
+  const monthCount = new Map<string, number>();
+  for (const e of kept) {
+    if (e.date.startsWith(yearMonth)) monthCount.set(e.prescriberId, (monthCount.get(e.prescriberId) ?? 0) + 1);
+  }
+
+  // Track bank-holiday shifts worked this year (existing records + this run)
+  const bhCount = new Map<string, number>();
+  for (const r of state.holidayWorkedRecords) {
+    if (r.year === year && r.worked) bhCount.set(r.prescriberId, (bhCount.get(r.prescriberId) ?? 0) + 1);
+  }
+
+  const eligibleBase = state.prescribers.filter(p =>
+    p.status === 'online' || p.status === 'scheduled' || p.status === 'allocated'
+  );
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(year, month - 1, day);
+    const dateStr = ymd(date);
+    const dow = date.getDay();
+    const isWeekend = dow === 0 || dow === 6;
+    const holiday = BANK_HOLIDAYS.find(b => b.date === dateStr);
+
+    const assignedToday = new Set<string>();
+    // Keep existing manual assignments out of the candidate pool for the day
+    for (const e of newEntries) {
+      if (e.date === dateStr) assignedToday.add(e.prescriberId);
+    }
+
+    for (const shift of state.shiftTypes) {
+      if (isWeekend && !shift.activeWeekends) continue;
+      if (!isWeekend && !shift.activeWeekdays) continue;
+
+      const existing = newEntries.filter(e => e.date === dateStr && e.shiftTypeId === shift.id).length;
+      const need = shift.defaultRequired - existing;
+      if (need <= 0) continue;
+
+      let candidates = eligibleBase.filter(p =>
+        !assignedToday.has(p.id) &&
+        isWorkingDay(p, date) &&
+        !isOnApprovedLeave(p.id, dateStr, state.leaveRequests)
+      );
+
+      candidates = candidates.sort((a, b) => {
+        if (holiday) {
+          // Respect holiday preferences: happy-to-work first, prefer-off last
+          const pref = (p: Prescriber) => {
+            const sp = state.shiftPreferences.find(s => s.prescriberId === p.id && s.holidayId === holiday.id);
+            if (!sp || sp.preference === 'flexible') return 1;
+            return sp.preference === 'happy-to-work' ? 0 : 2;
+          };
+          const pa = pref(a), pb = pref(b);
+          if (pa !== pb) return pa - pb;
+          // Then fewest BH shifts worked this year (fair distribution)
+          const ba = bhCount.get(a.id) ?? 0, bb = bhCount.get(b.id) ?? 0;
+          if (ba !== bb) return ba - bb;
+        }
+        // Then fewest shifts this month (fairness)
+        const ma = monthCount.get(a.id) ?? 0, mb = monthCount.get(b.id) ?? 0;
+        return ma - mb;
+      });
+
+      const take = candidates.slice(0, need);
+      for (const p of take) {
+        newEntries.push({
+          id: `rota-gen-${dateStr}-${shift.id}-${p.id}`,
+          prescriberId: p.id,
+          date: dateStr,
+          shiftTypeId: shift.id,
+          status: 'scheduled',
+        });
+        assignedToday.add(p.id);
+        monthCount.set(p.id, (monthCount.get(p.id) ?? 0) + 1);
+        if (holiday) bhCount.set(p.id, (bhCount.get(p.id) ?? 0) + 1);
+      }
+    }
+  }
+
+  // Record holiday-worked for fairness tracking
+  const newRecords = [...state.holidayWorkedRecords];
+  for (const holiday of BANK_HOLIDAYS) {
+    if (!holiday.date.startsWith(yearMonth)) continue;
+    const workers = new Set(newEntries.filter(e => e.date === holiday.date).map(e => e.prescriberId));
+    for (const pid of workers) {
+      const idx = newRecords.findIndex(r => r.prescriberId === pid && r.holidayId === holiday.id);
+      if (idx >= 0) newRecords[idx] = { ...newRecords[idx], worked: true };
+      else newRecords.push({ prescriberId: pid, holidayId: holiday.id, year, worked: true });
+    }
+  }
+
+  return { ...state, rotaEntries: newEntries, holidayWorkedRecords: newRecords };
 }
 
 function reducer(state: State, action: Action): State {
@@ -528,6 +716,81 @@ function reducer(state: State, action: Action): State {
       return { ...state, prescribers: newPrescribers };
     }
 
+    case 'ADD_ROTA_ENTRY':
+      return { ...state, rotaEntries: [...state.rotaEntries, action.entry] };
+    case 'UPDATE_ROTA_ENTRY':
+      return { ...state, rotaEntries: state.rotaEntries.map(e => e.id === action.entry.id ? action.entry : e) };
+    case 'DELETE_ROTA_ENTRY':
+      return { ...state, rotaEntries: state.rotaEntries.filter(e => e.id !== action.id) };
+    case 'CLEAR_ROTA_MONTH':
+      return { ...state, rotaEntries: state.rotaEntries.filter(e => !e.date.startsWith(action.yearMonth)) };
+    case 'GENERATE_ROTA':
+      return generateRota(state, action.yearMonth);
+    case 'ADD_LEAVE_REQUEST':
+      return { ...state, leaveRequests: [...state.leaveRequests, action.request] };
+    case 'UPDATE_LEAVE_REQUEST': {
+      const leaveRequests = state.leaveRequests.map(r => r.id === action.request.id ? action.request : r);
+      let rotaEntries = state.rotaEntries;
+      if (action.request.status === 'approved') {
+        // Remove conflicting rota entries in the leave date range
+        rotaEntries = rotaEntries.filter(e =>
+          !(e.prescriberId === action.request.prescriberId &&
+            e.date >= action.request.startDate &&
+            e.date <= action.request.endDate)
+        );
+      }
+      return { ...state, leaveRequests, rotaEntries };
+    }
+    case 'ADD_SWAP_REQUEST':
+      return { ...state, swapRequests: [...state.swapRequests, action.request] };
+    case 'UPDATE_SWAP_REQUEST': {
+      const swapRequests = state.swapRequests.map(r => r.id === action.request.id ? action.request : r);
+      let rotaEntries = state.rotaEntries;
+      if (action.request.status === 'approved') {
+        const req = action.request;
+        rotaEntries = rotaEntries.map(e => {
+          if (e.prescriberId === req.requesterId && e.date === req.requesterDate && e.shiftTypeId === req.requesterShiftTypeId) {
+            return { ...e, prescriberId: req.targetPrescriberId, status: 'swapped' as const };
+          }
+          if (e.prescriberId === req.targetPrescriberId && e.date === req.targetDate && e.shiftTypeId === req.targetShiftTypeId) {
+            return { ...e, prescriberId: req.requesterId, status: 'swapped' as const };
+          }
+          return e;
+        });
+      }
+      return { ...state, swapRequests, rotaEntries };
+    }
+    case 'ADD_ROTA_TRAINING_SESSION':
+      return { ...state, rotaTrainingSessions: [...state.rotaTrainingSessions, action.session] };
+    case 'UPDATE_ROTA_TRAINING_SESSION':
+      return { ...state, rotaTrainingSessions: state.rotaTrainingSessions.map(s => s.id === action.session.id ? action.session : s) };
+    case 'DELETE_ROTA_TRAINING_SESSION':
+      return { ...state, rotaTrainingSessions: state.rotaTrainingSessions.filter(s => s.id !== action.id) };
+    case 'UPDATE_SHIFT_TYPE':
+      return { ...state, shiftTypes: state.shiftTypes.map(s => s.id === action.shiftType.id ? action.shiftType : s) };
+    case 'SET_SHIFT_PREFERENCE': {
+      const exists = state.shiftPreferences.some(p => p.prescriberId === action.pref.prescriberId && p.holidayId === action.pref.holidayId);
+      const shiftPreferences = exists
+        ? state.shiftPreferences.map(p => p.prescriberId === action.pref.prescriberId && p.holidayId === action.pref.holidayId ? action.pref : p)
+        : [...state.shiftPreferences, action.pref];
+      return { ...state, shiftPreferences };
+    }
+    case 'RECORD_HOLIDAY_WORKED': {
+      const exists = state.holidayWorkedRecords.some(r => r.prescriberId === action.record.prescriberId && r.holidayId === action.record.holidayId);
+      const holidayWorkedRecords = exists
+        ? state.holidayWorkedRecords.map(r => r.prescriberId === action.record.prescriberId && r.holidayId === action.record.holidayId ? action.record : r)
+        : [...state.holidayWorkedRecords, action.record];
+      return { ...state, holidayWorkedRecords };
+    }
+    case 'SET_ROTA_PUBLISH_STATE': {
+      const exists = state.rotaPublishStates.some(p => p.yearMonth === action.yearMonth);
+      const next: RotaPublishState = { yearMonth: action.yearMonth, published: action.published, publishedAt: action.published ? new Date().toISOString() : undefined };
+      const rotaPublishStates = exists
+        ? state.rotaPublishStates.map(p => p.yearMonth === action.yearMonth ? next : p)
+        : [...state.rotaPublishStates, next];
+      return { ...state, rotaPublishStates };
+    }
+
     default:
       return state;
   }
@@ -553,6 +816,14 @@ const initialState: State = {
     idleMinutes: 20,
   },
   powerHour: null,
+  shiftTypes: DEFAULT_SHIFT_TYPES,
+  rotaEntries: [],
+  leaveRequests: [],
+  swapRequests: [],
+  rotaTrainingSessions: [],
+  holidayWorkedRecords: [],
+  shiftPreferences: [],
+  rotaPublishStates: [],
 };
 
 interface WorkforceContextValue extends State {

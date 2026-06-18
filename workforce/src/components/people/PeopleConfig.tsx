@@ -5,7 +5,23 @@ import { Button } from '../common/Button';
 import { Badge } from '../common/Badge';
 import { Avatar, ROLE_COLORS } from '../common/Avatar';
 import { Modal } from '../common/Modal';
-import type { Prescriber, PrescriberRole, PrescriberStatus } from '../../types';
+import { BANK_HOLIDAYS } from '../../data/bankHolidays';
+import type { Prescriber, PrescriberRole, PrescriberStatus, WorkingPatternType, HolidayShiftPreference } from '../../types';
+
+const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+const PATTERN_OPTIONS: { value: WorkingPatternType; label: string; desc: string }[] = [
+  { value: 'standard-weekly', label: 'Standard weekly', desc: 'Same days every week' },
+  { value: 'two-week-rotation', label: 'Two-week rotation', desc: 'Different days week 1 vs week 2' },
+  { value: 'alternate-weekends', label: 'Alternate weekends', desc: 'Weekdays + every other weekend' },
+  { value: 'monthly-weekend', label: 'Monthly weekend', desc: 'Weekdays + first weekend of month' },
+];
+
+const HOLIDAY_PREF_OPTIONS: { value: HolidayShiftPreference; label: string }[] = [
+  { value: 'happy-to-work', label: 'Happy to work' },
+  { value: 'flexible', label: 'Flexible' },
+  { value: 'prefer-off', label: 'Prefer off' },
+];
 
 const ROTATION_INTERVALS: { value: 30 | 60 | 90 | 120; label: string }[] = [
   { value: 30, label: '30 minutes' },
@@ -47,16 +63,27 @@ function makeInitials(name: string) {
 const emptyPrescriber: Omit<Prescriber, 'id'> = {
   name: '', initials: '', role: 'pharmacist', status: 'online',
   serviceIds: [], specialistServiceIds: [], allocationStyle: 'sessional',
+  email: '', phone: '', notificationPrefs: { email: true, sms: false },
+  workingPattern: { type: 'standard-weekly', weekDays: [1, 2, 3, 4, 5] },
 };
 
 export function PeopleConfig() {
-  const { prescribers, dispatch } = useWorkforce();
+  const { prescribers, shiftPreferences, dispatch } = useWorkforce();
+  const [holidayPrefs, setHolidayPrefs] = useState<Record<string, HolidayShiftPreference>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [form, setForm] = useState<Omit<Prescriber, 'id'>>(emptyPrescriber);
   const [filterRole, setFilterRole] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  function loadHolidayPrefs(prescriberId: string) {
+    const map: Record<string, HolidayShiftPreference> = {};
+    for (const sp of shiftPreferences) {
+      if (sp.prescriberId === prescriberId) map[sp.holidayId] = sp.preference;
+    }
+    setHolidayPrefs(map);
+  }
 
   function openEdit(p: Prescriber) {
     setEditingId(p.id);
@@ -66,13 +93,19 @@ export function PeopleConfig() {
       specialistServiceIds: [...(p.specialistServiceIds ?? [])],
       allocationStyle: p.allocationStyle ?? 'sessional',
       rotationIntervalMins: p.rotationIntervalMins,
+      email: p.email ?? '',
+      phone: p.phone ?? '',
+      notificationPrefs: p.notificationPrefs ?? { email: true, sms: false },
+      workingPattern: p.workingPattern ?? { type: 'standard-weekly', weekDays: [1, 2, 3, 4, 5] },
     });
+    loadHolidayPrefs(p.id);
     setIsCreating(false);
   }
 
   function openCreate() {
     setEditingId(null);
     setForm({ ...emptyPrescriber });
+    setHolidayPrefs({});
     setIsCreating(true);
   }
 
@@ -84,13 +117,21 @@ export function PeopleConfig() {
   function saveEdit() {
     if (!form.name.trim()) return;
     const initials = makeInitials(form.name);
-    if (editingId) {
-      dispatch({ type: 'UPDATE_PRESCRIBER', prescriber: { ...form, initials, id: editingId } });
-    } else {
-      const id = `p-${Date.now()}`;
-      dispatch({ type: 'UPDATE_PRESCRIBER', prescriber: { ...form, initials, id } });
+    const id = editingId ?? `p-${Date.now()}`;
+    dispatch({ type: 'UPDATE_PRESCRIBER', prescriber: { ...form, initials, id } });
+    for (const [holidayId, preference] of Object.entries(holidayPrefs)) {
+      dispatch({ type: 'SET_SHIFT_PREFERENCE', pref: { prescriberId: id, holidayId, preference } });
     }
     closeModal();
+  }
+
+  function toggleWeekDay(field: 'weekDays' | 'week1Days' | 'week2Days', dow: number) {
+    setForm(f => {
+      const wp = f.workingPattern ?? { type: 'standard-weekly' as WorkingPatternType };
+      const current = wp[field] ?? [];
+      const next = current.includes(dow) ? current.filter(d => d !== dow) : [...current, dow].sort((a, b) => a - b);
+      return { ...f, workingPattern: { ...wp, [field]: next } };
+    });
   }
 
   // Three-state cycle per service: none → trained → specialist → none
@@ -346,6 +387,146 @@ export function PeopleConfig() {
                   </select>
                 </FormField>
               )}
+            </div>
+          </Section>
+
+          {/* Contact & Working Pattern */}
+          <Section title="Contact & Working Pattern">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
+              <FormField label="Email">
+                <input
+                  type="email"
+                  style={inputStyle}
+                  value={form.email ?? ''}
+                  onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                  placeholder="jane.smith@boots.com"
+                />
+              </FormField>
+              <FormField label="Phone">
+                <input
+                  type="tel"
+                  style={inputStyle}
+                  value={form.phone ?? ''}
+                  onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+                  placeholder="07700 900000"
+                />
+              </FormField>
+            </div>
+            <div style={{ display: 'flex', gap: 'var(--space-4)', marginTop: 'var(--space-3)' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--fs-small)', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={form.notificationPrefs?.email ?? false}
+                  onChange={e => setForm(f => ({ ...f, notificationPrefs: { email: e.target.checked, sms: f.notificationPrefs?.sms ?? false } }))}
+                />
+                Email notifications
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--fs-small)', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={form.notificationPrefs?.sms ?? false}
+                  onChange={e => setForm(f => ({ ...f, notificationPrefs: { email: f.notificationPrefs?.email ?? false, sms: e.target.checked } }))}
+                />
+                SMS notifications
+              </label>
+            </div>
+
+            <div style={{ marginTop: 'var(--space-4)', fontSize: 'var(--fs-micro)', fontWeight: 700, color: 'var(--fg3)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+              Working pattern
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-2)' }}>
+              {PATTERN_OPTIONS.map(opt => {
+                const active = (form.workingPattern?.type ?? 'standard-weekly') === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    onClick={() => setForm(f => ({ ...f, workingPattern: { ...(f.workingPattern ?? {}), type: opt.value } }))}
+                    style={{
+                      padding: '8px 10px', borderRadius: 'var(--r-md)', cursor: 'pointer', textAlign: 'left',
+                      border: `2px solid ${active ? '#05054B' : 'var(--border)'}`,
+                      background: active ? '#F0F4FF' : 'var(--surface)',
+                    }}
+                  >
+                    <div style={{ fontSize: 'var(--fs-micro)', fontWeight: 700, color: active ? '#05054B' : 'var(--fg2)' }}>{opt.label}</div>
+                    <div style={{ fontSize: 10, color: 'var(--fg3)', marginTop: 2 }}>{opt.desc}</div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {(() => {
+              const type = form.workingPattern?.type ?? 'standard-weekly';
+              const dayPicker = (field: 'weekDays' | 'week1Days' | 'week2Days', label: string) => (
+                <div style={{ marginTop: 8 }}>
+                  <div style={{ fontSize: 10, color: 'var(--fg3)', marginBottom: 4 }}>{label}</div>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    {[1, 2, 3, 4, 5, 6, 0].map(dow => {
+                      const sel = (form.workingPattern?.[field] ?? []).includes(dow);
+                      return (
+                        <button
+                          key={dow}
+                          onClick={() => toggleWeekDay(field, dow)}
+                          style={{
+                            flex: 1, padding: '6px 0', borderRadius: 'var(--r-sm)', cursor: 'pointer',
+                            border: `1.5px solid ${sel ? '#05054B' : 'var(--border)'}`,
+                            background: sel ? '#05054B' : 'var(--surface)',
+                            color: sel ? '#fff' : 'var(--fg3)',
+                            fontSize: 10, fontWeight: 600,
+                          }}
+                        >
+                          {WEEKDAY_LABELS[dow]}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+              if (type === 'standard-weekly') return dayPicker('weekDays', 'Working days');
+              if (type === 'two-week-rotation') return <>{dayPicker('week1Days', 'Week 1 days')}{dayPicker('week2Days', 'Week 2 days')}</>;
+              if (type === 'alternate-weekends') return dayPicker('weekDays', 'Weekday pattern (weekends alternate automatically)');
+              if (type === 'monthly-weekend') return dayPicker('weekDays', 'Weekday pattern (first weekend of month worked)');
+              return null;
+            })()}
+          </Section>
+
+          {/* Holiday shift preferences */}
+          <Section title="Holiday shift preferences">
+            <div style={{ fontSize: 10, color: 'var(--fg3)', marginBottom: 8 }}>
+              Used by the rota generator to fairly allocate special days.
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 220, overflowY: 'auto' }}>
+              {BANK_HOLIDAYS.map(bh => {
+                const current = holidayPrefs[bh.id] ?? 'flexible';
+                return (
+                  <div key={bh.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}>
+                    <span style={{ width: 12, fontSize: 12 }}>{bh.type === 'statutory' ? '🏦' : '✦'}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 'var(--fs-micro)', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{bh.name}</div>
+                      <div style={{ fontSize: 9, color: 'var(--fg3)' }}>{bh.date}</div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 3 }}>
+                      {HOLIDAY_PREF_OPTIONS.map(opt => {
+                        const active = current === opt.value;
+                        return (
+                          <button
+                            key={opt.value}
+                            onClick={() => setHolidayPrefs(h => ({ ...h, [bh.id]: opt.value }))}
+                            style={{
+                              padding: '2px 7px', borderRadius: 'var(--r-pill)', cursor: 'pointer',
+                              border: `1.5px solid ${active ? '#05054B' : 'var(--border)'}`,
+                              background: active ? '#05054B' : 'var(--surface)',
+                              color: active ? '#fff' : 'var(--fg3)',
+                              fontSize: 9, fontWeight: 600, whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {opt.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </Section>
 

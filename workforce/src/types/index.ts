@@ -35,6 +35,10 @@ export interface Prescriber {
   pauseReason?: ExceptionalTaskReason;
   pausedAt?: string;
   pauseNote?: string;
+  email?: string;
+  phone?: string;
+  notificationPrefs?: { email: boolean; sms: boolean };
+  workingPattern?: WorkingPattern;
 }
 
 export interface PowerHourConfig {
@@ -148,4 +152,103 @@ export interface PerformanceMonitorConfig {
   watchHours: number;            // hours below threshold → Watch flag (default 1)
   actionHours: number;           // hours below threshold → Take Action flag (default 2)
   idleMinutes: number;           // minutes with no activity → Idle flag (default 20)
+}
+
+export type WorkingPatternType = 'standard-weekly' | 'two-week-rotation' | 'alternate-weekends' | 'monthly-weekend';
+
+export interface WorkingPattern {
+  type: WorkingPatternType;
+  weekDays?: number[];    // 0=Sun…6=Sat, for standard-weekly / alternate-weekends weekdays
+  week1Days?: number[];   // for two-week-rotation
+  week2Days?: number[];   // for two-week-rotation
+}
+
+export interface ShiftType {
+  id: string;
+  name: string;
+  startTime: string; // "HH:MM"
+  endTime: string;
+  color: string;
+  textColor: string;
+  hoursValue: number;
+  defaultRequired: number; // target headcount
+  defaultMin: number;
+  defaultMax: number;
+  activeWeekdays: boolean; // show on Mon-Fri
+  activeWeekends: boolean; // show on Sat-Sun
+}
+
+export type LeaveType = 'annual-leave' | 'training' | 'non-pims' | 'sick' | 'other';
+
+export interface LeaveRequest {
+  id: string;
+  prescriberId: string;
+  startDate: string; // YYYY-MM-DD
+  endDate: string;
+  type: LeaveType;
+  status: 'pending' | 'approved' | 'rejected';
+  note?: string;
+  requestedAt: string; // ISO
+}
+
+export interface ShiftSwapRequest {
+  id: string;
+  requesterId: string;
+  targetPrescriberId: string;
+  requesterDate: string;
+  requesterShiftTypeId: string;
+  targetDate: string;
+  targetShiftTypeId: string;
+  status: 'pending' | 'approved' | 'rejected';
+  note?: string;
+  requestedAt: string;
+}
+
+export interface RotaEntry {
+  id: string;
+  prescriberId: string;
+  date: string; // YYYY-MM-DD
+  shiftTypeId: string;
+  status: 'scheduled' | 'confirmed' | 'holiday' | 'training' | 'non-pims' | 'sick' | 'swapped';
+  note?: string;
+}
+
+export interface RotaTrainingSession {
+  id: string;
+  title: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  mandatory: boolean;
+  capacity: number;
+  attendeeIds: string[];
+  note?: string;
+}
+
+export interface BankHoliday {
+  id: string;
+  date: string; // YYYY-MM-DD
+  name: string;
+  type: 'statutory' | 'observance';
+}
+
+export interface HolidayWorkedRecord {
+  prescriberId: string;
+  holidayId: string;
+  year: number;
+  worked: boolean;
+}
+
+export type HolidayShiftPreference = 'happy-to-work' | 'prefer-off' | 'flexible';
+
+export interface ShiftPreference {
+  prescriberId: string;
+  holidayId: string;
+  preference: HolidayShiftPreference;
+}
+
+export interface RotaPublishState {
+  yearMonth: string; // "YYYY-MM"
+  published: boolean;
+  publishedAt?: string;
 }

@@ -6,6 +6,7 @@ import { PeopleConfig } from './components/people/PeopleConfig';
 import { RulesConfig } from './components/rules/RulesConfig';
 import { TestDataGenerator } from './components/testdata/TestDataGenerator';
 import { AppointmentDiary } from './components/diary/AppointmentDiary';
+import { RotaTool } from './components/rota/RotaTool';
 import './index.css';
 
 function AppContent() {
@@ -15,6 +16,7 @@ function AppContent() {
     switch (activeView) {
       case 'dashboard': return <WorkforceDashboard />;
       case 'diary': return <AppointmentDiary />;
+      case 'rota': return <RotaTool />;
       case 'people': return <PeopleConfig />;
       case 'rules': return <RulesConfig />;
       case 'testdata': return <TestDataGenerator />;

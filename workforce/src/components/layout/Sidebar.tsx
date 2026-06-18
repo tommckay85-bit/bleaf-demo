@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react';
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Workforce', icon: '⊞' },
   { id: 'diary', label: 'Diary', icon: '📅' },
+  { id: 'rota', label: 'Rota', icon: '📋' },
   { id: 'people', label: 'People', icon: '👤' },
   { id: 'rules', label: 'Rules & SLAs', icon: '⚙' },
   { id: 'testdata', label: 'Test Data', icon: '⚗' },
@@ -48,16 +49,20 @@ export function Sidebar({ activeView, onViewChange }: SidebarProps) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{
             width: 32, height: 32,
-            background: 'var(--bleaf-green)',
+            background: '#fff',
             borderRadius: 8,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 16,
+            overflow: 'hidden',
           }}>
-            🌿
+            <img
+              src="/bleaf-demo/assets/pims-sidebar-logo.png"
+              alt="PIMS"
+              style={{ width: 28, height: 28, objectFit: 'contain' }}
+            />
           </div>
           <div>
-            <div style={{ color: '#fff', fontWeight: 700, fontSize: 'var(--fs-small)', lineHeight: 1.2 }}>BLeaf</div>
-            <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 'var(--fs-micro)' }}>Clinical Workforce</div>
+            <div style={{ color: '#fff', fontWeight: 700, fontSize: 'var(--fs-small)', lineHeight: 1.2 }}>PIMS</div>
+            <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 'var(--fs-micro)' }}>Boots Online Doctor</div>
           </div>
         </div>
       </div>
@@ -85,7 +90,7 @@ export function Sidebar({ activeView, onViewChange }: SidebarProps) {
         fontSize: 'var(--fs-micro)',
         color: 'rgba(255,255,255,0.35)',
       }}>
-        BLeaf Ops v1.0
+        PIMS v1.0
       </div>
     </aside>
   );
