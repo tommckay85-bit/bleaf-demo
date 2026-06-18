@@ -274,6 +274,8 @@ export function WorkforceDashboard() {
                 onPrescriberDragEnd={() => setDragPrescriberId(null)}
                 onDeallocate={(id) => dispatch({ type: 'DEALLOCATE_PRESCRIBER', prescriberId: id })}
                 onPrescriberContextMenu={(id, x, y) => setContextMenu({ x, y, prescriberId: id, fromCategoryId: cat.id })}
+                onPrescriberPause={(id) => { setPausePrescriberId(id); setPauseReason('complexity'); setPauseNote(''); setPauseModal(true); }}
+                onPrescriberResume={(id) => dispatch({ type: 'RESUME_PRESCRIBER', prescriberId: id })}
               />
             );
           })}
@@ -781,11 +783,14 @@ interface ServiceTileProps {
   onPrescriberDragEnd: () => void;
   onDeallocate: (id: string) => void;
   onPrescriberContextMenu: (prescriberId: string, x: number, y: number) => void;
+  onPrescriberPause: (prescriberId: string) => void;
+  onPrescriberResume: (prescriberId: string) => void;
 }
 
 function ServiceTile({
   category, allocatedPrescribers, pendingOrders, pendingMessages, rag, isDropTarget, isDragIncompatible,
   onDragOver, onDragLeave, onDrop, onPrescriberDragStart, onPrescriberDragEnd, onDeallocate, onPrescriberContextMenu,
+  onPrescriberPause, onPrescriberResume,
 }: ServiceTileProps) {
   const [expanded, setExpanded] = useState(false);
   const serviceCount = category.serviceIds.length;
@@ -881,6 +886,8 @@ function ServiceTile({
                   onDragEnd={onPrescriberDragEnd}
                   onRemove={() => onDeallocate(p.id)}
                   onContextMenu={(x, y) => onPrescriberContextMenu(p.id, x, y)}
+                  onPause={() => onPrescriberPause(p.id)}
+                  onResume={() => onPrescriberResume(p.id)}
                 />
               ))}
               <div style={{
@@ -914,13 +921,15 @@ function ServiceTile({
 }
 
 function AllocatedPrescriberRow({
-  prescriber, onDragStart, onDragEnd, onRemove, onContextMenu,
+  prescriber, onDragStart, onDragEnd, onRemove, onContextMenu, onPause, onResume,
 }: {
   prescriber: Prescriber;
   onDragStart: () => void;
   onDragEnd: () => void;
   onRemove: () => void;
   onContextMenu: (x: number, y: number) => void;
+  onPause: () => void;
+  onResume: () => void;
 }) {
   const isPaused = prescriber.status === 'paused';
   const isRotation = prescriber.allocationStyle === 'rotation';
@@ -955,16 +964,22 @@ function AllocatedPrescriberRow({
         </div>
       </div>
       <button
-        onClick={e => { e.stopPropagation(); onRemove(); }}
+        onClick={e => { e.stopPropagation(); isPaused ? onResume() : onPause(); }}
+        title={isPaused ? 'Resume — return to work' : 'Mark exceptional task (pause)'}
         style={{
-          border: 'none', background: 'none', cursor: 'pointer',
-          color: 'var(--fg3)', fontSize: 14, padding: '0 2px', lineHeight: 1,
-          borderRadius: 4,
+          border: `1px solid ${isPaused ? '#FDE68A' : 'var(--border)'}`,
+          background: isPaused ? '#FEF3C7' : 'none',
+          cursor: 'pointer', fontSize: 11, padding: '1px 4px', lineHeight: 1,
+          borderRadius: 3, color: isPaused ? '#92400E' : 'var(--fg3)',
         }}
-        title="Remove from category"
       >
-        ×
+        {isPaused ? '▶' : '⏸'}
       </button>
+      <button
+        onClick={e => { e.stopPropagation(); onRemove(); }}
+        style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--fg3)', fontSize: 14, padding: '0 2px', lineHeight: 1, borderRadius: 4 }}
+        title="Remove from category"
+      >×</button>
     </div>
   );
 }
