@@ -353,6 +353,41 @@ section[id]{scroll-margin-top:88px}
 .bill-total .v{font-size:34px;font-weight:700;color:var(--navy);letter-spacing:-.02em}
 .bill-note{font-size:13px;color:var(--mute);margin-top:14px;line-height:1.55}
 
+/* ---------- Testimonials ---------- */
+.tst-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.tst-card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:28px 26px;
+  box-shadow:var(--shadow);display:flex;flex-direction:column;gap:16px;margin:0}
+.tst-stars{color:var(--leaf);font-size:17px;letter-spacing:3px}
+.tst-quote{font-size:16px;line-height:1.6;color:var(--ink);margin:0;flex:1}
+.tst-who{display:flex;align-items:center;gap:13px;border-top:1px solid var(--line);padding-top:16px}
+.tst-av{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  color:#fff;font-weight:700;font-size:16px;flex-shrink:0;letter-spacing:.02em}
+.tst-name{display:block;font-weight:700;color:var(--navy);font-size:15px}
+.tst-meta{display:block;font-size:13px;color:var(--mute);margin-top:2px}
+.tst-note{text-align:center;font-size:13px;color:var(--mute);margin-top:26px}
+
+/* ---------- Myth busting: Medication not Recreation ---------- */
+.myth-wrap{display:grid;grid-template-columns:330px 1fr;gap:40px;align-items:start}
+.myth-doc{background:var(--navy);color:#fff;border-radius:var(--radius-lg);padding:32px;position:sticky;top:92px;
+  box-shadow:var(--shadow-lg)}
+.myth-doc-photo{width:96px;height:96px;border-radius:50%;background:var(--bg-cool-2) center/cover no-repeat;
+  margin-bottom:18px;border:3px solid rgba(255,255,255,.22)}
+.myth-doc-name{font-size:21px;font-weight:700;color:#fff}
+.myth-doc-role{font-size:12.5px;color:#c8cce6;margin-top:5px;letter-spacing:.02em}
+.myth-doc-quote{font-size:16px;line-height:1.55;color:#eaf4ee;margin:20px 0;border-left:3px solid var(--leaf-bright);
+  padding-left:16px;font-style:italic}
+.myth-tag{margin-top:6px;font-weight:700;font-size:20px;color:#fff;letter-spacing:-.01em}
+.myth-tag span{color:var(--leaf-bright);font-style:italic}
+.myth-list{display:flex;flex-direction:column;gap:16px}
+.myth-item{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:24px 26px;box-shadow:var(--shadow)}
+.myth-q{font-size:18px;font-weight:700;color:var(--navy);display:flex;gap:12px;align-items:center;line-height:1.3}
+.myth-x{font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:#bb4a33;
+  background:#FDECEA;border-radius:6px;padding:5px 10px;flex-shrink:0}
+.myth-a{display:flex;gap:13px;margin-top:14px;font-size:15.5px;line-height:1.6;color:var(--body)}
+.myth-a .myth-tick{width:26px;height:26px;border-radius:50%;background:var(--leaf-tint);color:var(--leaf);
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;margin-top:1px}
+.myth-a strong{color:var(--navy)}
+
 /* ---------- "Are you new?" recommender ---------- */
 .pick-toggle{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:24px}
 .pick-btn{font-family:inherit;font-size:15px;font-weight:700;color:var(--navy);background:#fff;
@@ -389,6 +424,9 @@ section[id]{scroll-margin-top:88px}
   .video-stat{border-left:0;border-top:1px solid rgba(255,255,255,.16);padding-top:14px}
   .video-stat:first-child{border-top:0}
   .foot-top{grid-template-columns:1fr 1fr}
+  .myth-wrap{grid-template-columns:1fr;gap:26px}
+  .myth-doc{position:static}
+  .tst-grid{grid-template-columns:1fr 1fr}
   .nav-links,.nav-login{display:none}
 }
 @media (max-width:760px){
@@ -396,6 +434,7 @@ section[id]{scroll-margin-top:88px}
   .split,.split.reverse{grid-template-columns:1fr;gap:30px}
   .split.reverse .split-media{order:0}
   .aud-grid,.plans{grid-template-columns:1fr}
+  .tst-grid{grid-template-columns:1fr}
   .med-grid{grid-template-columns:1fr}
   .typical{grid-template-columns:1fr}
   .steps,.steps.three{grid-template-columns:1fr}
