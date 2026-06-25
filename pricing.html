@@ -33,10 +33,10 @@
       </span>
     </a>
     <div class="nav-links">
-      <a href="index.html#how">How it works</a>
-      <a href="index.html#quality">Our quality</a>
-      <a href="index.html#growers">Where it's grown</a>
-      <a href="pricing.html">Pricing</a>
+      <a href="#plans">The plans</a>
+      <a href="#medication">Medication costs</a>
+      <a href="#compare">Compare</a>
+      <a href="index.html">Home</a>
     </div>
     <div class="nav-right">
       <a class="nav-login" href="#">Patient login</a>
@@ -55,14 +55,21 @@
 </header>
 
 <!-- Plans -->
-<section style="padding-top:48px">
+<section id="plans" style="padding-top:48px">
   <div class="container">
+    <div class="section-head plan-pick">
+      <span class="kicker" style="justify-content:center"><span class="dot"></span> Which one are you?</span>
+      <h2>Pick the plan that matches your experience</h2>
+      <p class="lede">Both plans are £99 — but they're built for two very different people. Choose the one that sounds like you.</p>
+    </div>
+
     <div class="plans">
 
       <!-- New to cannabis -->
       <div class="plan featured">
-        <div class="plan-flag">New to cannabis · most popular</div>
+        <div class="plan-flag">🌱 New to cannabis · most popular</div>
         <div class="plan-body">
+          <div class="plan-for"><span class="pf-ic">👋</span><span>Choose this if you've <u>never tried medicinal cannabis</u> and want to try it safely, for a month, before deciding anything.</span></div>
           <span class="who">Your first month, all in</span>
           <h3>The £99 trial</h3>
           <p class="sub">Everything you need to try medicinal cannabis safely, under specialist care — with no year-long commitment.</p>
@@ -75,15 +82,16 @@
             <li><span class="tick">✓</span><span>Dispensing &amp; discreet UK delivery included.</span></li>
           </ul>
           <div class="note leaf"><strong>You're not tied in for a year.</strong> The £99 covers your first month only. There's no rolling contract and nothing to cancel — you simply decide at your check-in whether to carry on.</div>
-          <div class="note"><strong>Like it? Keep going for less.</strong> Continue after month one and you'll get <strong>25% off</strong> the annual plan — a full year of consultations for <strong>£74.25</strong>.</div>
+          <div class="note"><strong>Like it? Keep going for less.</strong> Continue after month one and you'll get <strong>25% off</strong> the annual plan — a full year of consultations for <strong>£74.25</strong>. From then on you pay for <a class="inline-link" href="#medication">medication separately ↓</a>.</div>
           <a class="btn btn-leaf" href="#start">Start the £99 trial <span class="arrow">→</span></a>
         </div>
       </div>
 
       <!-- Existing users -->
       <div class="plan">
-        <div class="plan-flag alt">For experienced patients</div>
+        <div class="plan-flag alt">🌿 Experienced patients</div>
         <div class="plan-body">
+          <div class="plan-for"><span class="pf-ic">✅</span><span>Choose this if you <u>already use cannabis</u> and want a regulated, supervised path — a named specialist and tested medicine.</span></div>
           <span class="who">A full year of care</span>
           <h3>The £99 annual plan</h3>
           <p class="sub">Already familiar with cannabis and want a regulated, supervised path? Get a year of specialist care for one fixed fee.</p>
@@ -93,7 +101,7 @@
             <li><span class="tick">✓</span><span><strong>Initial specialist consultation</strong> to move you onto a regulated prescription.</span></li>
             <li><span class="tick">✓</span><span><strong>A full year of consultations &amp; reviews</strong> — follow-ups and dose adjustments included.</span></li>
             <li><span class="tick">✓</span><span><strong>Repeat prescriptions</strong> issued as clinically appropriate, all year.</span></li>
-            <li><span class="x">£</span><span><strong>Medication is paid for separately</strong> — you only pay for the medicine you're prescribed.</span></li>
+            <li><span class="x">£</span><span><strong>Medication is paid for separately</strong> — you only pay for the medicine you're prescribed. <a class="inline-link" href="#medication">See typical costs ↓</a></span></li>
           </ul>
           <div class="note"><strong>Why it's structured this way.</strong> Experienced patients usually know their medicine and dose. So your £99 covers the clinical care for the whole year, and you pay for medication at our transparent dispensing price as you go.</div>
           <a class="btn btn-primary" href="#start">Choose the annual plan <span class="arrow">→</span></a>
@@ -118,8 +126,83 @@
   </div>
 </section>
 
+<!-- Typical medication costs -->
+<section id="medication">
+  <div class="container">
+    <div class="section-head">
+      <span class="kicker eyebrow-line"><span class="dot"></span> Typical medication costs</span>
+      <h2>What the medicine itself costs</h2>
+      <p class="lede">Indicative prices for the products we dispense. Your specialist tailors the exact products and quantities to you — and most patients use more than one product to balance THC and CBD through the day.</p>
+    </div>
+
+    <div class="med-grid">
+      <!-- Flower -->
+      <div class="med-card">
+        <div class="med-top">
+          <div>
+            <span class="med-kind">Dried flower</span>
+            <h3>Cannabis Flower BP</h3>
+          </div>
+          <span class="med-icon">🌿</span>
+        </div>
+        <div class="med-prices">
+          <div class="med-price"><span class="q">5 g</span><span class="p">£37.50</span></div>
+          <div class="med-price"><span class="q">10 g</span><span class="p">£72.50</span></div>
+        </div>
+        <div>
+          <span class="strain-label">Example strains</span>
+          <div class="chips">
+            <span class="chip"><b>Tangerine Sativa · T22</b> — THC 22% / CBD &lt;1%</span>
+            <span class="chip"><b>Grape Indica · T26</b> — THC 26% / CBD &lt;1%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Oil -->
+      <div class="med-card">
+        <div class="med-top">
+          <div>
+            <span class="med-kind">Medical cannabis oil</span>
+            <h3>Cannabis Oil</h3>
+          </div>
+          <span class="med-icon">🧴</span>
+        </div>
+        <div class="med-prices">
+          <div class="med-price"><span class="q">10 ml</span><span class="p">£35.00</span></div>
+          <div class="med-price"><span class="q">30 ml</span><span class="p">£90.00</span></div>
+        </div>
+        <div>
+          <span class="strain-label">Example oils (THC / CBD mg per ml)</span>
+          <div class="chips">
+            <span class="chip"><b>Lime CBD · T10 | C40</b> — CBD-rich, balancing</span>
+            <span class="chip"><b>Blackberry Balanced · T25 | C25</b> — even 1:1 blend</span>
+            <span class="chip"><b>Tangerine Sativa · T50 | C0</b> — high-THC, daytime</span>
+            <span class="chip"><b>Grape Indica · T50 | C2</b> — high-THC, evening</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Typical month: more than one product -->
+    <div class="typical">
+      <div class="typical-text">
+        <span class="kicker"><span class="dot"></span> A typical month</span>
+        <h3>Most patients use more than one product</h3>
+        <p>It's normal to combine products with different THC and CBD strengths — for example a higher-THC product for symptom relief alongside a CBD-rich or balanced one to even things out across the day. Here's an illustrative month.</p>
+      </div>
+      <div class="typical-bill">
+        <div class="bill-row"><span>Blackberry Balanced oil · 30 ml <small>THC 25 / CBD 25 per ml</small></span><span class="amt">£90.00</span></div>
+        <div class="bill-row"><span>Tangerine Sativa flower · 10 g <small>THC 22% / CBD &lt;1%</small></span><span class="amt">£72.50</span></div>
+        <div class="bill-row"><span>Lime CBD oil · 10 ml <small>THC 10 / CBD 40 per ml</small></span><span class="amt">£35.00</span></div>
+        <div class="bill-total"><span class="l">Typical monthly medicine</span><span class="v">£197.50</span></div>
+        <p class="bill-note">Illustrative only — your prescriber decides the products and quantities that suit you, and many patients spend less. Medicine is dispensed by a GPhC-registered pharmacy with a Certificate of Analysis behind every batch.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- Which is right for me -->
-<section style="background:var(--bg-cool)">
+<section id="compare" style="background:var(--bg-cool)">
   <div class="container">
     <div class="section-head">
       <span class="kicker eyebrow-line"><span class="dot"></span> At a glance</span>
