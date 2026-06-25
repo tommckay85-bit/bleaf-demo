@@ -1,14 +1,404 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/bleaf-demo/assets/pims-icon.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PIMS — Boots Online Doctor</title>
-    <script type="module" crossorigin src="/bleaf-demo/assets/index-GqE4QFnU.js"></script>
-    <link rel="stylesheet" crossorigin href="/bleaf-demo/assets/index-P_8Sv__d.css">
-  </head>
-  <body>
-    <div id="root"></div>
-  </body>
+<head>
+<meta charset="utf-8"/>
+<title>True Leaf — Medicinal cannabis care, by Boots Online Doctor</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="description" content="True Leaf by Boots Online Doctor — specialist-led medicinal cannabis care in the UK. GMC-registered prescribers, a robust clinical pathway, and a UK-only, carbon-positive supply chain."/>
+<link rel="icon" type="image/svg+xml" href="assets/trueleaf-icon.svg"/>
+<link rel="stylesheet" href="trueleaf.css"/>
+</head>
+<body>
+
+<!-- Trustpilot bar -->
+<div class="tp-bar">
+  <div class="inner">
+    <span class="tp-stars">★★★★★</span>
+    <span><strong>Excellent</strong> 4.8 / 5</span>
+    <span class="sep">|</span>
+    <span><strong>Trustpilot</strong></span>
+    <span class="sep">|</span>
+    <span>Care from <strong>GMC-registered</strong> specialist prescribers</span>
+  </div>
+</div>
+
+<!-- Nav -->
+<nav class="nav">
+  <div class="nav-row">
+    <a class="brand" href="index.html" aria-label="True Leaf by Boots Online Doctor">
+      <img class="mark" src="assets/trueleaf-icon.svg" alt=""/>
+      <span class="wm">
+        <span class="name">True<span class="leaf">Leaf</span></span>
+        <span class="by">by Boots Online Doctor</span>
+      </span>
+    </a>
+    <div class="nav-links">
+      <a href="#how">How it works</a>
+      <a href="#quality">Our quality</a>
+      <a href="#growers">Where it's grown</a>
+      <a href="pricing.html">Pricing</a>
+    </div>
+    <div class="nav-right">
+      <a class="nav-login" href="#">Patient login</a>
+      <a class="btn btn-primary" href="#start">Check your eligibility</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<header class="hero">
+  <div class="hero-inner">
+    <div>
+      <span class="kicker"><span class="dot"></span> UK medicinal cannabis · prescription-only</span>
+      <h1>Medicinal cannabis, done <span class="leaf">properly.</span></h1>
+      <p class="lede">Specialist-led treatment from the team behind Boots Online Doctor — a careful clinical assessment, prescribing only when it's right for you, and medicine you can trust from a UK-only, carbon-positive supply chain.</p>
+      <div class="hero-ctas">
+        <a class="btn btn-leaf" href="#start">Check your eligibility <span class="arrow">→</span></a>
+        <a class="btn btn-ghost" href="#how">See how consultations work</a>
+      </div>
+      <ul class="hero-points">
+        <li><span class="tick">✓</span> GMC-registered specialist prescribers</li>
+        <li><span class="tick">✓</span> Regulated by the CQC &amp; MHRA</li>
+        <li><span class="tick">✓</span> Grown &amp; dispensed in the UK</li>
+      </ul>
+    </div>
+    <div class="hero-media">
+      <div class="photo"><img src="project/probe2/b-composed-home.jpg" alt="A patient at home, relaxed and well"/></div>
+      <div class="hero-badge">
+        <span class="ic">🛡️</span>
+        <span class="t"><strong>A robust clinical process</strong> Every prescription reviewed by a specialist — never automatic.</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Credentials strip -->
+<section class="creds" style="padding:0">
+  <div class="creds-row">
+    <div class="creds-label">Regulated, registered &amp; accountable</div>
+    <div class="cred"><span class="n">CQC</span><span class="s">Registered clinic</span></div>
+    <div class="cred"><span class="n">GMC</span><span class="s">Specialist prescribers</span></div>
+    <div class="cred"><span class="n">GPhC</span><span class="s">Dispensing pharmacy</span></div>
+    <div class="cred"><span class="n">MHRA</span><span class="s">Compliant supply</span></div>
+    <div class="cred"><span class="n">Boots</span><span class="s">Online Doctor</span></div>
+  </div>
+</section>
+
+<!-- How consultations work -->
+<section id="how">
+  <div class="container">
+    <div class="section-head">
+      <span class="kicker eyebrow-line"><span class="dot"></span> How it works</span>
+      <h2>A consultation built around you, not a checkout</h2>
+      <p class="lede">Medicinal cannabis is a prescription-only medicine. Our pathway is designed so a specialist gets the full picture before anything is prescribed — and stays with you afterwards.</p>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <span class="num">1</span>
+        <h3>Free eligibility check</h3>
+        <p>Answer a short, confidential set of questions about your symptoms, history and current medicines. A clinician reviews it — there's no charge to find out if you're suitable.</p>
+        <span class="when">~10 minutes · free</span>
+      </div>
+      <div class="step">
+        <span class="num">2</span>
+        <h3>Specialist video consultation</h3>
+        <p>Meet a GMC-registered specialist prescriber by video. They discuss your goals, weigh the risks and benefits, and only prescribe when there's a clear clinical case.</p>
+        <span class="when">Booked around you</span>
+      </div>
+      <div class="step">
+        <span class="num">3</span>
+        <h3>Medicine, dispensed &amp; delivered</h3>
+        <p>If prescribed, your medicine is dispensed by a GPhC-registered pharmacy and delivered discreetly to your door, with batch testing behind every order.</p>
+        <span class="when">A few working days</span>
+      </div>
+      <div class="step">
+        <span class="num">4</span>
+        <h3>A check-in &amp; ongoing review</h3>
+        <p>We review how you're getting on at the end of your first month and adjust your plan to how you actually respond — not to a fixed schedule.</p>
+        <span class="when">Reviews included</span>
+      </div>
+    </div>
+    <div class="steps-cta">
+      <a class="btn btn-primary" href="#start">Start your free eligibility check <span class="arrow">→</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- Consultation split -->
+<section style="background:var(--bg-cool)">
+  <div class="container">
+    <div class="split">
+      <div class="split-media"><img src="project/probe/hero-alt.jpg" alt="A patient in a video consultation with a specialist"/></div>
+      <div>
+        <span class="kicker"><span class="dot"></span> The consultation</span>
+        <h2>Unhurried, expert and on your side</h2>
+        <p class="lede">No call centres and no scripts. You speak with a specialist who treats your condition — and who is accountable for the decision to prescribe.</p>
+        <ul class="feature-list">
+          <li><span class="tick">✓</span><span class="ft"><strong>Specialists, not generalists</strong><span>Prescribers experienced in pain, neurology and other long-term conditions.</span></span></li>
+          <li><span class="tick">✓</span><span class="ft"><strong>Prescribed only when appropriate</strong><span>If cannabis isn't right for you, we'll tell you — and point you to better options.</span></span></li>
+          <li><span class="tick">✓</span><span class="ft"><strong>One named clinician, a real record</strong><span>Continuity of care and a treatment record held to full clinical-governance standards.</span></span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Quality pillars -->
+<section id="quality">
+  <div class="container">
+    <div class="section-head">
+      <span class="kicker eyebrow-line"><span class="dot"></span> Our quality</span>
+      <h2>Robust where it matters most</h2>
+      <p class="lede">Quality isn't a slogan. It's the regulators we answer to, the pharmacies that dispense for us, and the testing behind every single batch.</p>
+    </div>
+    <div class="pillars">
+      <div class="pillar">
+        <span class="ic">🔬</span>
+        <h3>Every batch tested</h3>
+        <p>Each batch arrives with a Certificate of Analysis — verified for potency, pesticides, heavy metals and microbials before it can be dispensed.</p>
+      </div>
+      <div class="pillar">
+        <span class="ic">🏥</span>
+        <h3>Pharmacy-grade dispensing</h3>
+        <p>Medicine is dispensed by GPhC-registered pharmacy partners, with consistent dosing and proper labelling — never an unregulated source.</p>
+      </div>
+      <div class="pillar">
+        <span class="ic">🛡️</span>
+        <h3>Clinically governed</h3>
+        <p>A CQC-registered clinic with clinical governance, audit and pharmacovigilance built in — the same standards as any specialist service.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Greenhouse video -->
+<section class="video-sec" id="growers">
+  <div class="container">
+    <div class="section-head">
+      <span class="kicker light eyebrow-line"><span class="dot"></span> Where it's grown</span>
+      <h2>Inside our UK greenhouses</h2>
+      <p class="lede">Our medicine is cultivated in Britain by our growing partner — in some of the most advanced, sustainable glasshouses in the country. Take a look inside.</p>
+    </div>
+
+    <div class="video-wrap" id="ghVideo">
+      <!-- Drop the real greenhouse film in as assets/greenhouse.mp4 and it will play here -->
+      <video poster="assets/greenhouse-poster.svg" controls preload="none" playsinline>
+        <source src="assets/greenhouse.mp4" type="video/mp4"/>
+      </video>
+      <div class="video-overlay" id="ghOverlay">
+        <button class="play-btn" aria-label="Play greenhouse film" onclick="playGh()"></button>
+        <span class="video-cap">Our growing partner · UK glasshouse cultivation</span>
+      </div>
+    </div>
+
+    <div class="video-stats">
+      <div class="video-stat"><div class="v">100%</div><div class="l">UK-only supply chain — grown, tested and dispensed in Britain</div></div>
+      <div class="video-stat"><div class="v">Carbon&nbsp;positive</div><div class="l">Our grower removes more carbon than it emits</div></div>
+      <div class="video-stat"><div class="v">Every batch</div><div class="l">Certificate of Analysis before it reaches you</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- Supply chain split -->
+<section>
+  <div class="container">
+    <div class="split reverse">
+      <div class="split-media"><img src="project/img/cultivation.jpg" alt="Medicinal cannabis flower"/></div>
+      <div>
+        <span class="kicker"><span class="dot"></span> A supply chain to be proud of</span>
+        <h2>British-grown. Carbon positive. Fully traceable.</h2>
+        <p class="lede">We deliberately keep the whole journey in the UK — from glasshouse to pharmacy. Shorter supply lines mean tighter quality control, faster delivery, and a far smaller footprint.</p>
+        <ul class="feature-list">
+          <li><span class="tick">✓</span><span class="ft"><strong>Grown in the UK</strong><span>No long-haul imports — cultivated here under controlled, pharmaceutical conditions.</span></span></li>
+          <li><span class="tick">✓</span><span class="ft"><strong>Carbon-positive cultivation</strong><span>Our growing partner captures more carbon than it produces.</span></span></li>
+          <li><span class="tick">✓</span><span class="ft"><strong>Traceable from seed to script</strong><span>A documented chain of custody behind every prescription.</span></span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Audiences -->
+<section style="background:var(--bg-cool)">
+  <div class="container">
+    <div class="section-head">
+      <span class="kicker eyebrow-line"><span class="dot"></span> Who it's for</span>
+      <h2>Two ways to start — whatever your experience</h2>
+      <p class="lede">Whether this is completely new to you or you're moving from self-managing to a regulated, supervised path, there's a route that fits.</p>
+    </div>
+    <div class="aud-grid">
+      <article class="aud-card">
+        <div class="img"><img src="project/probe2/a-morning-coffee.jpg" alt="People enjoying everyday life"/></div>
+        <div class="body">
+          <span class="tag">New to cannabis</span>
+          <h3>Never tried it — and want to do it safely</h3>
+          <p>If your symptoms haven't responded to the usual treatments and you're curious whether medicinal cannabis could help, we'll guide you gently. Our trial lets you try it for a month, with medication included by agreement with your prescriber — and no year-long commitment.</p>
+          <a class="more" href="pricing.html">See the £99 trial <span>→</span></a>
+        </div>
+      </article>
+      <article class="aud-card">
+        <div class="img"><img src="project/probe2/b-man-calm.jpg" alt="An experienced patient, considered and calm"/></div>
+        <div class="body">
+          <span class="tag">Already familiar</span>
+          <h3>Ready for a regulated, supervised path</h3>
+          <p>If you've self-managed and want pharmaceutical oversight — consistent, tested medicine, a named specialist and a proper record — we'll move you onto a regulated prescription without judgement, with a year of consultations for one fixed fee.</p>
+          <a class="more" href="pricing.html">See the annual plan <span>→</span></a>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- Clinicians -->
+<section>
+  <div class="container">
+    <div class="section-head">
+      <span class="kicker eyebrow-line"><span class="dot"></span> Your clinical team</span>
+      <h2>Real specialists, on the record</h2>
+      <p class="lede">Every prescriber is GMC-registered and named. You'll always know who is responsible for your care.</p>
+    </div>
+    <div class="clin-grid">
+      <div class="clin">
+        <div class="avatar" style="background-image:url('project/probe2/a-older-portrait.jpg')"></div>
+        <div class="n">Dr Helena Marsh</div>
+        <div class="r">Medical Director · Pain medicine</div>
+        <div class="gmc">GMC 7102884</div>
+      </div>
+      <div class="clin">
+        <div class="avatar" style="background:#05054B;color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700">AO</div>
+        <div class="n">Dr Ayo Okonkwo</div>
+        <div class="r">Consultant · Neurology</div>
+        <div class="gmc">GMC 6823017</div>
+      </div>
+      <div class="clin">
+        <div class="avatar" style="background:#3E8C61;color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700">RV</div>
+        <div class="n">Dr Rhea Venkatesh</div>
+        <div class="r">Consultant · Palliative care</div>
+        <div class="gmc">GMC 7244519</div>
+      </div>
+      <div class="clin">
+        <div class="avatar" style="background:#26306E;color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700">JL</div>
+        <div class="n">Dr James Lindqvist</div>
+        <div class="r">Consultant · Psychiatry</div>
+        <div class="gmc">GMC 6911452</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section style="background:var(--bg-cool)">
+  <div class="container">
+    <div class="section-head">
+      <span class="kicker eyebrow-line"><span class="dot"></span> Good questions</span>
+      <h2>What patients ask us first</h2>
+    </div>
+    <div class="faq">
+      <div class="faq-item">
+        <button class="faq-q">Is medicinal cannabis legal in the UK? <span class="pm">+</span></button>
+        <div class="faq-a"><div class="inner">Yes. Since 2018, specialist doctors on the GMC Specialist Register have been able to prescribe cannabis-based medicinal products when clinically appropriate. It remains prescription-only — never recreational — and is always a clinical decision.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">Do I need a referral from my GP? <span class="pm">+</span></button>
+        <div class="faq-a"><div class="inner">No referral is needed. You can start with our free eligibility check. With your consent, we'll request a summary of your medical records so your specialist has the full picture before prescribing.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">How do you decide whether it's right for me? <span class="pm">+</span></button>
+        <div class="faq-a"><div class="inner">A specialist reviews your history, current medicines and previous treatments against clinical guidance. We only prescribe when the evidence supports it and the benefits outweigh the risks for you specifically.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">Where does the medicine come from? <span class="pm">+</span></button>
+        <div class="faq-a"><div class="inner">It's grown in the UK by our cultivation partner in advanced, sustainable glasshouses, batch-tested with a Certificate of Analysis, and dispensed by a GPhC-registered pharmacy. The whole chain stays in Britain.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">Am I tied into a long contract? <span class="pm">+</span></button>
+        <div class="faq-a"><div class="inner">No. If you're new to cannabis, our £99 trial covers your first month with no year-long commitment. You decide at the end of the month whether to continue — and you'll get 25% off the annual fee if you do.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA band -->
+<section class="cta-band" id="start">
+  <div class="inner">
+    <span class="kicker light" style="justify-content:center">Begin</span>
+    <h2 style="margin-top:16px">A free, confidential check is the first step</h2>
+    <p>Find out in about ten minutes whether True Leaf is a suitable path for you. Reviewed by a clinician, with no obligation to proceed.</p>
+    <div class="row">
+      <a class="btn btn-leaf" href="#">Check your eligibility <span class="arrow">→</span></a>
+      <a class="btn btn-ghost-light" href="pricing.html">See pricing</a>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <a class="brand" href="index.html" aria-label="True Leaf by Boots Online Doctor">
+          <img class="mark" src="assets/trueleaf-icon.svg" alt="" style="width:38px"/>
+          <span class="wm">
+            <span class="name" style="font-size:24px;font-weight:700;color:var(--navy)">True<span style="color:var(--leaf)">Leaf</span></span>
+          </span>
+        </a>
+        <div class="by">by Boots Online Doctor</div>
+        <p>True Leaf is a specialist medicinal cannabis service from Boots Online Doctor. Prescription-only medicine. Never recreational. Treatment is provided only where clinically appropriate.</p>
+      </div>
+      <div class="foot-col">
+        <h5>Treatment</h5>
+        <ul>
+          <li><a href="#how">How it works</a></li>
+          <li><a href="#quality">Our quality</a></li>
+          <li><a href="#growers">Where it's grown</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h5>Patients</h5>
+        <ul>
+          <li><a href="#start">Check eligibility</a></li>
+          <li><a href="#">Patient login</a></li>
+          <li><a href="#">Our clinicians</a></li>
+          <li><a href="#">Help &amp; support</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h5>Company</h5>
+        <ul>
+          <li><a href="#">About True Leaf</a></li>
+          <li><a href="#">Boots Online Doctor</a></li>
+          <li><a href="#">Sustainability</a></li>
+          <li><a href="#">Contact us</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <div>© 2026 True Leaf · Boots Online Doctor</div>
+      <div class="legal">
+        <a href="#">Privacy</a><a href="#">Terms</a><a href="#">Regulatory</a><a href="#">Complaints</a>
+      </div>
+    </div>
+    <p class="foot-disclaimer">Cannabis-based medicinal products are prescribed by specialist doctors on the GMC Specialist Register. They are not suitable for everyone and are prescribed only after a full clinical assessment. This page is a demonstration mock-up for True Leaf by Boots Online Doctor.</p>
+  </div>
+</footer>
+
+<script>
+// FAQ accordion
+document.querySelectorAll('.faq-q').forEach(function(q){
+  q.addEventListener('click',function(){
+    var item=q.parentElement, open=item.classList.contains('open');
+    document.querySelectorAll('.faq-item').forEach(function(i){i.classList.remove('open');i.querySelector('.pm').textContent='+';});
+    if(!open){item.classList.add('open');q.querySelector('.pm').textContent='–';}
+  });
+});
+// Greenhouse video play
+function playGh(){
+  var w=document.getElementById('ghVideo'),v=w.querySelector('video'),o=document.getElementById('ghOverlay');
+  o.style.display='none';
+  if(v.querySelector('source').getAttribute('src')){ v.play().catch(function(){}); }
+}
+</script>
+</body>
 </html>

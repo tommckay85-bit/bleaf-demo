@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 124" role="img" aria-label="True Leaf">
+  <!-- Shield -->
+  <path d="M50 4 L92 18 V58 C92 88 73 109 50 120 C27 109 8 88 8 58 V18 Z"
+        fill="#0B1240"/>
+  <path d="M50 4 L92 18 V58 C92 88 73 109 50 120 C27 109 8 88 8 58 V18 Z"
+        fill="none" stroke="#1B2766" stroke-width="1.5"/>
+  <!-- Four-petal leaf motif, centred at (50,60) -->
+  <g>
+    <!-- top petal (sage green) -->
+    <path d="M50 60 Q38 44 50 26 Q62 44 50 60 Z" fill="#5FB37D"/>
+    <!-- bottom petal -->
+    <path d="M50 60 Q38 76 50 94 Q62 76 50 60 Z" fill="#F4F6FB"/>
+    <!-- left petal -->
+    <path d="M50 60 Q34 49 18 60 Q34 71 50 60 Z" fill="#F4F6FB"/>
+    <!-- right petal -->
+    <path d="M50 60 Q66 49 82 60 Q66 71 50 60 Z" fill="#F4F6FB"/>
+    <!-- small accent leaves on the diagonal -->
+    <path d="M50 60 Q40 50 30 40 Q44 46 50 60 Z" fill="#3E8C61" opacity="0.85"/>
+    <path d="M50 60 Q60 50 70 40 Q56 46 50 60 Z" fill="#3E8C61" opacity="0.85"/>
+    <circle cx="50" cy="60" r="3.4" fill="#0B1240"/>
+  </g>
+</svg>
