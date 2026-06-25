@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 200" role="img" aria-label="Tangerine T50 | C0 oil">
+  <defs><linearGradient id="bx" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#0E1F4D"/><stop offset="1" stop-color="#1A337A"/></linearGradient></defs>
+  <rect x="20" y="10" width="80" height="168" rx="3" fill="url(#bx)" stroke="#0a173a"/>
+  <rect x="20" y="10" width="9" height="168" fill="#0a1a44" opacity="0.6"/>
+  <text x="62" y="40" text-anchor="middle" font-family="Georgia,serif" font-style="italic" font-size="15" font-weight="700" fill="#ffffff">Boots</text>
+  <text x="62" y="53" text-anchor="middle" font-family="Arial,sans-serif" font-size="5.8" letter-spacing="0.3" fill="#c8cce6">MEDICAL CANNABIS OIL</text>
+  <path d="M20 104 L100 92 L100 150 L20 150 Z" fill="#E96A2B"/>
+  <text x="60" y="122" text-anchor="middle" font-family="Arial,sans-serif" font-size="11" font-weight="700" fill="#ffffff">Tangerine</text>
+  <text x="60" y="137" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" font-weight="700" fill="#ffffff" opacity="0.92">T50 | C0</text>
+  <rect x="44" y="150" width="32" height="40" rx="4" fill="#7a4a1e"/>
+  <rect x="44" y="150" width="11" height="40" rx="4" fill="#9a6428" opacity="0.7"/>
+  <rect x="52" y="138" width="16" height="9" rx="2" fill="#11151f"/>
+  <rect x="55" y="131" width="10" height="9" rx="2" fill="#11151f"/>
+  <rect x="48" y="160" width="24" height="20" rx="2" fill="#f2ead9" opacity="0.92"/>
+</svg>

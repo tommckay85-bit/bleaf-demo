@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 640" role="img" aria-label="British-grown, carbon-positive cultivation">
+  <defs>
+    <linearGradient id="sky2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#dbeaf4"/><stop offset="1" stop-color="#eef5f0"/>
+    </linearGradient>
+    <linearGradient id="glass2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#eaf2f8"/><stop offset="1" stop-color="#c4d8e8"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="640" fill="url(#sky2)"/>
+  <!-- sun -->
+  <circle cx="620" cy="150" r="80" fill="#ffffff" opacity="0.55"/>
+  <circle cx="620" cy="150" r="46" fill="#ffffff" opacity="0.8"/>
+
+  <!-- distant hills -->
+  <path d="M0 360 Q200 320 400 350 T800 340 V640 H0 Z" fill="#bfe0c8"/>
+  <path d="M0 430 Q220 388 460 418 T800 410 V640 H0 Z" fill="#8ec79e"/>
+
+  <!-- glasshouse -->
+  <g>
+    <rect x="250" y="300" width="300" height="150" fill="url(#glass2)" stroke="#a9c3d6" stroke-width="3"/>
+    <!-- gable roofs -->
+    <g fill="#eef5fa" stroke="#a9c3d6" stroke-width="3">
+      <polygon points="250,300 300,272 350,300"/>
+      <polygon points="350,300 400,272 450,300"/>
+      <polygon points="450,300 500,272 550,300"/>
+    </g>
+    <!-- glazing bars -->
+    <g stroke="#a9c3d6" stroke-width="2" opacity="0.7">
+      <line x1="300" y1="300" x2="300" y2="450"/><line x1="350" y1="300" x2="350" y2="450"/>
+      <line x1="400" y1="300" x2="400" y2="450"/><line x1="450" y1="300" x2="450" y2="450"/>
+      <line x1="500" y1="300" x2="500" y2="450"/>
+      <line x1="250" y1="375" x2="550" y2="375"/>
+    </g>
+    <rect x="252" y="392" width="296" height="56" fill="#6aa97f" opacity="0.4"/>
+  </g>
+
+  <!-- foreground hill -->
+  <path d="M0 470 Q260 430 520 470 T800 460 V640 H0 Z" fill="#5f9772"/>
+  <path d="M0 540 Q300 505 600 545 T800 540 V640 H0 Z" fill="#4e8a63"/>
+
+  <!-- carbon-positive badge -->
+  <g transform="translate(120,150)">
+    <circle r="66" fill="#0B1240"/>
+    <circle r="66" fill="none" stroke="#5FB37D" stroke-width="4"/>
+    <!-- leaf -->
+    <path d="M0 26 Q-26 0 0 -30 Q26 0 0 26 Z" fill="#5FB37D"/>
+    <path d="M0 26 L0 -22" stroke="#0B1240" stroke-width="3"/>
+    <text x="0" y="50" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="700" fill="#ffffff">CARBON +</text>
+  </g>
+</svg>

@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Eligibility check — True Leaf by Boots Online Doctor</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="description" content="A free, confidential check to see whether a specialist medical cannabis consultation may be right for you. Not a guarantee of a prescription."/>
+<link rel="icon" type="image/svg+xml" href="assets/trueleaf-icon.svg"/>
+<link rel="stylesheet" href="trueleaf.css"/>
+<style>
+/* ---- Eligibility checker (scoped) ---- */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+.chk-wrap{background:var(--bg-cool);min-height:calc(100vh - 70px);padding:40px 20px 80px}
+.chk-card{max-width:680px;margin:0 auto;background:#fff;border:1px solid var(--line);
+  border-radius:var(--radius-lg);box-shadow:var(--shadow);padding:0;overflow:hidden}
+.chk-top{padding:22px 32px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:16px}
+.chk-top .pct{font-size:13px;font-weight:700;color:var(--mute);white-space:nowrap}
+.chk-bar{flex:1;height:8px;background:var(--bg-cool-2);border-radius:99px;overflow:hidden}
+.chk-bar > span{display:block;height:100%;width:0;background:var(--leaf);border-radius:99px;transition:width .3s ease}
+.chk-body{padding:32px 36px 36px}
+.chk-eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--leaf);margin:0 0 10px}
+.chk-q{font-size:26px;line-height:1.15;color:var(--navy);font-weight:700;margin:0 0 8px}
+.chk-help{font-size:15px;color:var(--body);margin:0 0 22px;line-height:1.55}
+.chk-options{display:flex;flex-direction:column;gap:12px;margin:0;padding:0;border:0}
+.opt{display:flex;align-items:flex-start;gap:13px;border:2px solid var(--line);border-radius:14px;
+  padding:15px 17px;cursor:pointer;font-size:16px;font-weight:600;color:var(--ink);transition:border-color .15s,background .15s}
+.opt:hover{border-color:var(--navy-soft)}
+.opt input{margin:2px 0 0;width:20px;height:20px;accent-color:var(--navy);flex-shrink:0}
+.opt.sel{border-color:var(--navy);background:var(--bg-cool)}
+.opt .opt-sub{display:block;font-weight:400;font-size:13.5px;color:var(--mute);margin-top:3px}
+.chk-field{margin-top:16px}
+.chk-field label{display:block;font-size:14px;font-weight:700;color:var(--navy);margin-bottom:7px}
+.chk-input,.chk-text{width:100%;font-family:inherit;font-size:16px;color:var(--ink);
+  border:2px solid var(--line);border-radius:12px;padding:13px 15px;background:#fff}
+.chk-input:focus,.chk-text:focus,.opt:focus-within{outline:none;border-color:var(--navy)}
+.chk-text{min-height:92px;resize:vertical}
+.chk-check{display:flex;align-items:flex-start;gap:13px;border:2px solid var(--line);border-radius:14px;
+  padding:16px 17px;cursor:pointer;font-size:15px;color:var(--ink);line-height:1.5;margin-top:12px}
+.chk-check input{margin:2px 0 0;width:20px;height:20px;accent-color:var(--leaf);flex-shrink:0}
+.chk-check.sel{border-color:var(--leaf);background:var(--leaf-tint)}
+.chk-note{background:var(--bg-cool);border-radius:12px;padding:16px 18px;font-size:14px;color:var(--body);line-height:1.6;margin:0 0 22px}
+.chk-note strong{color:var(--navy)}
+.chk-err{color:#b3261e;font-size:14px;font-weight:700;margin-top:14px;min-height:20px}
+.chk-actions{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-top:28px}
+.chk-back{background:none;border:0;font-family:inherit;font-size:15px;font-weight:700;color:var(--mute);cursor:pointer;padding:10px}
+.chk-back:hover{color:var(--navy)}
+.chk-back[hidden]{visibility:hidden}
+.chk-privacy{display:flex;gap:8px;align-items:center;justify-content:center;font-size:12.5px;color:var(--mute);margin-top:18px}
+/* outcome */
+.oc{text-align:center}
+.oc .badge{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:30px;margin:4px auto 18px}
+.oc.pos .badge{background:var(--leaf-tint)}
+.oc.cav .badge{background:#FFF4DD}
+.oc.neg .badge{background:#FDECEA}
+.oc.stop .badge{background:#FDECEA}
+.oc h2{font-size:27px;color:var(--navy);margin:0 0 14px}
+.oc p{font-size:16px;color:var(--body);line-height:1.6;margin:0 auto 16px;max-width:520px}
+.oc .warnbox{background:#FFF4DD;border:1px solid #f0d28a;border-radius:12px;padding:16px 18px;text-align:left;
+  font-size:14.5px;color:#6b531a;line-height:1.55;margin:0 auto 20px;max-width:540px}
+.oc .warnbox.red{background:#FDECEA;border-color:#f3b8b1;color:#7a241c}
+.oc .oc-cta{margin-top:10px;display:flex;flex-direction:column;gap:12px;align-items:center}
+.oc .contact-grid{display:grid;gap:14px;text-align:left;max-width:480px;margin:0 auto 8px}
+.oc .contact-grid .chk-field{margin-top:0}
+.oc .muted-cta{font-size:14px}
+@media (max-width:560px){
+  .chk-body{padding:26px 22px 30px}
+  .chk-top{padding:18px 22px}
+  .chk-q{font-size:22px}
+  .oc h2{font-size:23px}
+}
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="nav">
+  <div class="nav-row">
+    <a class="brand" href="index.html" aria-label="True Leaf by Boots Online Doctor">
+      <img class="mark" src="assets/trueleaf-icon.svg" alt=""/>
+      <span class="wm">
+        <span class="name">True<span class="leaf">Leaf</span></span>
+        <span class="by">by Boots Online Doctor</span>
+      </span>
+    </a>
+    <div class="nav-right">
+      <a class="nav-login" href="pricing.html">Pricing</a>
+      <a class="btn btn-ghost" href="index.html">Exit check</a>
+    </div>
+  </div>
+</nav>
+
+<main class="chk-wrap">
+  <div class="chk-card">
+    <div class="chk-top">
+      <div class="chk-bar"><span id="chkBar"></span></div>
+      <div class="pct" id="chkPct">Start</div>
+    </div>
+    <div class="chk-body">
+      <div id="chkScreen" aria-live="polite"></div>
+      <div class="chk-err" id="chkErr" role="alert"></div>
+      <div class="chk-actions" id="chkActions">
+        <button type="button" class="chk-back" id="chkBack" hidden>← Back</button>
+        <button type="button" class="btn btn-primary" id="chkNext">Continue</button>
+      </div>
+      <div class="chk-privacy">🔒 Confidential · your answers are used only to assess suitability</div>
+    </div>
+  </div>
+</main>
+
+<script>
+/* ============================================================
+   ELIGIBILITY CHECKER — True Leaf (demo)
+   A pre-booking suitability screen. NOT a guarantee of a prescription.
+
+   WHERE TO CHANGE THINGS
+   - Questions & options ........ STEPS array
+   - Gate logic (blockers) ...... evaluate()  +  the per-step `gate` flags
+   - Outcome wording ............ OUTCOMES object
+   - All copy is in these constants so non-devs can review it.
+
+   DECISION LOGIC (mirrors the spec)
+     HARD_STOP if age == "Under 18"
+     else blockers = any of:
+         treatments_tried == "No"
+         residency == "No"
+         pregnancy == "Yes"
+         psychosis == "Yes"
+         records_consent == false
+         acknowledgements not all checked
+     if blockers -> NEGATIVE
+     else if age == "18–25" -> CAVEATED_PASS
+     else -> POSITIVE
+   TODO(team): confirm whether NEGATIVE routes to the same booking flow or a
+   separate "review" booking type. Confirm refund wording with compliance.
+   TODO(team): wire "Book an appointment" to the real booking system.
+   ============================================================ */
+
+var STEPS = [
+  { id:'consent', type:'consent',
+    eyebrow:'Before we start',
+    q:'A quick note on your privacy',
+    help:'The questions that follow ask about your health. Your answers are special-category data and are used only to assess whether a specialist consultation may be suitable for you. We won’t store anything until you’ve agreed to continue, and completing this check never guarantees a prescription.',
+    checkLabel:'I understand, and I want to continue.' },
+
+  { id:'condition', type:'single',
+    eyebrow:'About you',
+    q:'What are you seeking treatment for?',
+    help:'Pick the closest match. This helps your specialist prepare — there are no wrong answers here.',
+    options:['Chronic / neuropathic pain','Anxiety','PTSD','Fibromyalgia','IBS','Crohn’s disease','Multiple sclerosis (MS)','Epilepsy','Insomnia','Migraine','Endometriosis','Other'],
+    other:true },
+
+  { id:'treatments', type:'single',
+    eyebrow:'Your treatment history',
+    q:'Have you tried at least two conventional treatments for this without adequate relief — or had to stop them due to side effects?',
+    help:'This is the most important question. UK specialists can usually only consider cannabis-based medicine once other licensed treatments haven’t worked well enough for you.',
+    options:['Yes','No'],
+    followup:{ when:'Yes', label:'Optional: what have you tried? (helps your specialist)', type:'text' },
+    gate:{ blockIf:'No' } },
+
+  { id:'age', type:'single',
+    eyebrow:'A few quick checks',
+    q:'How old are you?',
+    options:['Under 18','18–25','Over 25'] },
+
+  { id:'residency', type:'single',
+    eyebrow:'A few quick checks',
+    q:'Are you a UK resident with a UK GP?',
+    help:'We can only provide care to patients based in the UK with a registered GP.',
+    options:['Yes','No'],
+    gate:{ blockIf:'No' } },
+
+  { id:'pregnancy', type:'single',
+    eyebrow:'A few quick checks',
+    q:'Are you currently pregnant, trying to conceive, or breastfeeding?',
+    options:['Yes','No','Prefer not to say / not applicable'],
+    gate:{ blockIf:'Yes' } },
+
+  { id:'psychosis', type:'single',
+    eyebrow:'A few quick checks',
+    q:'Do you have a personal or family history of psychosis or schizophrenia?',
+    options:['Yes','No'],
+    gate:{ blockIf:'Yes' } },
+
+  { id:'medications', type:'text',
+    eyebrow:'For your specialist',
+    q:'Are you taking any medications at the moment?',
+    help:'Optional — list anything you take regularly so your specialist can check for interactions. This does not affect your result.',
+    placeholder:'e.g. amitriptyline 10mg, sertraline 50mg…',
+    optional:true },
+
+  { id:'records', type:'check',
+    eyebrow:'Consent',
+    q:'Access to your medical history',
+    help:'Safe prescribing isn’t possible without sight of your records, so this is required to proceed.',
+    checkLabel:'I agree to you accessing my Summary Care Record (England) or confirm that I can provide evidence of my medical history (Scotland, Wales and NI).',
+    gate:{ requireChecked:true } },
+
+  { id:'acks', type:'acks',
+    eyebrow:'Please confirm you understand',
+    q:'A few important points',
+    items:[
+      'Prescribed cannabis flower must be vaporised — smoking it remains illegal.',
+      'THC can affect your ability to drive.',
+      'Completing this check does not guarantee a prescription — the decision rests with the specialist.'
+    ],
+    gate:{ requireAll:true } }
+];
+
+var OUTCOMES = {
+  POSITIVE: {
+    cls:'pos', icon:'✓',
+    heading:'Good news — you may be suitable for a consultation',
+    body:'Based on your answers, a consultation with one of our specialists may be appropriate. Please note this is not a guarantee of a prescription — any treatment decision is made by the specialist after a full assessment.',
+    contact:true, ctaLabel:'Book an appointment', ctaPrimary:true
+  },
+  CAVEATED_PASS: {
+    cls:'cav', icon:'!',
+    heading:'You can book — with one thing to be aware of',
+    warn:'We only treat patients aged 18–25 in exceptional circumstances.',
+    body:'You’re welcome to book a consultation, but because of this you may not be found suitable for treatment. Please note that if the specialist determines you are not suitable, your appointment fee will not be refunded.',
+    contact:true, ctaLabel:'Book an appointment', ctaPrimary:true
+  },
+  NEGATIVE: {
+    cls:'neg', icon:'–',
+    heading:'We’re unlikely to be able to help right now',
+    body:'Based on your answers, a specialist consultation may not be the right next step for you at this stage.',
+    warnRed:'You can still choose to book an appointment if you’d like a specialist to review your case. Please be aware that you will not be refunded if the specialist determines you are not suitable for treatment.',
+    contact:false, ctaLabel:'Book an appointment anyway', ctaPrimary:false
+  },
+  HARD_STOP: {
+    cls:'stop', icon:'×',
+    heading:'We’re unable to help',
+    body:'Unfortunately we are not able to offer this service to anyone under 18. If you’re struggling with your health, please speak to your GP.',
+    contact:false, ctaLabel:null
+  }
+};
+
+/* ---- state + elements ---- */
+var state = { i:0, answers:{} };
+var screenEl = document.getElementById('chkScreen');
+var errEl    = document.getElementById('chkErr');
+var backBtn  = document.getElementById('chkBack');
+var nextBtn  = document.getElementById('chkNext');
+var barEl    = document.getElementById('chkBar');
+var pctEl    = document.getElementById('chkPct');
+var actionsEl= document.getElementById('chkActions');
+var finished = false;
+
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function setProgress(){
+  var pct = Math.round((state.i/STEPS.length)*100);
+  barEl.style.width = pct+'%';
+  pctEl.textContent = 'Step '+(state.i+1)+' of '+STEPS.length;
+}
+
+function render(){
+  finished=false;
+  errEl.textContent='';
+  actionsEl.style.display='flex';
+  var step = STEPS[state.i], a = state.answers[step.id], html='';
+  html += '<p class="chk-eyebrow">'+esc(step.eyebrow||'')+'</p>';
+  html += '<h1 class="chk-q">'+esc(step.q)+'</h1>';
+  if(step.help) html += '<p class="chk-help">'+esc(step.help)+'</p>';
+
+  if(step.type==='consent'){
+    html += '<label class="chk-check'+(a?' sel':'')+'"><input type="checkbox" id="f_consent"'+(a?' checked':'')+'/> <span>'+esc(step.checkLabel)+'</span></label>';
+  }
+  else if(step.type==='single'){
+    html += '<fieldset class="chk-options"><legend class="sr-only">'+esc(step.q)+'</legend>';
+    step.options.forEach(function(opt,idx){
+      var sel = a && a.value===opt;
+      html += '<label class="opt'+(sel?' sel':'')+'"><input type="radio" name="opt" value="'+esc(opt)+'"'+(sel?' checked':'')+'/> <span>'+esc(opt)+'</span></label>';
+    });
+    html += '</fieldset>';
+    if(step.other){
+      var showOther = a && a.value==='Other';
+      html += '<div class="chk-field" id="otherWrap" style="'+(showOther?'':'display:none')+'"><label for="f_other">Tell us a little more</label><input class="chk-input" id="f_other" type="text" value="'+esc(a&&a.other||'')+'" placeholder="What are you seeking treatment for?"/></div>';
+    }
+    if(step.followup){
+      var showFu = a && a.value===step.followup.when;
+      html += '<div class="chk-field" id="fuWrap" style="'+(showFu?'':'display:none')+'"><label for="f_fu">'+esc(step.followup.label)+'</label><textarea class="chk-text" id="f_fu" placeholder="Optional">'+esc(a&&a.followup||'')+'</textarea></div>';
+    }
+  }
+  else if(step.type==='text'){
+    html += '<div class="chk-field"><textarea class="chk-text" id="f_text" placeholder="'+esc(step.placeholder||'')+'">'+esc(a||'')+'</textarea></div>';
+  }
+  else if(step.type==='check'){
+    html += '<label class="chk-check'+(a?' sel':'')+'"><input type="checkbox" id="f_check"'+(a?' checked':'')+'/> <span>'+esc(step.checkLabel)+'</span></label>';
+  }
+  else if(step.type==='acks'){
+    step.items.forEach(function(it,idx){
+      var on = a && a[idx];
+      html += '<label class="chk-check'+(on?' sel':'')+'"><input type="checkbox" data-ack="'+idx+'"'+(on?' checked':'')+'/> <span>'+esc(it)+'</span></label>';
+    });
+  }
+  screenEl.innerHTML = html;
+
+  backBtn.hidden = state.i===0;
+  nextBtn.textContent = (state.i===STEPS.length-1) ? 'See my result' : 'Continue';
+  setProgress();
+  wire(step);
+  // focus first interactive element for keyboard users
+  var first = screenEl.querySelector('input,textarea,select');
+  if(first) first.focus();
+}
+
+function wire(step){
+  // live selection styling + conditional reveals
+  screenEl.querySelectorAll('.opt input').forEach(function(r){
+    r.addEventListener('change',function(){
+      screenEl.querySelectorAll('.opt').forEach(function(l){l.classList.remove('sel');});
+      r.closest('.opt').classList.add('sel');
+      var ow=document.getElementById('otherWrap'); if(ow) ow.style.display = (r.value==='Other')?'block':'none';
+      var fw=document.getElementById('fuWrap'); if(fw && step.followup) fw.style.display = (r.value===step.followup.when)?'block':'none';
+      errEl.textContent='';
+    });
+  });
+  screenEl.querySelectorAll('.chk-check input').forEach(function(c){
+    c.addEventListener('change',function(){ c.closest('.chk-check').classList.toggle('sel',c.checked); errEl.textContent=''; });
+  });
+}
+
+function collect(step){
+  if(step.type==='consent') return document.getElementById('f_consent').checked;
+  if(step.type==='single'){
+    var r=screenEl.querySelector('.opt input:checked');
+    if(!r) return null;
+    var out={value:r.value};
+    var ow=document.getElementById('f_other'); if(ow) out.other=ow.value.trim();
+    var fu=document.getElementById('f_fu'); if(fu) out.followup=fu.value.trim();
+    return out;
+  }
+  if(step.type==='text'){ return document.getElementById('f_text').value.trim(); }
+  if(step.type==='check'){ return document.getElementById('f_check').checked; }
+  if(step.type==='acks'){
+    var arr=[]; screenEl.querySelectorAll('input[data-ack]').forEach(function(c){arr[+c.getAttribute('data-ack')]=c.checked;});
+    return arr;
+  }
+}
+
+function validate(step,val){
+  if(step.type==='consent') return val ? '' : 'Please confirm you understand to continue.';
+  if(step.type==='single'){
+    if(!val) return 'Please choose an option to continue.';
+    if(step.other && val.value==='Other' && !val.other) return 'Please tell us a little more.';
+    return '';
+  }
+  if(step.type==='text'){ return step.optional ? '' : (val?'':'Please complete this to continue.'); }
+  if(step.type==='check'){ return val ? '' : 'This is required to proceed.'; }
+  if(step.type==='acks'){
+    var all = step.items.every(function(_,i){return val[i];});
+    return all ? '' : 'Please confirm all three points to continue.';
+  }
+  return '';
+}
+
+function evaluate(){
+  var ans=state.answers;
+  var age = ans.age && ans.age.value;
+  if(age==='Under 18') return 'HARD_STOP';
+  var blockers = [
+    ans.treatments && ans.treatments.value==='No',
+    ans.residency && ans.residency.value==='No',
+    ans.pregnancy && ans.pregnancy.value==='Yes',
+    ans.psychosis && ans.psychosis.value==='Yes',
+    ans.records!==true,
+    !(ans.acks && ans.acks.length===STEPS.find(function(s){return s.id==='acks';}).items.length && ans.acks.every(Boolean))
+  ].some(Boolean);
+  if(blockers) return 'NEGATIVE';
+  if(age==='18–25') return 'CAVEATED_PASS';
+  return 'POSITIVE';
+}
+
+function next(){
+  var step=STEPS[state.i];
+  var val=collect(step);
+  var msg=validate(step,val);
+  if(msg){ errEl.textContent=msg; return; }
+  state.answers[step.id]=val;
+  if(state.i===STEPS.length-1){ showOutcome(); return; }
+  state.i++; render();
+}
+function back(){ if(finished){ render(); return;} if(state.i>0){ state.i--; render(); } }
+
+function showOutcome(){
+  finished=true;
+  var key=evaluate(), o=OUTCOMES[key];
+  barEl.style.width='100%'; pctEl.textContent='Result';
+  actionsEl.style.display='none';
+  var html='<div class="oc '+o.cls+'">';
+  html+='<div class="badge">'+o.icon+'</div>';
+  html+='<h2>'+esc(o.heading)+'</h2>';
+  if(o.warn) html+='<div class="warnbox"><strong>'+esc(o.warn)+'</strong></div>';
+  html+='<p>'+esc(o.body)+'</p>';
+  if(o.warnRed) html+='<div class="warnbox red">'+esc(o.warnRed)+'</div>';
+
+  if(o.contact){
+    html+='<div class="contact-grid">'
+      +'<div class="chk-field"><label for="c_name">Full name</label><input class="chk-input" id="c_name" type="text" autocomplete="name"/></div>'
+      +'<div class="chk-field"><label for="c_email">Email</label><input class="chk-input" id="c_email" type="email" autocomplete="email"/></div>'
+      +'<div class="chk-field"><label for="c_phone">Phone</label><input class="chk-input" id="c_phone" type="tel" autocomplete="tel"/></div>'
+      +'</div>';
+    html+='<div class="chk-err" id="cErr" role="alert"></div>';
+  }
+  html+='<div class="oc-cta">';
+  if(o.ctaLabel){
+    html+='<a href="#" id="bookBtn" class="btn '+(o.ctaPrimary?'btn-leaf':'btn-ghost')+(o.ctaPrimary?'':' muted-cta')+'">'+esc(o.ctaLabel)+' <span class="arrow">→</span></a>';
+  }
+  html+='<a href="index.html" class="chk-back" style="text-decoration:underline">Back to True Leaf</a>';
+  html+='</div></div>';
+  screenEl.innerHTML=html;
+  screenEl.focus&&screenEl.focus();
+
+  var book=document.getElementById('bookBtn');
+  if(book){
+    book.addEventListener('click',function(e){
+      e.preventDefault();
+      if(o.contact){
+        var n=document.getElementById('c_name').value.trim(),
+            em=document.getElementById('c_email').value.trim(),
+            ph=document.getElementById('c_phone').value.trim();
+        if(!n||!em||!ph){ document.getElementById('cErr').textContent='Please add your name, email and phone so we can book you in.'; return; }
+        // TODO(team): POST {answers, contact} to the real booking system / CRM.
+      }
+      // TODO(team): wire to the real booking journey.
+      alert('Demo: this would now take you to booking.\n\nOutcome: '+key);
+    });
+  }
+}
+
+nextBtn.addEventListener('click',next);
+backBtn.addEventListener('click',back);
+document.addEventListener('keydown',function(e){
+  if(e.key==='Enter' && !finished && e.target.tagName!=='TEXTAREA'){ e.preventDefault(); next(); }
+});
+render();
+</script>
+</body>
+</html>
