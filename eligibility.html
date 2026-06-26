@@ -28,6 +28,13 @@
 .opt input{margin:2px 0 0;width:20px;height:20px;accent-color:var(--navy);flex-shrink:0}
 .opt.sel{border-color:var(--navy);background:var(--bg-cool)}
 .opt .opt-sub{display:block;font-weight:400;font-size:13.5px;color:var(--mute);margin-top:3px}
+.chk-fieldset{margin-bottom:30px}
+.chk-fieldset:last-child{margin-bottom:0}
+.chk-sub{font-size:18px;font-weight:700;color:var(--navy);margin:0 0 13px;line-height:1.3}
+.chk-inline{display:none;margin-top:14px;border-radius:12px;padding:14px 16px;font-size:14px;line-height:1.55}
+.chk-inline.show{display:block}
+.chk-inline.warn{background:#FFF4DD;border:1px solid #f0d28a;color:#6b531a}
+.chk-inline.stop{background:#FDECEA;border:1px solid #f3b8b1;color:#7a241c}
 .chk-field{margin-top:16px}
 .chk-field label{display:block;font-size:14px;font-weight:700;color:var(--navy);margin-bottom:7px}
 .chk-input,.chk-text{width:100%;font-family:inherit;font-size:16px;color:var(--ink);
@@ -136,75 +143,54 @@
    TODO(team): wire "Book an appointment" to the real booking system.
    ============================================================ */
 
+var ACK_ITEMS = [
+  'Prescribed cannabis flower must be vaporised — smoking it remains illegal.',
+  'THC can affect your ability to drive.',
+  'Completing this check does not guarantee a prescription — the decision rests with the specialist.'
+];
+
+/* Each step has one OR MORE fields (combine related questions onto one screen). */
 var STEPS = [
-  { id:'consent', type:'consent',
-    eyebrow:'Before we start',
-    q:'A quick note on your privacy',
+  { id:'consent', eyebrow:'Before we start', q:'A quick note on your privacy',
     help:'The questions that follow ask about your health. Your answers are special-category data and are used only to assess whether a specialist consultation may be suitable for you. We won’t store anything until you’ve agreed to continue, and completing this check never guarantees a prescription.',
-    checkLabel:'I understand, and I want to continue.' },
+    fields:[ {key:'consent', type:'consent', checkLabel:'I understand, and I want to continue.'} ] },
 
-  { id:'condition', type:'single',
-    eyebrow:'About you',
-    q:'What are you seeking treatment for?',
-    help:'Pick the closest match. This helps your specialist prepare — there are no wrong answers here.',
-    options:['Chronic / neuropathic pain','Anxiety','PTSD','Fibromyalgia','IBS','Crohn’s disease','Multiple sclerosis (MS)','Epilepsy','Insomnia','Migraine','Endometriosis','Other'],
-    other:true },
+  { id:'condition', eyebrow:'About you', q:'What are you seeking treatment for?',
+    help:'Pick the closest match — there are no wrong answers here.',
+    fields:[ {key:'condition', type:'single', other:true,
+      options:['Chronic / neuropathic pain','Anxiety','PTSD','Fibromyalgia','IBS','Crohn’s disease','Multiple sclerosis (MS)','Epilepsy','Insomnia','Migraine','Endometriosis','Other'] } ] },
 
-  { id:'treatments', type:'single',
-    eyebrow:'Your treatment history',
-    q:'Have you tried at least two conventional treatments for this without adequate relief — or had to stop them due to side effects?',
+  { id:'treatments', eyebrow:'Your treatment history',
+    q:'Have you tried at least two conventional treatments without adequate relief — or had to stop them due to side effects?',
     help:'This is the most important question. UK specialists can usually only consider cannabis-based medicine once other licensed treatments haven’t worked well enough for you.',
-    options:['Yes','No'],
-    followup:{ when:'Yes', label:'Optional: what have you tried? (helps your specialist)', type:'text' },
-    gate:{ blockIf:'No' } },
+    fields:[ {key:'treatments', type:'single', options:['Yes','No'], gate:{blockIf:'No'},
+      followup:{when:'Yes', label:'Optional: what have you tried? (helps your specialist)'} } ] },
 
-  { id:'age', type:'single',
-    eyebrow:'A few quick checks',
-    q:'How old are you?',
-    options:['Under 18','18–25','Over 25'] },
+  { id:'about', eyebrow:'A few quick checks', q:'A little about you',
+    fields:[
+      {key:'age', label:'How old are you?', type:'single', options:['Under 18','18–25','Over 25'],
+        notices:{
+          'Under 18':{type:'stop', outcome:'HARD_STOP', text:'We’re sorry — we’re unable to offer this service to anyone under 18, so there’s no need to go any further.'},
+          '18–25':{type:'warn', text:'Heads-up: we only treat patients aged 18–25 in exceptional circumstances, so you may not be accepted — and the appointment fee isn’t refunded if a specialist finds you unsuitable. You’re welcome to continue if you’d like.'}
+        } },
+      {key:'residency', label:'Are you a UK resident with a UK GP?', type:'single', options:['Yes','No'], gate:{blockIf:'No'}}
+    ] },
 
-  { id:'residency', type:'single',
-    eyebrow:'A few quick checks',
-    q:'Are you a UK resident with a UK GP?',
-    help:'We can only provide care to patients based in the UK with a registered GP.',
-    options:['Yes','No'],
-    gate:{ blockIf:'No' } },
+  { id:'health', eyebrow:'A few quick checks', q:'A little about your health',
+    fields:[
+      {key:'pregnancy', label:'Are you currently pregnant, trying to conceive, or breastfeeding?', type:'single', options:['Yes','No','Prefer not to say / N/A'], gate:{blockIf:'Yes'}},
+      {key:'psychosis', label:'Any personal or family history of psychosis or schizophrenia?', type:'single', options:['Yes','No'], gate:{blockIf:'Yes'}}
+    ] },
 
-  { id:'pregnancy', type:'single',
-    eyebrow:'A few quick checks',
-    q:'Are you currently pregnant, trying to conceive, or breastfeeding?',
-    options:['Yes','No','Prefer not to say / not applicable'],
-    gate:{ blockIf:'Yes' } },
+  { id:'records', eyebrow:'For your specialist', q:'Medications & medical records',
+    fields:[
+      {key:'medications', label:'Are you taking any medications at the moment? (optional)', type:'text', optional:true, placeholder:'e.g. amitriptyline 10mg, sertraline 50mg…'},
+      {key:'records', label:'Access to your medical history', type:'check', gate:{requireChecked:true},
+        checkLabel:'I agree to you accessing my Summary Care Record (England) or confirm that I can provide evidence of my medical history (Scotland, Wales and NI).'}
+    ] },
 
-  { id:'psychosis', type:'single',
-    eyebrow:'A few quick checks',
-    q:'Do you have a personal or family history of psychosis or schizophrenia?',
-    options:['Yes','No'],
-    gate:{ blockIf:'Yes' } },
-
-  { id:'medications', type:'text',
-    eyebrow:'For your specialist',
-    q:'Are you taking any medications at the moment?',
-    help:'Optional — list anything you take regularly so your specialist can check for interactions. This does not affect your result.',
-    placeholder:'e.g. amitriptyline 10mg, sertraline 50mg…',
-    optional:true },
-
-  { id:'records', type:'check',
-    eyebrow:'Consent',
-    q:'Access to your medical history',
-    help:'Safe prescribing isn’t possible without sight of your records, so this is required to proceed.',
-    checkLabel:'I agree to you accessing my Summary Care Record (England) or confirm that I can provide evidence of my medical history (Scotland, Wales and NI).',
-    gate:{ requireChecked:true } },
-
-  { id:'acks', type:'acks',
-    eyebrow:'Please confirm you understand',
-    q:'A few important points',
-    items:[
-      'Prescribed cannabis flower must be vaporised — smoking it remains illegal.',
-      'THC can affect your ability to drive.',
-      'Completing this check does not guarantee a prescription — the decision rests with the specialist.'
-    ],
-    gate:{ requireAll:true } }
+  { id:'acks', eyebrow:'Please confirm you understand', q:'A few important points',
+    fields:[ {key:'acks', type:'acks', items:ACK_ITEMS, gate:{requireAll:true}} ] }
 ];
 
 var OUTCOMES = {
@@ -254,118 +240,140 @@ function setProgress(){
   pctEl.textContent = 'Step '+(state.i+1)+' of '+STEPS.length;
 }
 
+function fieldByKey(step,key){ return step.fields.filter(function(f){return f.key===key;})[0]; }
+
 function render(){
-  finished=false;
-  errEl.textContent='';
-  actionsEl.style.display='flex';
-  var step = STEPS[state.i], a = state.answers[step.id], html='';
+  finished=false; errEl.textContent=''; actionsEl.style.display='flex';
+  var step=STEPS[state.i], html='';
   html += '<p class="chk-eyebrow">'+esc(step.eyebrow||'')+'</p>';
   html += '<h1 class="chk-q">'+esc(step.q)+'</h1>';
   if(step.help) html += '<p class="chk-help">'+esc(step.help)+'</p>';
-
-  if(step.type==='consent'){
-    html += '<label class="chk-check'+(a?' sel':'')+'"><input type="checkbox" id="f_consent"'+(a?' checked':'')+'/> <span>'+esc(step.checkLabel)+'</span></label>';
-  }
-  else if(step.type==='single'){
-    html += '<fieldset class="chk-options"><legend class="sr-only">'+esc(step.q)+'</legend>';
-    step.options.forEach(function(opt,idx){
-      var sel = a && a.value===opt;
-      html += '<label class="opt'+(sel?' sel':'')+'"><input type="radio" name="opt" value="'+esc(opt)+'"'+(sel?' checked':'')+'/> <span>'+esc(opt)+'</span></label>';
-    });
-    html += '</fieldset>';
-    if(step.other){
-      var showOther = a && a.value==='Other';
-      html += '<div class="chk-field" id="otherWrap" style="'+(showOther?'':'display:none')+'"><label for="f_other">Tell us a little more</label><input class="chk-input" id="f_other" type="text" value="'+esc(a&&a.other||'')+'" placeholder="What are you seeking treatment for?"/></div>';
-    }
-    if(step.followup){
-      var showFu = a && a.value===step.followup.when;
-      html += '<div class="chk-field" id="fuWrap" style="'+(showFu?'':'display:none')+'"><label for="f_fu">'+esc(step.followup.label)+'</label><textarea class="chk-text" id="f_fu" placeholder="Optional">'+esc(a&&a.followup||'')+'</textarea></div>';
-    }
-  }
-  else if(step.type==='text'){
-    html += '<div class="chk-field"><textarea class="chk-text" id="f_text" placeholder="'+esc(step.placeholder||'')+'">'+esc(a||'')+'</textarea></div>';
-  }
-  else if(step.type==='check'){
-    html += '<label class="chk-check'+(a?' sel':'')+'"><input type="checkbox" id="f_check"'+(a?' checked':'')+'/> <span>'+esc(step.checkLabel)+'</span></label>';
-  }
-  else if(step.type==='acks'){
-    step.items.forEach(function(it,idx){
-      var on = a && a[idx];
-      html += '<label class="chk-check'+(on?' sel':'')+'"><input type="checkbox" data-ack="'+idx+'"'+(on?' checked':'')+'/> <span>'+esc(it)+'</span></label>';
-    });
-  }
+  step.fields.forEach(function(field){ html += renderField(field, state.answers[field.key]); });
   screenEl.innerHTML = html;
 
   backBtn.hidden = state.i===0;
-  nextBtn.textContent = (state.i===STEPS.length-1) ? 'See my result' : 'Continue';
+  setNextLabel();
   setProgress();
   wire(step);
-  // focus first interactive element for keyboard users
   var first = screenEl.querySelector('input,textarea,select');
   if(first) first.focus();
 }
 
-function wire(step){
-  // live selection styling + conditional reveals
-  screenEl.querySelectorAll('.opt input').forEach(function(r){
-    r.addEventListener('change',function(){
-      screenEl.querySelectorAll('.opt').forEach(function(l){l.classList.remove('sel');});
-      r.closest('.opt').classList.add('sel');
-      var ow=document.getElementById('otherWrap'); if(ow) ow.style.display = (r.value==='Other')?'block':'none';
-      var fw=document.getElementById('fuWrap'); if(fw && step.followup) fw.style.display = (r.value===step.followup.when)?'block':'none';
-      errEl.textContent='';
+function renderField(field, a){
+  var h='<div class="chk-fieldset" data-field="'+field.key+'">';
+  if(field.label) h+='<p class="chk-sub">'+esc(field.label)+'</p>';
+  if(field.type==='consent' || field.type==='check'){
+    var on=a===true;
+    h+='<label class="chk-check'+(on?' sel':'')+'"><input type="checkbox" class="f-check"'+(on?' checked':'')+'/> <span>'+esc(field.checkLabel)+'</span></label>';
+  }
+  else if(field.type==='single'){
+    h+='<fieldset class="chk-options"><legend class="sr-only">'+esc(field.label||'')+'</legend>';
+    field.options.forEach(function(opt){
+      var sel=a&&a.value===opt;
+      h+='<label class="opt'+(sel?' sel':'')+'"><input type="radio" name="r_'+field.key+'" value="'+esc(opt)+'"'+(sel?' checked':'')+'/> <span>'+esc(opt)+'</span></label>';
     });
+    h+='</fieldset>';
+    if(field.other){ var so=a&&a.value==='Other';
+      h+='<div class="chk-field f-other" style="'+(so?'':'display:none')+'"><label>Tell us a little more</label><input class="chk-input f-othertext" type="text" value="'+esc(a&&a.other||'')+'"/></div>'; }
+    if(field.followup){ var sf=a&&a.value===field.followup.when;
+      h+='<div class="chk-field f-fu" style="'+(sf?'':'display:none')+'"><label>'+esc(field.followup.label)+'</label><textarea class="chk-text f-futext" placeholder="Optional">'+esc(a&&a.followup||'')+'</textarea></div>'; }
+    if(field.notices){ h+='<div class="chk-inline" data-noticefor="'+field.key+'"></div>'; }
+  }
+  else if(field.type==='text'){
+    h+='<textarea class="chk-text f-text" placeholder="'+esc(field.placeholder||'')+'">'+esc(a||'')+'</textarea>';
+  }
+  else if(field.type==='acks'){
+    field.items.forEach(function(it,idx){ var on=a&&a[idx];
+      h+='<label class="chk-check'+(on?' sel':'')+'"><input type="checkbox" class="f-ack" data-ack="'+idx+'"'+(on?' checked':'')+'/> <span>'+esc(it)+'</span></label>'; });
+  }
+  h+='</div>';
+  return h;
+}
+
+function selectedStop(){
+  // returns an outcome key if any currently-selected option is a hard "stop"
+  var step=STEPS[state.i], stop=null;
+  step.fields.forEach(function(field){
+    if(!field.notices) return;
+    var fs=screenEl.querySelector('[data-field="'+field.key+'"]');
+    var r=fs&&fs.querySelector('.opt input:checked');
+    if(r && field.notices[r.value] && field.notices[r.value].type==='stop') stop=field.notices[r.value].outcome;
   });
-  screenEl.querySelectorAll('.chk-check input').forEach(function(c){
-    c.addEventListener('change',function(){ c.closest('.chk-check').classList.toggle('sel',c.checked); errEl.textContent=''; });
+  return stop;
+}
+function setNextLabel(){
+  nextBtn.textContent = selectedStop() ? 'See result' : (state.i===STEPS.length-1 ? 'See my result' : 'Continue');
+}
+
+function applyNotice(field, fs, value){
+  var nb=fs.querySelector('.chk-inline'); if(!nb||!field.notices) return;
+  var n=field.notices[value];
+  if(n){ nb.className='chk-inline show '+(n.type==='stop'?'stop':'warn'); nb.innerHTML=esc(n.text); }
+  else { nb.className='chk-inline'; nb.innerHTML=''; }
+}
+
+function wire(step){
+  screenEl.querySelectorAll('.chk-fieldset').forEach(function(fs){
+    var field=fieldByKey(step, fs.getAttribute('data-field'));
+    fs.querySelectorAll('.opt input').forEach(function(r){
+      r.addEventListener('change',function(){
+        fs.querySelectorAll('.opt').forEach(function(l){l.classList.remove('sel');});
+        r.closest('.opt').classList.add('sel');
+        var ot=fs.querySelector('.f-other'); if(ot) ot.style.display=(r.value==='Other')?'block':'none';
+        var fu=fs.querySelector('.f-fu'); if(fu&&field.followup) fu.style.display=(r.value===field.followup.when)?'block':'none';
+        applyNotice(field, fs, r.value);
+        setNextLabel();
+        errEl.textContent='';
+      });
+    });
+    fs.querySelectorAll('.chk-check input').forEach(function(c){
+      c.addEventListener('change',function(){ c.closest('.chk-check').classList.toggle('sel',c.checked); errEl.textContent=''; });
+    });
+    // restore any notice when navigating back to a step
+    var a=state.answers[fs.getAttribute('data-field')];
+    if(field.notices && a && a.value) applyNotice(field, fs, a.value);
   });
 }
 
-function collect(step){
-  if(step.type==='consent') return document.getElementById('f_consent').checked;
-  if(step.type==='single'){
-    var r=screenEl.querySelector('.opt input:checked');
-    if(!r) return null;
-    var out={value:r.value};
-    var ow=document.getElementById('f_other'); if(ow) out.other=ow.value.trim();
-    var fu=document.getElementById('f_fu'); if(fu) out.followup=fu.value.trim();
-    return out;
-  }
-  if(step.type==='text'){ return document.getElementById('f_text').value.trim(); }
-  if(step.type==='check'){ return document.getElementById('f_check').checked; }
-  if(step.type==='acks'){
-    var arr=[]; screenEl.querySelectorAll('input[data-ack]').forEach(function(c){arr[+c.getAttribute('data-ack')]=c.checked;});
-    return arr;
-  }
+function collectStep(step){
+  var map={}, stop=null, error=null;
+  step.fields.forEach(function(field){
+    var fs=screenEl.querySelector('[data-field="'+field.key+'"]'), val;
+    if(field.type==='consent' || field.type==='check'){ val=fs.querySelector('.f-check').checked; }
+    else if(field.type==='single'){
+      var r=fs.querySelector('.opt input:checked');
+      val = r ? {value:r.value} : null;
+      if(val){ var ot=fs.querySelector('.f-othertext'); if(ot) val.other=ot.value.trim();
+               var fu=fs.querySelector('.f-futext'); if(fu) val.followup=fu.value.trim(); }
+    }
+    else if(field.type==='text'){ val=fs.querySelector('.f-text').value.trim(); }
+    else if(field.type==='acks'){ var arr=[]; fs.querySelectorAll('.f-ack').forEach(function(c){arr[+c.getAttribute('data-ack')]=c.checked;}); val=arr; }
+    map[field.key]=val;
+    if(!error){ var e=validateField(field,val); if(e) error=e; }
+    if(field.notices && val && val.value && field.notices[val.value] && field.notices[val.value].type==='stop') stop=field.notices[val.value].outcome;
+  });
+  return {map:map, stop:stop, error:error};
 }
 
-function validate(step,val){
-  if(step.type==='consent') return val ? '' : 'Please confirm you understand to continue.';
-  if(step.type==='single'){
-    if(!val) return 'Please choose an option to continue.';
-    if(step.other && val.value==='Other' && !val.other) return 'Please tell us a little more.';
-    return '';
-  }
-  if(step.type==='text'){ return step.optional ? '' : (val?'':'Please complete this to continue.'); }
-  if(step.type==='check'){ return val ? '' : 'This is required to proceed.'; }
-  if(step.type==='acks'){
-    var all = step.items.every(function(_,i){return val[i];});
-    return all ? '' : 'Please confirm all three points to continue.';
-  }
+function validateField(field,val){
+  if(field.type==='consent') return val?'':'Please confirm you understand to continue.';
+  if(field.type==='check') return (field.gate&&field.gate.requireChecked)?(val?'':'This is required to proceed.'):'';
+  if(field.type==='single'){ if(!val) return 'Please choose an option to continue.'; if(field.other&&val.value==='Other'&&!val.other) return 'Please tell us a little more.'; return ''; }
+  if(field.type==='text') return field.optional?'':(val?'':'Please complete this to continue.');
+  if(field.type==='acks') return field.items.every(function(_,i){return val[i];})?'':'Please confirm all points to continue.';
   return '';
 }
 
 function evaluate(){
-  var ans=state.answers;
-  var age = ans.age && ans.age.value;
+  var ans=state.answers, age=ans.age&&ans.age.value;
   if(age==='Under 18') return 'HARD_STOP';
-  var blockers = [
+  var blockers=[
     ans.treatments && ans.treatments.value==='No',
     ans.residency && ans.residency.value==='No',
     ans.pregnancy && ans.pregnancy.value==='Yes',
     ans.psychosis && ans.psychosis.value==='Yes',
     ans.records!==true,
-    !(ans.acks && ans.acks.length===STEPS.find(function(s){return s.id==='acks';}).items.length && ans.acks.every(Boolean))
+    !(ans.acks && ans.acks.length===ACK_ITEMS.length && ans.acks.every(Boolean))
   ].some(Boolean);
   if(blockers) return 'NEGATIVE';
   if(age==='18–25') return 'CAVEATED_PASS';
@@ -374,18 +382,18 @@ function evaluate(){
 
 function next(){
   var step=STEPS[state.i];
-  var val=collect(step);
-  var msg=validate(step,val);
-  if(msg){ errEl.textContent=msg; return; }
-  state.answers[step.id]=val;
+  var c=collectStep(step);
+  if(c.error){ errEl.textContent=c.error; return; }
+  for(var k in c.map){ state.answers[k]=c.map[k]; }
+  if(c.stop){ showOutcome(c.stop); return; }     // e.g. Under 18 -> stop immediately
   if(state.i===STEPS.length-1){ showOutcome(); return; }
   state.i++; render();
 }
 function back(){ if(finished){ render(); return;} if(state.i>0){ state.i--; render(); } }
 
-function showOutcome(){
+function showOutcome(forcedKey){
   finished=true;
-  var key=evaluate(), o=OUTCOMES[key];
+  var key=forcedKey||evaluate(), o=OUTCOMES[key];
   barEl.style.width='100%'; pctEl.textContent='Result';
   actionsEl.style.display='none';
   var html='<div class="oc '+o.cls+'">';

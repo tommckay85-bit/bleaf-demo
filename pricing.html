@@ -86,7 +86,8 @@
             <div class="per">one-off payment · your first month</div>
             <span class="noob">✓ No obligation — not a subscription</span>
           </div>
-          <p class="plan2-desc">Try medical cannabis safely under specialist care — <strong>medication included</strong>.</p>
+          <div class="med-flag inc"><span class="mf-ic">💊</span> Medication <strong>included</strong> — your whole first month</div>
+          <p class="plan2-desc">Try medical cannabis safely under specialist care, with nothing more to pay this month.</p>
           <ul class="incl">
             <li><span class="tick">✓</span><span><strong>Initial specialist review</strong> with a GMC-registered prescriber</span></li>
             <li><span class="tick">✓</span><span><strong>One month's medication included</strong></span></li>
@@ -107,8 +108,8 @@
           <div class="plan2-price">
             <div class="amt"><span class="ccy">£</span>99</div>
             <div class="per">per year · consultations &amp; reviews</div>
-            <span class="noob alt">Medication paid separately</span>
           </div>
+          <div class="med-flag sep"><span class="mf-ic">💊</span> Medication <strong>paid separately</strong> — <a class="inline-link" href="#medication">see typical costs ↓</a></div>
           <p class="plan2-desc">Move to us for one fixed yearly fee — <strong>a full year of specialist care</strong>.</p>
           <ul class="incl">
             <li><span class="tick">✓</span><span><strong>Initial specialist consultation</strong> onto a regulated prescription</span></li>
@@ -124,6 +125,8 @@
       </article>
 
     </div>
+
+    <p class="plan-direct">New to cannabis but already sure you want to commit? You can skip the trial and <button type="button" class="linkbtn" id="goAnnual">go straight to the £99 annual plan →</button></p>
   </div>
 </section>
 
@@ -484,6 +487,8 @@ document.querySelectorAll('.faq-q').forEach(function(q){
     btnNew.addEventListener('click',function(){choose('new');});
     btnExp.addEventListener('click',function(){choose('exp');});
   }
+  var goA=document.getElementById('goAnnual');
+  if(goA){ goA.addEventListener('click',function(){ choose('exp'); planExp.scrollIntoView({behavior:'smooth',block:'center'}); }); }
 })();
 
 // Monthly cost calculator

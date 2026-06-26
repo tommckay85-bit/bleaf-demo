@@ -9,6 +9,21 @@ for fonts/colours/buttons, with all checker styles and logic inline. State lives
 JavaScript memory only — nothing is written to browser storage, and nothing is
 captured until the user accepts the privacy notice on the first screen.
 
+## Flow (7 steps)
+
+Questions are grouped to keep the form short — a step can hold more than one
+field: 1) privacy consent · 2) condition · 3) prior treatment · 4) age **+**
+UK residency · 5) pregnancy **+** psychosis history · 6) medications **+**
+records consent · 7) acknowledgements → outcome (contact captured only on a
+pass / caveated-pass).
+
+Age gives **inline feedback the moment it's selected**: "Under 18" shows a stop
+message and the next button takes the user straight to the hard-stop outcome (no
+need to finish the form); "18–25" shows an amber caution that they may not be
+accepted, but they can continue. These live in the `notices` map on the age
+field (`type:'stop'` ends the flow at the given `outcome`; `type:'warn'` is
+advisory only).
+
 ## Where to change things
 
 All copy and rules live in clearly-named constants inside the `<script>` in

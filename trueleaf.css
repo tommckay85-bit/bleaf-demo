@@ -305,7 +305,9 @@ footer{background:#fff;border-top:1px solid var(--line);padding:70px 0 32px}
 .crow .lbl{font-weight:700;color:var(--navy)}
 .crow .val{color:var(--body)}
 .crow .val.yes{color:var(--leaf);font-weight:700}
-.crow > div:nth-child(2){background:var(--bg-cool)}
+.crow:not(.chead) > div:nth-child(2){background:var(--bg-cool)}
+.ctable .chead > div{background:var(--navy);color:#fff}
+.ctable .chead > div:nth-child(2){color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
 
 .steps.three{grid-template-columns:repeat(3,1fr)}
 
@@ -417,6 +419,18 @@ section[id]{scroll-margin-top:88px}
 .noob{display:inline-block;margin-top:12px;font-size:13px;font-weight:700;color:var(--leaf);
   background:var(--leaf-tint);border-radius:999px;padding:7px 15px}
 .noob.alt{color:var(--navy-soft);background:#e9edf8}
+/* prominent medication-included / -separate strip */
+.med-flag{display:flex;align-items:center;justify-content:center;gap:9px;font-size:15px;font-weight:700;
+  border-radius:12px;padding:13px 16px;margin-bottom:18px;line-height:1.35;text-align:center}
+.med-flag .mf-ic{font-size:18px;flex-shrink:0}
+.med-flag.inc{background:var(--leaf-tint);color:var(--leaf);border:1.5px solid #bfe0cd}
+.med-flag.sep{background:#FBF1E0;color:#8a6b1c;border:1.5px solid #ecd9a8}
+.med-flag.sep .inline-link{color:#8a6b1c;text-decoration:underline}
+/* "go straight to annual" note */
+.plan-direct{text-align:center;margin-top:26px;font-size:15.5px;color:var(--body)}
+.linkbtn{background:none;border:0;font:inherit;font-weight:700;color:var(--leaf);cursor:pointer;
+  text-decoration:underline;text-underline-offset:2px;padding:0}
+.linkbtn:hover{color:var(--leaf-bright)}
 .plan2-desc{font-size:15.5px;line-height:1.55;color:var(--body);margin-bottom:18px}
 .plan2-desc strong{color:var(--navy)}
 .plan2 .incl{gap:13px}
