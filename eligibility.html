@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <meta name="description" content="A free, confidential check to see whether a specialist medical cannabis consultation may be right for you. Not a guarantee of a prescription."/>
 <link rel="icon" type="image/svg+xml" href="assets/trueleaf-icon.svg"/>
-<link rel="stylesheet" href="trueleaf.css?v=20260626-2"/>
+<link rel="stylesheet" href="trueleaf.css?v=20260626-3"/>
 <style>
 /* ---- Eligibility checker (scoped) ---- */
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
@@ -70,6 +70,18 @@
 .oc .contact-grid{display:grid;gap:14px;text-align:left;max-width:480px;margin:0 auto 8px}
 .oc .contact-grid .chk-field{margin-top:0}
 .oc .muted-cta{font-size:14px}
+/* answer summary */
+.oc-summary{list-style:none;margin:6px auto 24px;padding:0;max-width:560px;text-align:left;display:flex;flex-direction:column;gap:10px}
+.sm{display:grid;grid-template-columns:26px 1fr;gap:13px;align-items:start;border:1px solid var(--line);border-radius:12px;padding:13px 16px;background:#fff}
+.sm-ic{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px}
+.sm.green .sm-ic{background:var(--leaf-tint);color:var(--leaf)}
+.sm.amber{border-color:#f0d28a}
+.sm.amber .sm-ic{background:#FFF4DD;color:#9a6b00}
+.sm.red{border-color:#f3b8b1;background:#fef7f6}
+.sm.red .sm-ic{background:#FDECEA;color:#b3261e}
+.sm-label{font-weight:700;color:var(--navy);font-size:14.5px}
+.sm-val{color:var(--body);font-size:14.5px;margin-left:6px}
+.sm-note{display:block;color:var(--mute);font-size:13px;margin-top:3px;line-height:1.45}
 @media (max-width:560px){
   .chk-body{padding:26px 22px 30px}
   .chk-top{padding:18px 22px}
@@ -145,7 +157,7 @@
 
 var ACK_ITEMS = [
   'Prescribed cannabis flower must be vaporised — smoking it remains illegal.',
-  'THC can affect your ability to drive.',
+  'THC can affect your ability to drive or operate machinery.',
   'Completing this check does not guarantee a prescription — the decision rests with the specialist.'
 ];
 
@@ -158,13 +170,14 @@ var STEPS = [
   { id:'condition', eyebrow:'About you', q:'What are you seeking treatment for?',
     help:'Pick the closest match — there are no wrong answers here.',
     fields:[ {key:'condition', type:'single', other:true,
-      options:['Chronic / neuropathic pain','Anxiety','PTSD','Fibromyalgia','IBS','Crohn’s disease','Multiple sclerosis (MS)','Epilepsy','Insomnia','Migraine','Endometriosis','Other'] } ] },
+      options:['Chronic / neuropathic pain','Anxiety','Depression','PTSD','ADHD','Arthritis','Fibromyalgia','Crohn’s disease','Insomnia','Migraine','Endometriosis','Other'],
+      notices:{ 'Other':{type:'warn', text:'We can currently only prescribe for the conditions listed above, so we’re unlikely to be able to help — but you’re welcome to continue if you’d like.'} } } ] },
 
   { id:'treatments', eyebrow:'Your treatment history',
     q:'Have you tried at least two conventional treatments without adequate relief — or had to stop them due to side effects?',
     help:'This is the most important question. UK specialists can usually only consider cannabis-based medicine once other licensed treatments haven’t worked well enough for you.',
-    fields:[ {key:'treatments', type:'single', options:['Yes','No'], gate:{blockIf:'No'},
-      followup:{when:'Yes', label:'Optional: what have you tried? (helps your specialist)'} } ] },
+    fields:[ {key:'treatments', type:'single', options:['Yes','No'],
+      notices:{ 'No':{type:'warn', text:'Specialists usually can’t prescribe until at least two other treatments haven’t worked, so we’re unlikely to be able to approve treatment — you can still continue if you’d like.'} } } ] },
 
   { id:'about', eyebrow:'A few quick checks', q:'A little about you',
     fields:[
@@ -173,19 +186,22 @@ var STEPS = [
           'Under 18':{type:'stop', outcome:'HARD_STOP', text:'We’re sorry — we’re unable to offer this service to anyone under 18, so there’s no need to go any further.'},
           '18–25':{type:'warn', text:'Heads-up: we only treat patients aged 18–25 in exceptional circumstances, so you may not be accepted — and the appointment fee isn’t refunded if a specialist finds you unsuitable. You’re welcome to continue if you’d like.'}
         } },
-      {key:'residency', label:'Are you a UK resident with a UK GP?', type:'single', options:['Yes','No'], gate:{blockIf:'No'}}
+      {key:'residency', label:'Are you a UK resident with a UK GP?', type:'single', options:['Yes','No'],
+        notices:{ 'No':{type:'warn', text:'We can only prescribe for UK residents who have a UK GP, so we’re unlikely to be able to prescribe for you.'} } }
     ] },
 
   { id:'health', eyebrow:'A few quick checks', q:'A little about your health',
     fields:[
-      {key:'pregnancy', label:'Are you currently pregnant, trying to conceive, or breastfeeding?', type:'single', options:['Yes','No','Prefer not to say / N/A'], gate:{blockIf:'Yes'}},
-      {key:'psychosis', label:'Any personal or family history of psychosis or schizophrenia?', type:'single', options:['Yes','No'], gate:{blockIf:'Yes'}}
+      {key:'pregnancy', label:'Are you currently pregnant, trying to conceive, or breastfeeding?', type:'single', options:['Yes','No','Prefer not to say / N/A'],
+        notices:{ 'Yes':{type:'danger', text:'We don’t prescribe cannabis-based medicines during pregnancy, while trying to conceive, or while breastfeeding — so we won’t be able to prescribe for you.'} } },
+      {key:'psychosis', label:'Any personal or family history of psychosis or schizophrenia?', type:'single', options:['Yes','No'],
+        notices:{ 'Yes':{type:'warn', text:'A personal or family history of psychosis or schizophrenia means we’re unlikely to be able to prescribe for you.'} } }
     ] },
 
-  { id:'records', eyebrow:'For your specialist', q:'Medications & medical records',
+  { id:'records', eyebrow:'Consent', q:'Access to your medical records',
+    help:'Safe prescribing isn’t possible without sight of your records, so this is required to proceed.',
     fields:[
-      {key:'medications', label:'Are you taking any medications at the moment? (optional)', type:'text', optional:true, placeholder:'e.g. amitriptyline 10mg, sertraline 50mg…'},
-      {key:'records', label:'Access to your medical history', type:'check', gate:{requireChecked:true},
+      {key:'records', type:'check', gate:{requireChecked:true},
         checkLabel:'I agree to you accessing my Summary Care Record (England) or confirm that I can provide evidence of my medical history (Scotland, Wales and NI).'}
     ] },
 
@@ -194,26 +210,28 @@ var STEPS = [
 ];
 
 var OUTCOMES = {
-  POSITIVE: {
+  // overall GREEN — nothing of concern
+  GREEN: {
     cls:'pos', icon:'✓',
     heading:'Good news — you may be suitable for a consultation',
-    body:'Based on your answers, a consultation with one of our specialists may be appropriate. Please note this is not a guarantee of a prescription — any treatment decision is made by the specialist after a full assessment.',
+    body:'Based on your answers below, a consultation with one of our specialists may be appropriate. This isn’t a guarantee of a prescription — ultimately it will be a joint decision between you and one of our clinicians after a full assessment.',
     contact:true, ctaLabel:'Book an appointment', ctaPrimary:true
   },
-  CAVEATED_PASS: {
+  // overall AMBER — one or more "unlikely" factors
+  AMBER: {
     cls:'cav', icon:'!',
-    heading:'You can book — with one thing to be aware of',
-    warn:'We only treat patients aged 18–25 in exceptional circumstances.',
-    body:'You’re welcome to book a consultation, but because of this you may not be found suitable for treatment. Please note that if the specialist determines you are not suitable, your appointment fee will not be refunded.',
-    contact:true, ctaLabel:'Book an appointment', ctaPrimary:true
+    heading:'You can book — but you may not be suitable',
+    body:'Some of your answers below mean a specialist may not be able to prescribe for you. You’re welcome to book a consultation, but please note that if the specialist finds you unsuitable, your appointment fee won’t be refunded.',
+    contact:true, ctaLabel:'Book an appointment anyway', ctaPrimary:false
   },
-  NEGATIVE: {
-    cls:'neg', icon:'–',
-    heading:'We’re unlikely to be able to help right now',
-    body:'Based on your answers, a specialist consultation may not be the right next step for you at this stage.',
-    warnRed:'You can still choose to book an appointment if you’d like a specialist to review your case. Please be aware that you will not be refunded if the specialist determines you are not suitable for treatment.',
-    contact:false, ctaLabel:'Book an appointment anyway', ctaPrimary:false
+  // overall RED — a definite blocker (e.g. pregnancy)
+  RED: {
+    cls:'neg', icon:'×',
+    heading:'We’re not able to prescribe right now',
+    body:'Based on the answer(s) highlighted in red below, we’re not able to offer treatment at this time. If you’re struggling with your health, please speak to your GP.',
+    contact:false, ctaLabel:null
   },
+  // under 18 — immediate, no booking
   HARD_STOP: {
     cls:'stop', icon:'×',
     heading:'We’re unable to help',
@@ -308,7 +326,7 @@ function setNextLabel(){
 function applyNotice(field, fs, value){
   var nb=fs.querySelector('.chk-inline'); if(!nb||!field.notices) return;
   var n=field.notices[value];
-  if(n){ nb.className='chk-inline show '+(n.type==='stop'?'stop':'warn'); nb.innerHTML=esc(n.text); }
+  if(n){ nb.className='chk-inline show '+((n.type==='stop'||n.type==='danger')?'stop':'warn'); nb.innerHTML=esc(n.text); }
   else { nb.className='chk-inline'; nb.innerHTML=''; }
 }
 
@@ -364,20 +382,34 @@ function validateField(field,val){
   return '';
 }
 
-function evaluate(){
-  var ans=state.answers, age=ans.age&&ans.age.value;
-  if(age==='Under 18') return 'HARD_STOP';
-  var blockers=[
-    ans.treatments && ans.treatments.value==='No',
-    ans.residency && ans.residency.value==='No',
-    ans.pregnancy && ans.pregnancy.value==='Yes',
-    ans.psychosis && ans.psychosis.value==='Yes',
-    ans.records!==true,
-    !(ans.acks && ans.acks.length===ACK_ITEMS.length && ans.acks.every(Boolean))
-  ].some(Boolean);
-  if(blockers) return 'NEGATIVE';
-  if(age==='18–25') return 'CAVEATED_PASS';
-  return 'POSITIVE';
+/* Build a Red/Amber/Green summary of the clinical answers. */
+function summarise(){
+  var a=state.answers, items=[];
+  function add(label,value,status,note){ items.push({label:label,value:value,status:status,note:note||''}); }
+
+  var cond=a.condition&&a.condition.value;
+  if(cond==='Other') add('Condition', a.condition.other||'Other', 'amber', 'We currently only prescribe for the conditions on our list.');
+  else add('Condition', cond||'—', 'green');
+
+  if(a.treatments&&a.treatments.value==='No') add('Tried two or more treatments', 'No', 'amber', 'Usually required before a specialist can prescribe.');
+  else add('Tried two or more treatments', 'Yes', 'green');
+
+  var age=a.age&&a.age.value;
+  if(age==='18–25') add('Age', age, 'amber', 'We treat 18–25s only in exceptional circumstances.');
+  else add('Age', age||'—', 'green');
+
+  if(a.residency&&a.residency.value==='No') add('UK resident with a UK GP', 'No', 'amber', 'We can only prescribe for UK residents with a UK GP.');
+  else add('UK resident with a UK GP', 'Yes', 'green');
+
+  if(a.pregnancy&&a.pregnancy.value==='Yes') add('Pregnant / conceiving / breastfeeding', 'Yes', 'red', 'We don’t prescribe in this situation.');
+  else add('Pregnant / conceiving / breastfeeding', (a.pregnancy&&a.pregnancy.value)||'No', 'green');
+
+  if(a.psychosis&&a.psychosis.value==='Yes') add('Psychosis / schizophrenia history', 'Yes', 'amber', 'A history of psychosis makes prescribing unlikely.');
+  else add('Psychosis / schizophrenia history', 'No', 'green');
+
+  var overall = items.some(function(i){return i.status==='red';}) ? 'RED'
+              : items.some(function(i){return i.status==='amber';}) ? 'AMBER' : 'GREEN';
+  return {items:items, overall:overall};
 }
 
 function next(){
@@ -393,15 +425,29 @@ function back(){ if(finished){ render(); return;} if(state.i>0){ state.i--; rend
 
 function showOutcome(forcedKey){
   finished=true;
-  var key=forcedKey||evaluate(), o=OUTCOMES[key];
+  var summary = forcedKey ? null : summarise();
+  var key = forcedKey || summary.overall;   // GREEN | AMBER | RED | HARD_STOP
+  var o = OUTCOMES[key];
   barEl.style.width='100%'; pctEl.textContent='Result';
   actionsEl.style.display='none';
   var html='<div class="oc '+o.cls+'">';
   html+='<div class="badge">'+o.icon+'</div>';
   html+='<h2>'+esc(o.heading)+'</h2>';
-  if(o.warn) html+='<div class="warnbox"><strong>'+esc(o.warn)+'</strong></div>';
   html+='<p>'+esc(o.body)+'</p>';
-  if(o.warnRed) html+='<div class="warnbox red">'+esc(o.warnRed)+'</div>';
+
+  // answer summary (skipped on the under-18 hard stop)
+  if(summary){
+    var ICON={green:'✓',amber:'!',red:'×'};
+    html+='<ul class="oc-summary">';
+    summary.items.forEach(function(it){
+      html+='<li class="sm '+it.status+'"><span class="sm-ic">'+ICON[it.status]+'</span>'
+        +'<span class="sm-body"><span class="sm-label">'+esc(it.label)+':</span>'
+        +'<span class="sm-val">'+esc(it.value)+'</span>'
+        +(it.note?'<span class="sm-note">'+esc(it.note)+'</span>':'')
+        +'</span></li>';
+    });
+    html+='</ul>';
+  }
 
   if(o.contact){
     html+='<div class="contact-grid">'

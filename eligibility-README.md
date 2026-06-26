@@ -13,64 +13,60 @@ captured until the user accepts the privacy notice on the first screen.
 
 Questions are grouped to keep the form short — a step can hold more than one
 field: 1) privacy consent · 2) condition · 3) prior treatment · 4) age **+**
-UK residency · 5) pregnancy **+** psychosis history · 6) medications **+**
-records consent · 7) acknowledgements → outcome (contact captured only on a
-pass / caveated-pass).
+UK residency · 5) pregnancy **+** psychosis history · 6) records consent ·
+7) acknowledgements → results page (contact captured only when the overall
+verdict is green/amber).
 
-Age gives **inline feedback the moment it's selected**: "Under 18" shows a stop
-message and the next button takes the user straight to the hard-stop outcome (no
-need to finish the form); "18–25" shows an amber caution that they may not be
-accepted, but they can continue. These live in the `notices` map on the age
-field (`type:'stop'` ends the flow at the given `outcome`; `type:'warn'` is
-advisory only).
+**Inline feedback** appears the moment certain options are selected, via the
+`notices` map on a field. Three note types:
+- `stop` — ends the flow immediately at the given `outcome` (used for **Under 18**:
+  "we're unable to help", no booking).
+- `danger` — red, advisory (used for **pregnancy**: "we won't be able to
+  prescribe"); the user can still continue and it shows as a **red** item on the
+  results page.
+- `warn` — amber, advisory (18–25, no UK GP, fewer than two prior treatments,
+  psychosis/schizophrenia history, "Other" condition).
 
-## Where to change things
+## Results page — Red / Amber / Green
 
-All copy and rules live in clearly-named constants inside the `<script>` in
-`eligibility.html`:
-
-| What | Where |
-|------|-------|
-| Questions, options, help text, "Other"/follow-up fields | `STEPS` array |
-| Which answers block (e.g. residency "No") | the `gate` flag on each step + `evaluate()` |
-| Outcome headings / body / warnings / CTA | `OUTCOMES` object |
-| Hard-stop age, caveat age | `evaluate()` |
-
-Non-devs can review wording by reading `STEPS` and `OUTCOMES`; the clinical team can
-adjust gates by editing the `gate` flags and `evaluate()` without touching the form
-rendering.
-
-## Decision logic (mirrors the spec)
+`summarise()` turns the answers into a per-item RAG list and an overall verdict
+(**worst** item wins). The results screen lists every clinical answer with a
+green tick / amber / red marker and a short note on anything of concern.
 
 ```
-HARD_STOP        if age == "Under 18"            -> no booking path
-otherwise, NEGATIVE if ANY blocker is true:
-    treatments_tried == "No"
-    residency        == "No"
-    pregnancy        == "Yes"
-    psychosis        == "Yes"
-    records_consent  == unchecked
-    acknowledgements  not all checked
-otherwise CAVEATED_PASS if age == "18–25"
-otherwise POSITIVE
+RED   item: pregnant / conceiving / breastfeeding        -> overall RED
+AMBER items: < 2 prior treatments · age 18–25 · no UK GP ·
+             psychosis/schizophrenia history · "Other" condition
+GREEN: everything else
+overall = RED if any red, else AMBER if any amber, else GREEN
 ```
 
-## Flow & compliance notes
-- **Privacy first.** Step 0 is the special-category-data notice; the user must accept
-  it before any health question, and before any answer is held.
-- **Soft-fail wording.** A NEGATIVE result says "we're unlikely to be able to help
-  right now", never "you are not eligible".
-- **Contact capture.** Name/email/phone are only requested on POSITIVE or
-  CAVEATED_PASS outcomes (shown on the result screen), never before screening, and
-  never on HARD_STOP.
-- **No prescription promise.** Positive copy says a consultation "may be
-  appropriate" only.
-- Fully keyboard accessible (radio/checkbox groups, Enter to advance, focus moved to
-  the first field on each step, `aria-live` progress and errors).
+- **GREEN → "you may be suitable"** — book CTA + contact capture.
+- **AMBER → "you can book, but you may not be suitable"** — de-emphasised
+  "book anyway" + contact capture; fee-not-refunded caveat.
+- **RED → "we're not able to prescribe"** — no booking, no contact; signpost GP.
+- **Under 18 → HARD_STOP** — immediate, no summary, no booking.
+
+To change conditions, gates, notices or wording, edit the `STEPS` array, the
+`summarise()` function (statuses + notes) and the `OUTCOMES` object — all
+clearly-named constants in the `<script>` in `eligibility.html`. Non-devs can
+review all copy there.
+
+## Compliance notes
+- **Privacy first.** Step 1 is the special-category-data notice; nothing is held
+  until the user accepts it.
+- **Contact capture** only happens on a green or amber result, never on a red
+  result or the under-18 hard stop, and never before screening.
+- **No prescription promise.** Copy says a consultation "may be appropriate" and
+  that it's "ultimately a joint decision between you and one of our clinicians".
+- **Not persisted.** Free-text fields were removed; answers live in component
+  memory only.
+- Fully keyboard accessible (radio/checkbox groups, Enter to advance, focus moved
+  to the first field on each step, `aria-live` progress and errors).
 
 ## TODO for the team (also flagged inline as `TODO(team)`)
-1. Confirm whether NEGATIVE outcomes route to the same booking flow as POSITIVE or a
-   separate "review" booking type.
+1. Confirm whether amber "book anyway" routes to the same booking flow as green or
+   a separate "review" booking type.
 2. Confirm refund / no-refund wording with legal & compliance before launch.
 3. Wire the "Book an appointment" CTA (and POST of answers + contact) to the real
    booking system / CRM. Currently it shows a demo `alert()`.
