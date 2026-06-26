@@ -41,10 +41,13 @@ GREEN: everything else
 overall = RED if any red, else AMBER if any amber, else GREEN
 ```
 
-- **GREEN → "you may be suitable"** — book CTA + contact capture.
+- **GREEN → "you may be suitable"** — primary "Book an appointment" button.
 - **AMBER → "you can book, but you may not be suitable"** — de-emphasised
-  "book anyway" + contact capture; fee-not-refunded caveat.
-- **RED → "we're not able to prescribe"** — no booking, no contact; signpost GP.
+  "book anyway" button; fee-not-refunded caveat.
+- **RED → "we're not able to prescribe"** — no booking button; signpost GP.
+
+No contact details are collected on the results page — the button hands off to
+the booking journey, which captures and persists details itself.
 - **Under 18 → HARD_STOP** — immediate, no summary, no booking.
 
 To change conditions, gates, notices or wording, edit the `STEPS` array, the
@@ -55,8 +58,8 @@ review all copy there.
 ## Compliance notes
 - **Privacy first.** Step 1 is the special-category-data notice; nothing is held
   until the user accepts it.
-- **Contact capture** only happens on a green or amber result, never on a red
-  result or the under-18 hard stop, and never before screening.
+- **No contact details are captured** anywhere in the checker — the booking
+  journey handles that downstream.
 - **No prescription promise.** Copy says a consultation "may be appropriate" and
   that it's "ultimately a joint decision between you and one of our clinicians".
 - **Not persisted.** Free-text fields were removed; answers live in component

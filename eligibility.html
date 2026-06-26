@@ -449,14 +449,6 @@ function showOutcome(forcedKey){
     html+='</ul>';
   }
 
-  if(o.contact){
-    html+='<div class="contact-grid">'
-      +'<div class="chk-field"><label for="c_name">Full name</label><input class="chk-input" id="c_name" type="text" autocomplete="name"/></div>'
-      +'<div class="chk-field"><label for="c_email">Email</label><input class="chk-input" id="c_email" type="email" autocomplete="email"/></div>'
-      +'<div class="chk-field"><label for="c_phone">Phone</label><input class="chk-input" id="c_phone" type="tel" autocomplete="tel"/></div>'
-      +'</div>';
-    html+='<div class="chk-err" id="cErr" role="alert"></div>';
-  }
   html+='<div class="oc-cta">';
   if(o.ctaLabel){
     html+='<a href="#" id="bookBtn" class="btn '+(o.ctaPrimary?'btn-leaf':'btn-ghost')+(o.ctaPrimary?'':' muted-cta')+'">'+esc(o.ctaLabel)+' <span class="arrow">→</span></a>';
@@ -470,13 +462,6 @@ function showOutcome(forcedKey){
   if(book){
     book.addEventListener('click',function(e){
       e.preventDefault();
-      if(o.contact){
-        var n=document.getElementById('c_name').value.trim(),
-            em=document.getElementById('c_email').value.trim(),
-            ph=document.getElementById('c_phone').value.trim();
-        if(!n||!em||!ph){ document.getElementById('cErr').textContent='Please add your name, email and phone so we can book you in.'; return; }
-        // TODO(team): POST {answers, contact} to the real booking system / CRM.
-      }
       // TODO(team): wire to the real booking journey.
       alert('Demo: this would now take you to booking.\n\nOutcome: '+key);
     });
