@@ -58,62 +58,70 @@
 <section id="plans" style="padding-top:48px">
   <div class="container">
     <div class="section-head plan-pick">
-      <span class="kicker" style="justify-content:center"><span class="dot"></span> Find your plan in one tap</span>
+      <span class="kicker" style="justify-content:center"><span class="dot"></span> Step 1 — tell us about you</span>
       <h2>Are you new to medical cannabis?</h2>
-      <p class="lede">Tell us where you're starting from and we'll highlight the right plan for you.</p>
-      <div class="pick-toggle" role="group" aria-label="Are you new to medical cannabis?">
-        <button type="button" class="pick-btn" id="pickNew" aria-pressed="false">Yes — I'm new to it</button>
-        <button type="button" class="pick-btn" id="pickExp" aria-pressed="false">No — I'm already a patient / switching provider</button>
-      </div>
-      <p class="pick-hint" id="pickHint" aria-live="polite">&nbsp;</p>
+      <p class="lede">Pick the option that sounds like you and we'll point you to the right plan.</p>
     </div>
+
+    <div class="pick-toggle" role="group" aria-label="Are you new to medical cannabis?">
+      <button type="button" class="pick-btn" id="pickNew" aria-pressed="false">
+        <span class="pick-emoji">🌱</span>
+        <span class="pick-text"><span class="pick-main">Yes — I'm new to it</span><span class="pick-sub">I've never had a cannabis prescription</span></span>
+      </button>
+      <button type="button" class="pick-btn" id="pickExp" aria-pressed="false">
+        <span class="pick-emoji">🌿</span>
+        <span class="pick-text"><span class="pick-main">No — I'm already a patient</span><span class="pick-sub">Using it now, or switching provider</span></span>
+      </button>
+    </div>
+    <p class="pick-hint" id="pickHint" aria-live="polite">&nbsp;</p>
 
     <div class="plans">
 
       <!-- New to cannabis -->
-      <div class="plan featured" id="planNew" data-plan="new">
-        <div class="plan-flag">🌱 NEW TO MEDICAL CANNABIS</div>
-        <div class="rec-ribbon">Recommended for you</div>
-        <div class="plan-body">
-          <div class="plan-for"><span class="pf-ic">👋</span><span>For people who have <u>never tried medical cannabis</u> and want to try it safely, for one month, before committing to anything.</span></div>
-          <span class="who">Your first month, all in</span>
-          <h3>The £89 trial</h3>
-          <p class="sub">Everything you need to try medical cannabis safely under specialist care — <strong>medication included</strong>, with no year-long commitment.</p>
-          <div class="price"><span class="ccy">£</span><span class="amt">89</span><span class="per">one-off · first month</span></div>
-          <div class="plan-hr"></div>
+      <article class="plan2" id="planNew" data-plan="new">
+        <div class="plan2-rail">🌱 New to medical cannabis</div>
+        <div class="plan2-inner">
+          <div class="plan2-price">
+            <div class="amt"><span class="ccy">£</span>89</div>
+            <div class="per">one-off payment · your first month</div>
+            <span class="noob">✓ No obligation — not a subscription</span>
+          </div>
+          <p class="plan2-desc">Try medical cannabis safely under specialist care — <strong>medication included</strong>.</p>
           <ul class="incl">
-            <li><span class="tick">✓</span><span><strong>Initial specialist review</strong> — a full video consultation with a GMC-registered prescriber.</span></li>
-            <li><span class="tick">✓</span><span><strong>One month's medication included</strong> — supplied by agreement with your specialist prescriber.</span></li>
-            <li><span class="tick">✓</span><span><strong>An end-of-month check-in</strong> — a review to see how you're getting on.</span></li>
-            <li><span class="tick">✓</span><span>Dispensing &amp; discreet UK delivery included.</span></li>
+            <li><span class="tick">✓</span><span><strong>Initial specialist review</strong> with a GMC-registered prescriber</span></li>
+            <li><span class="tick">✓</span><span><strong>One month's medication included</strong></span></li>
+            <li><span class="tick">✓</span><span><strong>End-of-month check-in</strong></span></li>
+            <li><span class="tick">✓</span><span>Dispensing &amp; discreet UK delivery</span></li>
           </ul>
-          <div class="note leaf"><strong>You're not tied in for a year.</strong> The £89 covers your first month only. There's no rolling contract and nothing to cancel — you simply decide at your check-in whether to carry on.</div>
-          <div class="note"><strong>Like it? Keep going for less.</strong> Continue after month one and you'll get <strong>25% off</strong> the annual plan — a full year of consultations for <strong>£74.25</strong>. From then on you pay for <a class="inline-link" href="#medication">medication separately ↓</a>.</div>
-          <a class="btn btn-leaf" href="eligibility.html">Start the £89 trial <span class="arrow">→</span></a>
+          <div class="plan2-foot">
+            <a class="btn btn-leaf" href="eligibility.html">Start the £89 trial <span class="arrow">→</span></a>
+            <p class="plan2-fine">One-off — nothing to cancel. Continue only if you choose, and get <strong>25% off</strong> the annual plan (£74.25).</p>
+          </div>
         </div>
-      </div>
+      </article>
 
       <!-- Existing users / switching provider -->
-      <div class="plan" id="planExp" data-plan="exp">
-        <div class="plan-flag alt">🌿 ALREADY A CANNABIS PATIENT</div>
-        <div class="rec-ribbon">Recommended for you</div>
-        <div class="plan-body">
-          <div class="plan-for"><span class="pf-ic">✅</span><span>For people who <u>already use medical cannabis</u> — or are <u>switching from another provider</u> — and want regulated, supervised care.</span></div>
-          <span class="who">A full year of care</span>
-          <h3>The £99 annual plan</h3>
-          <p class="sub">Move to us for one fixed yearly fee. A full year of specialist consultations and reviews — you pay for medication separately.</p>
-          <div class="price"><span class="ccy">£</span><span class="amt">99</span><span class="per">per year · consultations</span></div>
-          <div class="plan-hr"></div>
+      <article class="plan2" id="planExp" data-plan="exp">
+        <div class="plan2-rail alt">🌿 Already a cannabis patient</div>
+        <div class="plan2-inner">
+          <div class="plan2-price">
+            <div class="amt"><span class="ccy">£</span>99</div>
+            <div class="per">per year · consultations &amp; reviews</div>
+            <span class="noob alt">Medication paid separately</span>
+          </div>
+          <p class="plan2-desc">Move to us for one fixed yearly fee — <strong>a full year of specialist care</strong>.</p>
           <ul class="incl">
-            <li><span class="tick">✓</span><span><strong>Initial specialist consultation</strong> to move you onto a regulated prescription.</span></li>
-            <li><span class="tick">✓</span><span><strong>A full year of consultations &amp; reviews</strong> — follow-ups and dose adjustments included.</span></li>
-            <li><span class="tick">✓</span><span><strong>Repeat prescriptions</strong> issued as clinically appropriate, all year.</span></li>
-            <li><span class="x">£</span><span><strong>Medication is paid for separately</strong> — you only pay for the medicine you're prescribed. <a class="inline-link" href="#medication">See typical costs ↓</a></span></li>
+            <li><span class="tick">✓</span><span><strong>Initial specialist consultation</strong> onto a regulated prescription</span></li>
+            <li><span class="tick">✓</span><span><strong>A full year of consultations &amp; reviews</strong></span></li>
+            <li><span class="tick">✓</span><span><strong>Repeat prescriptions</strong> as clinically appropriate</span></li>
+            <li><span class="x">£</span><span>Medication billed separately — <a class="inline-link" href="#medication">see typical costs ↓</a></span></li>
           </ul>
-          <div class="note"><strong>Why it's structured this way.</strong> Patients already familiar with cannabis usually know their medicine and dose. So your £99 covers all clinical care for the year, and you pay for medication at our transparent dispensing price as you go.</div>
-          <a class="btn btn-primary" href="eligibility.html">Choose the annual plan <span class="arrow">→</span></a>
+          <div class="plan2-foot">
+            <a class="btn btn-primary" href="eligibility.html">Choose the annual plan <span class="arrow">→</span></a>
+            <p class="plan2-fine">Best if you already know your medicine and dose. You pay for medication as you go.</p>
+          </div>
         </div>
-      </div>
+      </article>
 
     </div>
   </div>
@@ -190,26 +198,71 @@
       </div>
     </div>
 
-    <!-- Typical month: more than one product -->
-    <div class="typical">
-      <div class="typical-text">
-        <span class="kicker"><span class="dot"></span> A typical month</span>
-        <h3>Most patients use more than one product</h3>
-        <p>It's normal to combine products with different THC and CBD strengths — for example a higher-THC product for symptom relief alongside a CBD-rich or balanced one to even things out across the day. Here's an illustrative month.</p>
+    <!-- Interactive monthly cost calculator -->
+    <div class="calc">
+      <div class="calc-text">
+        <span class="kicker"><span class="dot"></span> Estimate your monthly cost</span>
+        <h3>What might a month cost me?</h3>
+        <p>Most patients use more than one product to balance THC and CBD. A typical month is around <strong>30&nbsp;ml of oil and 10&nbsp;g of flower</strong> — adjust below for an estimate. Your prescriber sets the actual amounts.</p>
+        <p class="calc-fine">Illustrative only. Dispensed by a GPhC-registered pharmacy with a Certificate of Analysis behind every batch.</p>
       </div>
-      <div class="typical-bill">
-        <div class="bill-row"><span>Blackberry Balanced oil · 30 ml <small>THC 25 / CBD 25 per ml</small></span><span class="amt">£90.00</span></div>
-        <div class="bill-row"><span>Tangerine Sativa flower · 10 g <small>THC 22% / CBD &lt;1%</small></span><span class="amt">£72.50</span></div>
-        <div class="bill-row"><span>Lime CBD oil · 10 ml <small>THC 10 / CBD 40 per ml</small></span><span class="amt">£35.00</span></div>
-        <div class="bill-total"><span class="l">Typical monthly medicine</span><span class="v">£197.50</span></div>
-        <p class="bill-note">Illustrative only — your prescriber decides the products and quantities that suit you, and many patients spend less. Medicine is dispensed by a GPhC-registered pharmacy with a Certificate of Analysis behind every batch.</p>
+      <div class="calc-panel">
+        <div class="calc-control">
+          <label for="calcFlower">Dried flower per month</label>
+          <select id="calcFlower" class="calc-select">
+            <option value="0">None</option>
+            <option value="37.5">5 g — £37.50</option>
+            <option value="72.5" selected>10 g — £72.50 (typical)</option>
+            <option value="145">20 g — £145.00</option>
+          </select>
+        </div>
+        <div class="calc-control">
+          <label for="calcOil">Cannabis oil per month</label>
+          <select id="calcOil" class="calc-select">
+            <option value="0">None</option>
+            <option value="35">10 ml — £35.00</option>
+            <option value="90" selected>30 ml — £90.00 (typical)</option>
+            <option value="180">60 ml — £180.00</option>
+          </select>
+        </div>
+        <div class="calc-out">
+          <span class="calc-out-l">Estimated monthly medicine</span>
+          <span class="calc-out-v" id="calcTotal">£162.50</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Flower starter pack -->
+<section id="starter" style="background:var(--bg-cool)">
+  <div class="container">
+    <div class="starter">
+      <div class="starter-media">
+        <img src="assets/products/vaporiser.svg" alt="Mighty Medic medical vaporiser" class="starter-vape"/>
+        <img src="assets/products/grinder.svg" alt="Boots-branded grinder" class="starter-grind"/>
+      </div>
+      <div class="starter-body">
+        <span class="starter-tag">🌱 Optional add-on · for flower</span>
+        <h2>New to flower? The starter pack has it covered.</h2>
+        <p class="lede">Prescribed cannabis flower must be <strong>vaporised, never smoked</strong>. Our starter pack gives you everything you need, delivered with your first prescription.</p>
+        <ul class="incl starter-incl">
+          <li><span class="tick">✓</span><span><strong>Mighty Medic vaporiser</strong> — precise, temperature-controlled medical device</span></li>
+          <li><span class="tick">✓</span><span><strong>Boots-branded grinder</strong></span></li>
+          <li><span class="tick">✓</span><span><strong>Your prescribed flower supply</strong> included</span></li>
+        </ul>
+        <div class="starter-buy">
+          <div class="starter-price"><span class="ccy">£</span><span class="amt">399</span><span class="per">one-off · includes medicine</span></div>
+          <a class="btn btn-leaf" href="eligibility.html">Start with a flower pack <span class="arrow">→</span></a>
+        </div>
+        <p class="starter-fine">Hardware supplied with a prescription for flower and subject to clinical suitability. The vaporiser is reusable; future flower is charged at the per-gram prices above.</p>
       </div>
     </div>
   </div>
 </section>
 
 <!-- Which is right for me -->
-<section id="compare" style="background:var(--bg-cool)">
+<section id="compare" style="background:#fff">
   <div class="container">
     <div class="section-head">
       <span class="kicker eyebrow-line"><span class="dot"></span> At a glance</span>
@@ -431,6 +484,15 @@ document.querySelectorAll('.faq-q').forEach(function(q){
     btnNew.addEventListener('click',function(){choose('new');});
     btnExp.addEventListener('click',function(){choose('exp');});
   }
+})();
+
+// Monthly cost calculator
+(function(){
+  var f=document.getElementById('calcFlower'),o=document.getElementById('calcOil'),out=document.getElementById('calcTotal');
+  if(!f||!o||!out) return;
+  function fmt(n){return '£'+n.toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2});}
+  function update(){ out.textContent = fmt(parseFloat(f.value)+parseFloat(o.value)); }
+  f.addEventListener('change',update); o.addEventListener('change',update); update();
 })();
 </script>
 </body>

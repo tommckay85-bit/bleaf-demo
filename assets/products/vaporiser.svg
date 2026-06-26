@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 320" role="img" aria-label="Mighty Medic vaporiser">
+  <defs>
+    <linearGradient id="vb" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#2a2a2c"/><stop offset="0.5" stop-color="#1a1a1c"/><stop offset="1" stop-color="#101012"/>
+    </linearGradient>
+  </defs>
+  <!-- mouthpiece -->
+  <rect x="150" y="14" width="40" height="20" rx="6" fill="#1a1a1c"/>
+  <!-- body -->
+  <rect x="46" y="30" width="148" height="276" rx="20" fill="url(#vb)" stroke="#000" stroke-width="1.5"/>
+  <!-- top cooling fins -->
+  <rect x="62" y="40" width="116" height="3.4" rx="1.7" fill="#3a3a3a"/><rect x="62" y="47" width="116" height="3.4" rx="1.7" fill="#3a3a3a"/><rect x="62" y="54" width="116" height="3.4" rx="1.7" fill="#3a3a3a"/><rect x="62" y="61" width="116" height="3.4" rx="1.7" fill="#3a3a3a"/><rect x="62" y="68" width="116" height="3.4" rx="1.7" fill="#3a3a3a"/><rect x="62" y="75" width="116" height="3.4" rx="1.7" fill="#3a3a3a"/><rect x="62" y="82" width="116" height="3.4" rx="1.7" fill="#3a3a3a"/>
+  <!-- vertical ridged chamber -->
+  <rect x="64" y="104" width="112" height="92" rx="6" fill="#151517"/>
+  <path d="M70 118 q 7 6 0 12 q 7 6 0 12 q 7 6 0 12 q 7 6 0 12 q 7 6 0 12 q 7 6 0 12 q 7 6 0 12 q 7 6 0 12 " fill="none" stroke="#000000" stroke-width="2.4" opacity="0.55"/><path d="M88 118 q 7 6 0 12 q 7 6 0 12 q 7 6 0 12 q 7 6 0 12 q 7 6 0 12 q 7 6 0 12 q 7 6 0 12 q 7 6 0 12 " fill="none" stroke="#000000" stroke-width="2.4" opacity="0.55"/><path d="M106 118 q 7 6 0 12 q 7 6 0 12 q 7 6 0 12 q 7 6 0 12 q 7 6 0 12 q 7 6 0 12 q 7 6 0 12 q 7 6 0 12 " fill="none" stroke="#000000" stroke-width="2.4" opacity="0.55"/><path d="M124 118 q 7 6 0 12 q 7 6 0 12 q 7 6 0 12 q 7 6 0 12 q 7 6 0 12 q 7 6 0 12 q 7 6 0 12 q 7 6 0 12 " fill="none" stroke="#000000" stroke-width="2.4" opacity="0.55"/><path d="M142 118 q 7 6 0 12 q 7 6 0 12 q 7 6 0 12 q 7 6 0 12 q 7 6 0 12 q 7 6 0 12 q 7 6 0 12 q 7 6 0 12 " fill="none" stroke="#000000" stroke-width="2.4" opacity="0.55"/><path d="M160 118 q 7 6 0 12 q 7 6 0 12 q 7 6 0 12 q 7 6 0 12 q 7 6 0 12 q 7 6 0 12 q 7 6 0 12 q 7 6 0 12 " fill="none" stroke="#000000" stroke-width="2.4" opacity="0.55"/>
+  <!-- display -->
+  <rect x="64" y="210" width="112" height="74" rx="8" fill="#0c0c0e"/>
+  <text x="120" y="236" text-anchor="middle" font-family="Arial,sans-serif" font-size="22" font-weight="700" fill="#F08A1D">180&#176;C</text>
+  <text x="120" y="258" text-anchor="middle" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#ffffff">180&#176;C</text>
+  <g fill="#F08A1D">
+    <rect x="80" y="266" width="8" height="9" rx="1"/><rect x="91" y="266" width="8" height="9" rx="1"/>
+    <rect x="102" y="266" width="8" height="9" rx="1"/><rect x="113" y="266" width="8" height="9" rx="1"/>
+    <rect x="124" y="266" width="8" height="9" rx="1"/>
+  </g>
+  <!-- buttons -->
+  <path d="M52 240 l16 -10 0 20 z" fill="#F08A1D"/>
+  <path d="M188 240 l-16 -10 0 20 z" fill="#F08A1D"/>
+  <text x="120" y="300" text-anchor="middle" font-family="Georgia,serif" font-style="italic" font-size="17" font-weight="700" fill="#F08A1D">Mighty+</text>
+</svg>
