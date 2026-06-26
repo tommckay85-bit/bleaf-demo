@@ -82,6 +82,8 @@
 .sm-label{font-weight:700;color:var(--navy);font-size:14.5px}
 .sm-val{color:var(--body);font-size:14.5px;margin-left:6px}
 .sm-note{display:block;color:var(--mute);font-size:13px;margin-top:3px;line-height:1.45}
+.oc-note{max-width:540px;margin:0 auto 20px;font-size:13px;color:var(--mute);line-height:1.55;
+  background:var(--bg-cool);border-radius:12px;padding:14px 16px}
 @media (max-width:560px){
   .chk-body{padding:26px 22px 30px}
   .chk-top{padding:18px 22px}
@@ -164,7 +166,8 @@ var ACK_ITEMS = [
 /* Each step has one OR MORE fields (combine related questions onto one screen). */
 var STEPS = [
   { id:'consent', eyebrow:'Before we start', q:'A quick note on your privacy',
-    help:'The questions that follow ask about your health. Your answers are special-category data and are used only to assess whether a specialist consultation may be suitable for you. We won’t store anything until you’ve agreed to continue, and completing this check never guarantees a prescription.',
+    help:'The questions that follow ask about your health. Your answers are special-category data and are used only to assess whether a specialist consultation may be suitable for you. We won’t store anything until you’ve agreed to continue.',
+    note:'Please note: the results of this screening are not a guarantee of treatment. A full clinical review with a specialist is always required, and they will make the final decision on whether treatment is appropriate.',
     fields:[ {key:'consent', type:'consent', checkLabel:'I understand, and I want to continue.'} ] },
 
   { id:'condition', eyebrow:'About you', q:'What are you seeking treatment for?',
@@ -266,6 +269,7 @@ function render(){
   html += '<p class="chk-eyebrow">'+esc(step.eyebrow||'')+'</p>';
   html += '<h1 class="chk-q">'+esc(step.q)+'</h1>';
   if(step.help) html += '<p class="chk-help">'+esc(step.help)+'</p>';
+  if(step.note) html += '<div class="chk-note">'+esc(step.note)+'</div>';
   step.fields.forEach(function(field){ html += renderField(field, state.answers[field.key]); });
   screenEl.innerHTML = html;
 
@@ -447,6 +451,10 @@ function showOutcome(forcedKey){
         +'</span></li>';
     });
     html+='</ul>';
+  }
+
+  if(key!=='HARD_STOP'){
+    html+='<p class="oc-note">The results of this screening are not a guarantee of treatment. A full clinical review with a specialist is always required, and they will make the final decision on whether treatment is appropriate.</p>';
   }
 
   html+='<div class="oc-cta">';
