@@ -254,6 +254,16 @@ footer{background:#fff;border-top:1px solid var(--line);padding:70px 0 32px}
 .foot-bottom .legal{display:flex;gap:22px;flex-wrap:wrap}
 .foot-disclaimer{margin-top:20px;font-size:12.5px;color:var(--mute);line-height:1.6;max-width:900px}
 
+/* ---------- Sticky bottom CTA (homepage) ---------- */
+.sticky-cta{position:fixed;left:0;right:0;bottom:0;z-index:60;
+  background:rgba(255,255,255,.97);backdrop-filter:saturate(160%) blur(8px);
+  border-top:1px solid var(--line);box-shadow:0 -10px 30px -18px rgba(5,5,75,.35);padding:12px 20px}
+.sticky-inner{max-width:var(--maxw);margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:18px}
+.sticky-msg{font-weight:700;color:var(--navy);font-size:16px}
+.sticky-btns{display:flex;gap:12px}
+.sticky-cta .btn{padding:13px 24px}
+body:has(.sticky-cta){padding-bottom:90px}
+
 /* ============================================================
    PRICING PAGE
    ============================================================ */
@@ -525,6 +535,11 @@ section[id]{scroll-margin-top:88px}
   .starter-buy{justify-content:center}
   .pick-btn{min-width:0;flex:1 1 100%}
   .plan2-price .amt{font-size:64px}
+  .sticky-msg{display:none}
+  .sticky-inner{justify-content:center}
+  .sticky-btns{flex:1;gap:10px}
+  .sticky-cta .btn{flex:1;padding:13px 8px;font-size:14px;justify-content:center}
+  body:has(.sticky-cta){padding-bottom:80px}
   .steps,.steps.three{grid-template-columns:1fr}
   .section-head h2{font-size:30px}
   .hero h1{font-size:33px}
