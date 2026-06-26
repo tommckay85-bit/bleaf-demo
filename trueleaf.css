@@ -405,7 +405,7 @@ section[id]{scroll-margin-top:88px}
 .pick-hint{text-align:center;margin:18px auto 0;font-size:16px;color:var(--body);min-height:22px;max-width:640px}
 
 /* ---------- Redesigned plan cards ---------- */
-.plans{align-items:stretch}
+.plans{align-items:stretch;margin-top:34px}
 .plan2{background:#fff;border:1.5px solid var(--line);border-radius:var(--radius-lg);overflow:hidden;
   box-shadow:var(--shadow);display:flex;flex-direction:column;transition:box-shadow .25s,transform .25s,opacity .25s,border-color .25s}
 .plan2-rail{display:flex;align-items:center;justify-content:center;gap:9px;font-size:13.5px;font-weight:700;
