@@ -12,7 +12,12 @@ leaf, Boots Sharp type — with the fonts and [SheetJS](https://sheetjs.com)
 
 ## What it does (7 steps)
 
-1. **Upload a demand forecast** — orders by service, by month (`.xlsx`/`.csv`).
+1. **Upload a demand forecast** (`.xlsx`/`.csv`). Columns can be **weekly** (or
+   any cadence) dated headers — they're **pro-rated into calendar months** by day
+   count (no orders lost), and the forecast window (start month + horizon) is
+   **auto-detected**. Demand rows are matched to configured services by name;
+   unmatched rows are **flagged for mapping** (map to an existing service, create
+   it, or ignore) and **block export** — never silently dropped.
 2. **Demand → required hours by group** — each service splits its orders across
    clinician **groups** (IP / GP / Nurse) by a **% share**; hours =
    `orders × share × (prescribing AHT + messaging time) ÷ 3600`.
@@ -89,6 +94,9 @@ Starting assumptions to revisit during iteration:
   from the **useful** month. Dates before the horizon start are flagged *overdue*.
 - **Planned hires** in the HR file (Start = cost begins, Ready = capacity counts)
   are counted and **never re-recommended**.
+- **Weekly demand** is aggregated to months by day-count proration; the first/last
+  months of a window can be **partial** (fewer days), so trim the horizon in
+  Config if you want whole months only.
 - **Gap = required − (existing + planned)** in hours; recommended hires fill it
   cumulatively (earlier hires are netted off, so no double-hiring).
 - **Workload model only** (no queueing/SLA maths); **no attrition/backfill** yet.

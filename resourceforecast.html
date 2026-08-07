@@ -208,8 +208,17 @@ footer.appfoot{border-top:1px solid var(--line);background:#fff;padding:26px 0;m
     </div>
   </section>
 
+  <section class="card" id="card-svcmap">
+    <div class="card-head"><div class="ttl"><h2>3 · Service mapping</h2><span class="sub">Match demand rows to configured services. Auto-matched by name; only unmatched rows need attention — they are never dropped.</span></div><span class="badge" id="svcMapBadge">—</span></div>
+    <div class="card-body">
+      <div class="notice warn hidden" id="svcMapWarn"><span class="ic">⚠️</span><div><strong>Unmatched demand services must be resolved.</strong> Map each to a configured service, create it, or ignore it — exporting is blocked until none remain, so demand is never silently dropped.</div></div>
+      <div id="svcMapList"><div class="map-empty">Load a demand file (or the sample) to match services.</div></div>
+      <p class="hint" id="svcMapInfo"></p>
+    </div>
+  </section>
+
   <section class="card" id="card-mapping">
-    <div class="card-head"><div class="ttl"><h2>3 · Role mapping</h2><span class="sub">HR role names → clinician roles. Known mappings auto-apply; only new/unmatched roles are flagged.</span></div><span class="badge" id="mapBadge">—</span></div>
+    <div class="card-head"><div class="ttl"><h2>4 · Role mapping</h2><span class="sub">HR role names → clinician roles. Known mappings auto-apply; only new/unmatched roles are flagged.</span></div><span class="badge" id="mapBadge">—</span></div>
     <div class="card-body">
       <div class="notice warn hidden" id="mapWarn"><span class="ic">⚠️</span><div><strong>Unmatched roles must be mapped.</strong> They are highlighted below and never dropped silently — exporting is blocked until every HR role points to a role (or is set to <em>Ignore</em>).</div></div>
       <div id="mapList"><div class="map-empty">Load an HR file (or the sample) to map roles.</div></div>
@@ -218,7 +227,7 @@ footer.appfoot{border-top:1px solid var(--line);background:#fff;padding:26px 0;m
   </section>
 
   <section class="card" id="card-results">
-    <div class="card-head"><div class="ttl"><h2>4–6 · Resource plan &amp; cost forecast</h2><span class="sub">Group capacity vs required, gaps, recommended hires with recruit/start/ready dates, and phased cost.</span></div><button class="btn btn-primary btn-sm" id="btnRun">Recompute</button></div>
+    <div class="card-head"><div class="ttl"><h2>Resource plan &amp; cost forecast</h2><span class="sub">Steps 5–6 · Group capacity vs required, gaps, recommended hires with recruit/start/ready dates, and phased cost.</span></div><button class="btn btn-primary btn-sm" id="btnRun">Recompute</button></div>
     <div class="card-body" id="resultsBody"><div class="map-empty">Load data and map roles, then Recompute.</div></div>
   </section>
 
@@ -310,7 +319,8 @@ function defaultConfig(){
     ],
     roles: JSON.parse(JSON.stringify(CONFIG_DATA.roles)),
     services: JSON.parse(JSON.stringify(CONFIG_DATA.services)),
-    mappings: Object.assign({}, CONFIG_DATA.mappings)
+    mappings: Object.assign({}, CONFIG_DATA.mappings),
+    serviceAliases: {}   // demand service name -> config service id, or '__ignore__'
   };
 }
 function sampleDemand(cfg){
@@ -323,7 +333,7 @@ function sampleHr(){ return JSON.parse(JSON.stringify(CONFIG_DATA.sampleHr)); }
 /* =========================================================================
    STATE
    ========================================================================= */
-const STATE = { config:defaultConfig(), demand:null, demandMonths:null, hr:null, lastRun:null };
+const STATE = { config:defaultConfig(), demandRaw:null, demandMonths:null, demandCadence:'', demandRange:'', hr:null, lastRun:null };
 let SVC_FILTER='';
 
 function monthKeys(cfg){
@@ -334,6 +344,45 @@ function monthKeys(cfg){
 function roleById(cfg){ const m={}; cfg.roles.forEach(r=>m[r.id]=r); return m; }
 function distinctHrRoles(){ const s=[]; if(STATE.hr) STATE.hr.forEach(x=>{ if(s.indexOf(x.role)<0) s.push(x.role); }); return s; }
 function unmatchedRoles(){ const map=STATE.config.mappings||{}; return distinctHrRoles().filter(r=> !map[r]); }
+// --- demand service resolution (demand rows -> configured services) ---
+function resolveDemand(){
+  const cfg=STATE.config; if(!STATE.demandRaw) return {};
+  const byId={}; cfg.services.forEach(s=>byId[s.id]=s);
+  const byName={}; cfg.services.forEach(s=>byName[s.name.trim().toLowerCase()]=s);
+  const al=cfg.serviceAliases||{}; const out={}; cfg.services.forEach(s=>out[s.name]={});
+  Object.keys(STATE.demandRaw).forEach(d=>{
+    const alias=al[d]; if(alias==='__ignore__') return;
+    let target=null;
+    if(alias && byId[alias]) target=byId[alias]; else target=byName[d.trim().toLowerCase()];
+    if(!target) return; // unmatched -> excluded (flagged in Service mapping)
+    const dst=out[target.name], src=STATE.demandRaw[d];
+    Object.keys(src).forEach(mk=> dst[mk]=(dst[mk]||0)+src[mk]);
+  });
+  return out;
+}
+function unmatchedServices(){
+  const cfg=STATE.config; if(!STATE.demandRaw) return [];
+  const nameSet={}; cfg.services.forEach(s=>nameSet[s.name.trim().toLowerCase()]=1); const al=cfg.serviceAliases||{};
+  return Object.keys(STATE.demandRaw).filter(d=> !al[d] && !nameSet[d.trim().toLowerCase()]);
+}
+// --- date header parsing + weekly->monthly aggregation ---
+function excelSerialToDate(n){ return new Date(Date.UTC(1899,11,30)+Math.round(n)*86400000); }
+function parseDateHeader(h){
+  if(h==null||h==='') return null;
+  if(typeof h==='number'){ return (h>20000&&h<80000)? excelSerialToDate(h) : null; }
+  const s=String(h).trim(); let m;
+  if(m=/^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(s)) return new Date(Date.UTC(+m[1],+m[2]-1,+m[3]));
+  if(m=/^(\d{4})-(\d{1,2})$/.exec(s)) return new Date(Date.UTC(+m[1],+m[2]-1,1));
+  if(m=/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s)) return new Date(Date.UTC(+m[3],+m[2]-1,+m[1])); // dd/mm/yyyy
+  const t=Date.parse(s); return isNaN(t)? null : new Date(t);
+}
+function ymOf(d){ return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0'); }
+function addDays(d,n){ return new Date(d.getTime()+n*86400000); }
+function distributeToMonths(dst,start,end,v){
+  if(!(end>start)){ const mk=ymOf(start); dst[mk]=(dst[mk]||0)+v; return; }
+  const total=(end-start)/86400000; let cur=new Date(start.getTime());
+  while(cur<end){ const monthEnd=new Date(Date.UTC(cur.getUTCFullYear(),cur.getUTCMonth()+1,1)); const segEnd=end<monthEnd?end:monthEnd; const days=(segEnd-cur)/86400000; const mk=ymOf(cur); dst[mk]=(dst[mk]||0)+v*(days/total); cur=segEnd; }
+}
 function serviceCategories(){ const s=[]; STATE.config.services.forEach(sv=>{ if(sv.category && s.indexOf(sv.category)<0) s.push(sv.category); }); return s.sort(); }
 // month index of an HR date field: number => offset from start; 'YYYY-MM' => diff; blank => null
 function fieldToIdx(v, startMonth){
@@ -450,12 +499,12 @@ function runEngine(cfg, demand, hr){
    RENDER
    ========================================================================= */
 const $=s=>document.querySelector(s);
-function renderAll(){ renderSteps(); renderGlobal(); renderGroups(); renderRoles(); renderCatList(); renderServices(); renderMapping(); renderResults(); renderChecks(); updateExportGate(); }
+function renderAll(){ renderSteps(); renderGlobal(); renderGroups(); renderRoles(); renderCatList(); renderServices(); renderServiceMap(); renderMapping(); renderResults(); renderChecks(); updateExportGate(); }
 
 function renderSteps(){
-  const steps=['Upload demand','Demand → groups','HR + planned + map','Compare capacity','Lead-time & cost','Plan output','Export .xlsx'];
-  const mapped=STATE.demand&&STATE.hr&&unmatchedRoles().length===0; const ran=!!STATE.lastRun;
-  const st=i=>{ if(i<=1) return STATE.demand?'done':'active'; if(i===2) return STATE.hr?(mapped?'done':'active'):(STATE.demand?'active':''); if(i>=3&&i<=5) return ran?'done':(mapped?'active':''); if(i===6) return ran?'active':''; return ''; };
+  const steps=['Upload demand','Map services','HR + planned + map roles','Compare capacity','Lead-time & cost','Plan output','Export .xlsx'];
+  const mapped=STATE.demandRaw&&STATE.hr&&unmatchedRoles().length===0&&unmatchedServices().length===0; const ran=!!STATE.lastRun;
+  const st=i=>{ if(i<=1) return STATE.demandRaw?(unmatchedServices().length?'active':'done'):'active'; if(i===2) return STATE.hr?(mapped?'done':'active'):(STATE.demandRaw?'active':''); if(i>=3&&i<=5) return ran?'done':(mapped?'active':''); if(i===6) return ran?'active':''; return ''; };
   $('#stepRail').innerHTML=steps.map((t,i)=>`<div class="step ${st(i)}"><div class="n">${i+1}</div><div class="t">${t}</div></div>`).join('');
 }
 function renderGlobal(){
@@ -524,6 +573,34 @@ function renderServices(){
   t.querySelectorAll('[data-delh]').forEach(b=> b.onclick=e=>{ const [si,hi]=e.target.dataset.delh.split(':').map(Number); STATE.config.services[si].handlers.splice(hi,1); renderServices(); softRerun(false); });
   t.querySelectorAll('[data-del-svc]').forEach(b=> b.onclick=e=>{ STATE.config.services.splice(+e.target.dataset.delSvc,1); renderServices(); softRerun(false); });
 }
+function renderServiceMap(){
+  const list=$('#svcMapList'), badge=$('#svcMapBadge'), warn=$('#svcMapWarn'), info=$('#svcMapInfo');
+  if(!STATE.demandRaw){ list.innerHTML='<div class="map-empty">Load a demand file (or the sample) to match services.</div>'; badge.textContent='—'; warn.classList.add('hidden'); info.textContent=''; return; }
+  const cfg=STATE.config; const dnames=Object.keys(STATE.demandRaw);
+  const byName={}; cfg.services.forEach(s=>byName[s.name.trim().toLowerCase()]=s); const al=cfg.serviceAliases||(cfg.serviceAliases={});
+  let matched=0,unm=0,ignored=0; const rowsHtml=[];
+  dnames.forEach(d=>{
+    const key=d.trim().toLowerCase(), alias=al[d];
+    if(alias==='__ignore__'){ ignored++; return; }
+    if((alias && cfg.services.some(s=>s.id===alias)) || byName[key]){ matched++; return; }
+    unm++;
+    const opts=['<option value="">— choose —</option>']
+      .concat(cfg.services.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(s=>`<option value="${esc(s.id)}">${esc(s.name)}${s.category?' · '+esc(s.category):''}</option>`))
+      .concat(['<option value="__create__">➕ Create as new service</option>','<option value="__ignore__">Ignore (exclude)</option>']).join('');
+    rowsHtml.push(`<div class="map-row unmatched"><div class="hrname">${esc(d)}<small>in demand file · no matching service</small></div><div class="arrow">→</div><select data-dsvc="${esc(d)}">${opts}</select><div><span class="tag tag-unmatched">Unmatched</span></div></div>`);
+  });
+  list.innerHTML= unm? rowsHtml.join('') : `<div class="notice leaf"><span class="ic">✓</span><div>All ${matched} demand services matched configured services${ignored?' ('+ignored+' ignored)':''}.</div></div>`;
+  list.querySelectorAll('select[data-dsvc]').forEach(sel=> sel.onchange=e=>{ const d=e.target.dataset.dsvc, v=e.target.value;
+    if(!v){ delete al[d]; }
+    else if(v==='__create__'){ const id=uid('svc'); cfg.services.push({id,name:d,category:'',clinicianType:'',handlers:[{group:cfg.groups[0]||'',sharePct:1,ahtSec:120,msgSec:0}]}); delete al[d]; renderServices(); renderCatList(); }
+    else { al[d]=v; }
+    renderServiceMap(); softRerun(); updateExportGate();
+  });
+  const noDemand=cfg.services.filter(s=> !dnames.some(d=>{ const alias=al[d]; return alias===s.id || (!alias && s.name.trim().toLowerCase()===d.trim().toLowerCase()); })).length;
+  badge.textContent=`${matched} matched · ${unm} unmatched${ignored?' · '+ignored+' ignored':''}`;
+  warn.classList.toggle('hidden',unm===0);
+  info.textContent= noDemand? noDemand+' configured service(s) have no demand row in this file (they contribute 0 orders).' : '';
+}
 function renderMapping(){
   const list=$('#mapList'); const roles=distinctHrRoles();
   if(!STATE.hr||!roles.length){ list.innerHTML='<div class="map-empty">Load an HR file (or the sample) to map roles.</div>'; $('#mapBadge').textContent='—'; $('#mapWarn').classList.add('hidden'); return; }
@@ -547,7 +624,8 @@ function renderMapping(){
 function ragH(gap,req){ if(gap<=1e-6) return 'rag-zero'; const r=req>0?gap/req:1; return r>0.15?'rag-red':'rag-amber'; }
 function renderResults(){
   const body=$('#resultsBody');
-  if(!STATE.demand||!STATE.hr){ body.innerHTML='<div class="map-empty">Load data and map roles, then Recompute.</div>'; return; }
+  if(!STATE.demandRaw||!STATE.hr){ body.innerHTML='<div class="map-empty">Load data and map roles, then Recompute.</div>'; return; }
+  if(unmatchedServices().length){ body.innerHTML='<div class="notice warn"><span class="ic">⚠️</span><div><strong>Resolve the unmatched demand services first.</strong> Unmatched rows would be dropped, understating required resource.</div></div>'; return; }
   if(unmatchedRoles().length){ body.innerHTML='<div class="notice warn"><span class="ic">⚠️</span><div><strong>Map the highlighted roles first.</strong> Unmatched HR roles are excluded from capacity.</div></div>'; return; }
   const R=STATE.lastRun; if(!R){ body.innerHTML='<div class="map-empty">Press <strong>Recompute</strong> to run the model.</div>'; return; }
   const cur=R.currency, ML=R.monthLabels;
@@ -607,8 +685,8 @@ function renderChecks(){
 /* =========================================================================
    RUN / GATE
    ========================================================================= */
-function canRun(){ return STATE.demand&&STATE.hr&&unmatchedRoles().length===0; }
-function doRun(){ if(!canRun()){ renderResults(); return; } STATE.lastRun=runEngine(STATE.config,STATE.demand,STATE.hr); renderResults(); renderChecks(); renderSteps(); }
+function canRun(){ return STATE.demandRaw&&STATE.hr&&unmatchedRoles().length===0&&unmatchedServices().length===0; }
+function doRun(){ if(!canRun()){ renderResults(); return; } STATE.lastRun=runEngine(STATE.config,resolveDemand(),STATE.hr); renderResults(); renderChecks(); renderSteps(); }
 function softRerun(){ if(canRun()&&STATE.lastRun) doRun(); else { renderSteps(); renderResults(); renderChecks(); } updateExportGate(); }
 function updateExportGate(){ const ok=canRun(); ['#btnExportXlsx','#btnExportXlsx2'].forEach(s=>{ const b=$(s); if(b) b.disabled=!ok; }); }
 function doRunIfReady(){ if(canRun()) doRun(); else { renderSteps(); updateExportGate(); } }
@@ -618,12 +696,32 @@ function doRunIfReady(){ if(canRun()) doRun(); else { renderSteps(); updateExpor
    ========================================================================= */
 function readWorkbook(file,cb){ const rd=new FileReader(); rd.onload=e=>{ try{ const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'}); const ws=wb.Sheets[wb.SheetNames[0]]; const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:true}); cb(aoa.filter(r=>r.some(c=>String(c).trim()!==''))); }catch(err){ alert('Could not read that file: '+err.message); } }; rd.readAsArrayBuffer(file); }
 function parseDemand(aoa){
-  if(!aoa.length) return; const header=aoa[0]; const monthCols=header.slice(1).map(h=>String(h).trim());
-  const demand={}; for(let i=1;i<aoa.length;i++){ const row=aoa[i]; const svc=String(row[0]).trim(); if(!svc) continue; demand[svc]={}; monthCols.forEach((mc,ci)=>{ demand[svc][mc]=num(row[ci+1]); }); }
-  const keys=monthKeys(STATE.config); const aligned={};
-  Object.keys(demand).forEach(svc=>{ aligned[svc]={}; keys.forEach((k,idx)=>{ const label=monthCols[idx]; aligned[svc][k]=label!=null?num(demand[svc][label]):0; }); });
-  STATE.demand=aligned; STATE.demandMonths=monthCols;
-  $('#statusDemand').className='file-status ok'; $('#statusDemand').textContent=`✓ ${Object.keys(demand).length} services × ${monthCols.length} months`;
+  if(!aoa.length) return; const header=aoa[0]; const cols=header.slice(1);
+  const dates=cols.map(parseDateHeader); const datedCount=dates.filter(Boolean).length;
+  const isDated=datedCount>=Math.max(1,Math.floor(cols.length*0.6));
+  const rows=[]; for(let i=1;i<aoa.length;i++){ const r=aoa[i]; const name=String(r[0]).trim(); if(name) rows.push(r); }
+  const raw={};
+  if(isDated){
+    // each column represents a period from its date to the next; distribute value across calendar months by day count
+    const sorted=dates.map((d,i)=>({d,i})).filter(o=>o.d).sort((a,b)=>a.d-b.d);
+    const gaps=[]; for(let k=1;k<sorted.length;k++) gaps.push((sorted[k].d-sorted[k-1].d)/86400000);
+    gaps.sort((a,b)=>a-b); const medGap=gaps.length?gaps[Math.floor(gaps.length/2)]:30;
+    const endOf={}; sorted.forEach((o,p)=>{ endOf[o.i]= sorted[p+1]? sorted[p+1].d : addDays(o.d,medGap); });
+    rows.forEach(r=>{ const name=String(r[0]).trim(); raw[name]={}; cols.forEach((c,ci)=>{ const d=dates[ci]; if(!d) return; const v=num(r[ci+1]); if(!v) return; distributeToMonths(raw[name],d,endOf[ci]||addDays(d,medGap),v); }); });
+    const mset={}; Object.keys(raw).forEach(n=>Object.keys(raw[n]).forEach(mk=>mset[mk]=1)); const ms=Object.keys(mset).sort();
+    if(ms.length){ STATE.config.global.startMonth=ms[0]; STATE.config.global.horizonMonths=Math.min(60,monthsBetween(ms[0],ms[ms.length-1])+1); }
+    STATE.demandCadence= medGap<=10?'weekly→monthly': medGap<=20?'fortnightly→monthly':'monthly';
+    STATE.demandRange= ms.length? monthLabel(ms[0])+'–'+monthLabel(ms[ms.length-1]) : '';
+  } else {
+    // fallback: columns are month labels by position (legacy)
+    const keys=monthKeys(STATE.config);
+    rows.forEach(r=>{ const name=String(r[0]).trim(); raw[name]={}; cols.forEach((c,ci)=>{ if(keys[ci]) raw[name][keys[ci]]=num(r[ci+1]); }); });
+    STATE.demandCadence='by position'; STATE.demandRange='';
+  }
+  STATE.demandRaw=raw; STATE.demandMonths=cols.map(String);
+  const nSvc=Object.keys(raw).length, unm=unmatchedServices().length;
+  $('#statusDemand').className='file-status ok';
+  $('#statusDemand').textContent=`✓ ${nSvc} services · ${STATE.demandCadence}${STATE.demandRange?' · '+STATE.demandRange:''}${unm?' · '+unm+' unmatched':''}`;
 }
 function parseHr(aoa){
   if(!aoa.length) return; const header=aoa[0].map(h=>String(h).trim().toLowerCase());
@@ -648,10 +746,11 @@ function exportXlsx(){
   if(!STATE.lastRun) doRun();
   const R=STATE.lastRun, cfg=STATE.config, cur=cfg.global.currency, rById=roleById(cfg), ML=R.monthLabels;
   const wb=XLSX.utils.book_new(); const add=(n,aoa)=>{ XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(aoa),n); };
+  const RD=resolveDemand();
 
   // Inputs (raw demand + raw HR; names only here)
-  const inp=[['INPUTS — raw uploads (reference). HR staff names appear on this tab ONLY.'],[],['Demand forecast — orders by service by month'],['Service'].concat(ML)];
-  cfg.services.forEach(sv=>{ const row=[sv.name]; R.months.forEach(mk=> row.push((STATE.demand[sv.name]&&STATE.demand[sv.name][mk])||0)); inp.push(row); });
+  const inp=[['INPUTS — raw uploads (reference). HR staff names appear on this tab ONLY.'],[],['Demand → configured services, orders by month ('+(STATE.demandCadence||'')+')'],['Service'].concat(ML)];
+  cfg.services.forEach(sv=>{ const row=[sv.name]; R.months.forEach(mk=> row.push(round2((RD[sv.name]&&RD[sv.name][mk])||0))); inp.push(row); });
   inp.push([]); inp.push(['HR extract — current team + planned hires (personal data)']);
   inp.push(['Name','HR role','Contracted hrs/mo','Start month','Ready month','Mapped to','Planned?']);
   STATE.hr.forEach(s=>{ const rid=cfg.mappings[s.role]; const to=rid==='__ignore__'?'(ignored)':(rById[rid]?rById[rid].name:'(unmapped)'); inp.push([s.name,s.role,s.hours,s.startMonth||'',s.readyMonth||'',to,(s.startMonth||s.readyMonth)?'yes':'no']); });
@@ -725,7 +824,7 @@ function exportXlsx(){
    CONFIG JSON EXPORT / IMPORT
    ========================================================================= */
 function exportConfig(){ const clean=JSON.parse(JSON.stringify(STATE.config)); delete clean._sessionManual; const blob=new Blob([JSON.stringify(clean,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='resourceforecast-config.json'; a.click(); URL.revokeObjectURL(a.href); }
-function importConfig(file){ const rd=new FileReader(); rd.onload=e=>{ try{ const cfg=JSON.parse(e.target.result); if(!cfg.roles||!cfg.services) throw new Error('missing roles/services'); cfg.global=cfg.global||{currency:'£',horizonMonths:12,startMonth:'2026-09'}; cfg.groups=cfg.groups||['IP','GP','Nurse']; cfg.roleAttrs=cfg.roleAttrs||defaultConfig().roleAttrs; cfg.mappings=cfg.mappings||{}; STATE.config=cfg; STATE.lastRun=null; renderAll(); alert('Config imported.'); }catch(err){ alert('That config file could not be read: '+err.message); } }; rd.readAsText(file); }
+function importConfig(file){ const rd=new FileReader(); rd.onload=e=>{ try{ const cfg=JSON.parse(e.target.result); if(!cfg.roles||!cfg.services) throw new Error('missing roles/services'); cfg.global=cfg.global||{currency:'£',horizonMonths:12,startMonth:'2026-09'}; cfg.groups=cfg.groups||['IP','GP','Nurse']; cfg.roleAttrs=cfg.roleAttrs||defaultConfig().roleAttrs; cfg.mappings=cfg.mappings||{}; cfg.serviceAliases=cfg.serviceAliases||{}; STATE.config=cfg; STATE.lastRun=null; renderAll(); alert('Config imported.'); }catch(err){ alert('That config file could not be read: '+err.message); } }; rd.readAsText(file); }
 
 /* =========================================================================
    WIRING
@@ -739,11 +838,11 @@ function wire(){
     el.addEventListener('dragover',ev=>{ev.preventDefault();el.classList.add('dragover');});
     el.addEventListener('dragleave',()=>el.classList.remove('dragover'));
     el.addEventListener('drop',ev=>{ ev.preventDefault();el.classList.remove('dragover'); const f=ev.dataTransfer.files[0]; if(f) readWorkbook(f,aoa=>{ parser(aoa); renderAll(); doRunIfReady(); }); }); });
-  $('#btnLoadSample').onclick=()=>{ STATE.config=defaultConfig(); STATE.demand=sampleDemand(STATE.config); STATE.demandMonths=monthKeys(STATE.config).map(monthLabel); STATE.hr=sampleHr(); STATE.lastRun=null;
+  $('#btnLoadSample').onclick=()=>{ STATE.config=defaultConfig(); STATE.demandRaw=sampleDemand(STATE.config); STATE.demandMonths=monthKeys(STATE.config).map(monthLabel); STATE.demandCadence='sample (monthly)'; STATE.demandRange=monthLabel(monthKeys(STATE.config)[0]); STATE.hr=sampleHr(); STATE.lastRun=null;
     $('#statusDemand').className='file-status ok'; $('#statusDemand').textContent='✓ sample: '+STATE.config.services.length+' services × '+monthKeys(STATE.config).length+' months';
     const planned=STATE.hr.filter(s=>s.startMonth||s.readyMonth).length;
     $('#statusHr').className='file-status ok'; $('#statusHr').textContent='✓ sample: '+STATE.hr.length+' staff · '+planned+' planned · 1 unmatched'; renderAll(); };
-  $('#btnClearData').onclick=()=>{ STATE.demand=null; STATE.hr=null; STATE.lastRun=null; $('#statusDemand').className='file-status none'; $('#statusDemand').textContent='No demand file loaded'; $('#statusHr').className='file-status none'; $('#statusHr').textContent='No HR file loaded'; renderAll(); };
+  $('#btnClearData').onclick=()=>{ STATE.demandRaw=null; STATE.hr=null; STATE.lastRun=null; $('#statusDemand').className='file-status none'; $('#statusDemand').textContent='No demand file loaded'; $('#statusHr').className='file-status none'; $('#statusHr').textContent='No HR file loaded'; renderAll(); };
   $('#btnAddRole').onclick=()=>{ STATE.config.roles.push({id:uid('role'),name:'New role',group:STATE.config.groups[0]||'',costPerHour:40,nonPrescribingPct:25,contractedHours:152,hireLeadWeeks:10,usefulLeadWeeks:6}); renderRoles(); softRerun(); };
   $('#btnAddRoleAttr').onclick=()=>{ const k=prompt('New role attribute key:'); if(!k) return; const label=prompt('Column label:',k)||k; STATE.config.roleAttrs.push({key:k,label:label,type:'text'}); renderRoles(); };
   $('#btnAddService').onclick=()=>{ STATE.config.services.push({id:uid('svc'),name:'New service',category:'',clinicianType:'',handlers:[{group:STATE.config.groups[0]||'',sharePct:1,ahtSec:120,msgSec:60}]}); SVC_FILTER=''; $('#svcFilter').value=''; renderServices(); softRerun(); };
