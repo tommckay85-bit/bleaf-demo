@@ -13,29 +13,45 @@ leaf, Boots Sharp type — with the fonts and [SheetJS](https://sheetjs.com)
 ## What it does (7 steps)
 
 1. **Upload a demand forecast** — orders by service, by month (`.xlsx`/`.csv`).
-2. **Demand → required resource** — `required hours = orders × AHT`;
-   `required FTE = required hours ÷ productive hours per FTE`, where
-   `productive hours = contracted hours × (1 − shrinkage%)`.
-3. **Upload the HR extract** and map HR role names to the tool's taxonomy. Known
-   mappings **auto-apply**; only new/unmatched roles are **flagged** for live
-   mapping. Unmatched roles are highlighted and **block export** — never dropped.
-4. **Compare** required vs available capacity, per role per month → surplus/gap.
-5. **Recruitment lead time** — for each gap, back-date the recruitment start; a
-   hire's salary is booked only **from the month it starts**, not the earlier
-   recruit-start month.
-6. **Resource plan + cost forecast** — gaps, recommended hires, when to start
-   recruiting, and phased cost.
+2. **Demand → required hours by group** — each service splits its orders across
+   clinician **groups** (IP / GP / Nurse) by a **% share**; hours =
+   `orders × share × (prescribing AHT + messaging time) ÷ 3600`.
+3. **Upload the HR extract** (current team **and** already-planned hires) and map
+   HR role names to the tool's roles. Known mappings **auto-apply**; only
+   new/unmatched roles are **flagged** for live mapping and **block export** —
+   never dropped.
+4. **Compare** required vs available capacity, per **group** per month → gap. A
+   group pools its roles' capacity; already-planned hires count from their
+   **Ready month** so they aren't re-recommended.
+5. **Lead-time-aware recruitment** — to be useful in a given month, recruiting
+   starts *lead-to-hire + lead-to-useful* earlier. **Cost is booked from the hire
+   month; capacity only counts from the useful month.** A group's gap is filled by
+   its **cheapest-capable role**.
+6. **Resource plan + cost forecast** — gaps, recommended hires with recruit /
+   hire / useful dates, and phased cost (new hires, planned, baseline).
 7. **Export** everything to an auditable `.xlsx`.
+
+The default config is seeded from the client's **AssumptionsBacking Data** tab
+(48 services with category, IP/GP/Nurse share, prescribing AHT and messaging
+time per order).
 
 ## Config & persistence
 
-Config is a **flexible key/value model** — services, roles and their *attributes*
-(columns) are added as rows in-app, not code. All parameters are editable:
+Config is a **flexible data model** — groups, roles, services and their
+*attributes* (columns) are added as rows in-app, not code. All parameters are
+editable:
 
-- **Per service:** AHT, eligible role pool(s).
-- **Per role:** cost / FTE / month, shrinkage %, recruitment lead time (months),
-  standard contracted hours.
+- **Groups:** the demand pools services share orders across (e.g. IP, GP, Nurse).
+- **Per service:** category, and for each handling group a **% share of orders**,
+  **prescribing AHT (sec)** and **messaging time per order (sec)**.
+- **Per role:** its **group**, **cost per hour**, **Non-Prescribing time %**,
+  contracted hours/month, **lead time to hire (weeks)** and **lead time to become
+  useful (weeks)**. Monthly cost = cost/hour × contracted hours; productive hours
+  = contracted × (1 − non-prescribing %).
 - **Global:** forecast horizon, currency, start month.
+
+Roles carry a **group** (e.g. IP and Nurse IP both sit in the *IP* group), so a
+group's demand can be met by any of its roles, cheapest first.
 
 Config **and** remembered role mappings persist by **exporting/importing a small
 JSON file** you keep next to the app (top-right *Export config* / *Import
@@ -49,38 +65,40 @@ later pass). Tabs:
 
 | Tab | Contents |
 |-----|----------|
-| **Inputs** | Raw demand + raw HR. **Staff names appear on this tab only.** |
-| **Config** | Every parameter as used in the run. |
-| **Mapping** | HR role → taxonomy, with auto vs manual noted. |
-| **Calc** | Orders → required hours → required FTE, every intermediate column. |
-| **Capacity & Gap** | Available vs required vs gap (FTE), by role by month. |
-| **Recruitment & Cost** | Hires, recruit-start month, phased cost. |
+| **Inputs** | Raw demand + raw HR (incl. Start/Ready months). **Staff names appear on this tab only.** |
+| **Config** | Global, groups, roles, and per-service handler splits as used in the run. |
+| **Mapping** | HR role → clinician role, with auto vs manual noted. |
+| **Calc** | Orders → handler hours (per service/group), then group required/available/gap. |
+| **Capacity & Gap** | Required vs available vs recommended vs gap (hours), by group by month. |
+| **Recruitment & Cost** | Hires with recruit / hire / useful months + lead times, and phased cost. |
 | **Self-Check** | The app re-derives totals and reconciles cost ↔ gap → PASS/FAIL. |
 | **Methodology** | Plain-English explanation of every calculation. |
 
-Calc/cost tabs are aggregated to **role level** — no staff names scattered through
-them.
+Calc/cost tabs are aggregated to **group / role level** — no staff names
+scattered through them.
 
-## v1 modelling defaults — all **editable config**, not hardcoded
+## Modelling defaults — all **editable config**, not hardcoded
 
-These are starting assumptions to revisit first during iteration:
+Starting assumptions to revisit during iteration:
 
-- **Shrinkage %** reduces contracted → productive hours (editable per role).
-- **Role overlap:** where several roles can cover a service, existing capacity is
-  consumed **cheapest-capable-first** (by cost per productive hour); any remainder
-  becomes a gap assigned to the cheapest capable role.
-- **Workload model only** (no queueing/SLA maths) for v1.
-- **Required FTE rounds up** per role per month. Note: the *gap* that drives
-  hiring is computed in productive **hours**, so part-time existing capacity can
-  cover a rounded-up requirement without a phantom hire.
-- **No attrition / backfill** in v1.
+- **Non-Prescribing time %** reduces contracted → productive hours (per role).
+- **Group overlap:** a group's gap is filled by its **cheapest-capable role** (by
+  cost per productive hour).
+- **Lead times (weeks):** to be useful in a month, recruitment starts
+  `hire + useful` lead earlier; cost is booked from the **hire** month, capacity
+  from the **useful** month. Dates before the horizon start are flagged *overdue*.
+- **Planned hires** in the HR file (Start = cost begins, Ready = capacity counts)
+  are counted and **never re-recommended**.
+- **Gap = required − (existing + planned)** in hours; recommended hires fill it
+  cumulatively (earlier hires are netted off, so no double-hiring).
+- **Workload model only** (no queueing/SLA maths); **no attrition/backfill** yet.
 
-The engine is written as small, named pure functions (`ASSUMPTIONS` block in the
-`<script>`), decoupled from the DOM, so a **queueing/SLA model** and **attrition**
-can be added later without a rewrite.
+The engine is isolated pure functions (an `ASSUMPTIONS` block), decoupled from the
+DOM, so a queueing/SLA model and attrition can be added without a rewrite.
 
 ## Try it
 
-Open the file and click **Load sample data** — a tiny hardcoded demand + HR set
-(one role is intentionally left unmatched to show the mapping flag). Map it, press
+Open the file and click **Load sample data** — the 48 real services, a sample
+monthly demand, and a sample team that includes one **planned hire** and one
+**unmatched role** (to show the mapping flag). Map the unmatched role, press
 **Recompute**, then **Export .xlsx**.
