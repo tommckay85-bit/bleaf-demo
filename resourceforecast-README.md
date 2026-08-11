@@ -18,9 +18,14 @@ leaf, Boots Sharp type — with the fonts and [SheetJS](https://sheetjs.com)
    **auto-detected**. Demand rows are matched to configured services by name;
    unmatched rows are **flagged for mapping** (map to an existing service, create
    it, or ignore) and **block export** — never silently dropped.
-2. **Demand → required hours by group** — each service splits its orders across
-   clinician **groups** (IP / GP / Nurse) by a **% share**; hours =
-   `orders × share × (prescribing AHT + messaging time) ÷ 3600`.
+2. **Demand → required hours by task** — each service is a **list of tasks**;
+   every task is one role doing one activity, with a **time per order** and an
+   **incidence %** (how many orders need it). Task hours =
+   `orders × incidence% × time ÷ 3600`, attributed to the task's group. An order
+   can span several tasks across **different roles** — async *review + messaging*,
+   or synchronous *pre-screen + specialist consult + GP letter*. Incidence also
+   carries the prescriber/GP order-routing split and funnels (e.g. only 60% of
+   orders reach a consult).
 3. **Upload the HR extract** (current team **and** already-planned hires) and map
    HR role names to the tool's roles. Known mappings **auto-apply**; only
    new/unmatched roles are **flagged** for live mapping and **block export** —
@@ -47,8 +52,9 @@ Config is a **flexible data model** — groups, roles, services and their
 editable:
 
 - **Groups:** the demand pools services share orders across (e.g. IP, GP, Nurse).
-- **Per service:** category, and for each handling group a **% share of orders**,
-  **prescribing AHT (sec)** and **messaging time per order (sec)**.
+- **Per service:** category, and a **list of tasks** — each with a name, the
+  **group** that performs it, **time per order (sec)** and **incidence %**. This
+  models multi-person orders (async and synchronous) uniformly.
 - **Per role:** its **group**, **cost per hour**, **Non-Prescribing time %**,
   contracted hours/month, **lead time to hire (weeks)** and **lead time to become
   useful (weeks)**. Monthly cost = cost/hour × contracted hours; productive hours
