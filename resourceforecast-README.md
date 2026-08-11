@@ -27,16 +27,19 @@ leaf, Boots Sharp type — with the fonts and [SheetJS](https://sheetjs.com)
    carries the prescriber/GP order-routing split and funnels (e.g. only 60% of
    orders reach a consult).
 3. **Upload the HR extract** (current team **and** already-planned hires) and map
-   HR role names to the tool's roles. Known mappings **auto-apply**; only
-   new/unmatched roles are **flagged** for live mapping and **block export** —
-   never dropped.
-4. **Compare** required vs available capacity, per **group** per month → gap. A
-   group pools its roles' capacity; already-planned hires count from their
-   **Ready month** so they aren't re-recommended.
+   HR role names to the tool's roles. Each staff row can also carry a per-person
+   **Non-prescribing %** (seniors carry more) and **Specialisms** — the areas they
+   can work. Known role mappings **auto-apply**; unmatched roles **block export**.
+4. **Match capacity to demand, eligibility-aware.** Staff are allocated only to
+   work they're **qualified for** (scarcest area first), and required vs available
+   is compared per **group × category** — so a shortage in one specialism can't be
+   hidden by spare capacity that isn't qualified for it. Planned hires count from
+   their **Ready month** so they aren't re-recommended.
 5. **Lead-time-aware recruitment** — to be useful in a given month, recruiting
    starts *lead-to-hire + lead-to-useful* earlier. **Cost is booked from the hire
-   month; capacity only counts from the useful month.** A group's gap is filled by
-   its **cheapest-capable role**.
+   month; capacity only counts from the useful month.** Each gap is filled by the
+   group's **cheapest-capable role**, and the hire is **tagged to the area**
+   (group × category) it's recruited for.
 6. **Resource plan + cost forecast** — gaps, recommended hires with recruit /
    hire / useful dates, and phased cost (new hires, planned, baseline).
 7. **Export** everything to an auditable `.xlsx`.
@@ -58,7 +61,11 @@ editable:
 - **Per role:** its **group**, **cost per hour**, **Non-Prescribing time %**,
   contracted hours/month, **lead time to hire (weeks)** and **lead time to become
   useful (weeks)**. Monthly cost = cost/hour × contracted hours; productive hours
-  = contracted × (1 − non-prescribing %).
+  = contracted × (1 − non-prescribing %). Non-prescribing % and specialisms can be
+  overridden **per staff member** in the HR file.
+- **Per staff (HR file):** optional **Non-prescribing %** and **Specialisms** — a
+  `;`-separated list of categories and/or services, with `-` to exclude
+  (e.g. `Skin; Sexual Health; -Psoriasis`). Blank = eligible for everything.
 - **Global:** forecast horizon, currency, start month.
 
 Roles carry a **group** (e.g. IP and Nurse IP both sit in the *IP* group), so a
@@ -92,7 +99,12 @@ scattered through them.
 
 Starting assumptions to revisit during iteration:
 
-- **Non-Prescribing time %** reduces contracted → productive hours (per role).
+- **Non-Prescribing time %** reduces contracted → productive hours (per role, or
+  per staff member).
+- **Specialisms:** existing/planned staff are allocated only to work they're
+  eligible for, **scarcest area first, most-specialised staff first** (a
+  transparent heuristic, not an optimiser). Gaps and hiring are per **group ×
+  category**; recommended hires are **dedicated to their area**.
 - **Group overlap:** a group's gap is filled by its **cheapest-capable role** (by
   cost per productive hour).
 - **Lead times (weeks):** to be useful in a month, recruitment starts
