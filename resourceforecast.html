@@ -119,6 +119,28 @@ table.dt input.w-sm{min-width:56px}
 .filterbar{display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
 .filterbar input{font-family:inherit;font-size:13.5px;border:1px solid var(--line);border-radius:9px;padding:8px 12px;min-width:220px;background:#fff}
 .filterbar input:focus{outline:none;border-color:var(--leaf);box-shadow:0 0 0 2px var(--leaf-tint)}
+/* ---- Config sub-panels, group colour coding, editable vs calculated ---- */
+.subpanel{background:var(--bg-cool);border:1px solid var(--line);border-radius:14px;padding:14px 16px 16px;margin-bottom:14px}
+.subpanel .sp-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.subpanel .sp-title{font-size:12.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--navy);display:flex;align-items:center;gap:9px}
+.subpanel .sp-title .accent{width:7px;height:15px;border-radius:3px;background:var(--leaf);display:inline-block}
+.subpanel .sp-sub{font-size:12px;color:var(--mute)}
+.subpanel .sp-count{font-weight:700;color:var(--mute);letter-spacing:0;text-transform:none;font-size:11.5px}
+.subpanel .tbl-wrap{background:#fff}
+.cfg-legend{display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:14px;font-size:11.5px;color:var(--mute)}
+.cfg-legend .lg{display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.cfg-legend .sw{width:13px;height:13px;border-radius:4px;border:1px solid rgba(5,5,75,.08)}
+.grp-pill{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;border:1px solid;border-radius:999px;padding:2px 9px;white-space:nowrap}
+.grp-dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0}
+table.dt select.grp-sel{font-weight:700;border-width:1px}
+table.dt td.calc{background:#eef2fa;color:var(--mute)}
+table.dt tbody tr:hover td.calc{background:#e7edf7}
+table.dt input.needs{background:#fff7ea;border-color:#e6c583}
+table.dt tbody tr.svc-top td{border-top:2px solid var(--line-2)}
+table.dt tbody tr.svc-alt td{background:#fafbfe}
+table.dt tbody tr.svc-alt:hover td{background:var(--bg-cool)}
+table.dt tbody tr.svc-alt td.calc{background:#e9eef7}
+td.rowaccent{border-left:3px solid var(--leaf)}
 footer.appfoot{border-top:1px solid var(--line);background:#fff;padding:26px 0;margin-top:40px}
 .appfoot .row{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;font-size:12.5px;color:var(--mute)}.appfoot strong{color:var(--navy)}
 </style>
@@ -182,29 +204,36 @@ footer.appfoot{border-top:1px solid var(--line);background:#fff;padding:26px 0;m
   <section class="card" id="card-config">
     <div class="card-head"><div class="ttl"><h2>2 · Config</h2><span class="sub">Every parameter used in the run — fully editable. Add groups, roles, services or attributes as data, not code.</span></div><span class="badge">Editable model</span></div>
     <div class="card-body">
-      <div class="section-title">Global</div>
-      <div class="inline-fields" id="globalFields"></div>
+      <div class="cfg-legend" id="cfgLegend"></div>
 
-      <div class="section-title" style="margin-top:22px">Clinician groups <span class="mute" style="text-transform:none;letter-spacing:0">· demand pools that services share orders across</span></div>
-      <div class="chips" id="groupChips"></div>
-
-      <div class="section-title" style="margin-top:22px">Roles <span class="mute" style="text-transform:none;letter-spacing:0">· each belongs to a group; cost/hour, non-prescribing %, lead times</span></div>
-      <div class="tbl-wrap"><table class="dt" id="tblRoles"></table></div>
-      <div class="card-actions" style="margin-top:10px">
-        <button class="btn btn-ghost btn-xs" id="btnAddRole">+ Add role</button>
-        <button class="btn btn-ghost btn-xs" id="btnAddRoleAttr">+ Add attribute (column)</button>
+      <div class="subpanel">
+        <div class="sp-head"><div class="sp-title"><span class="accent"></span>Global</div><span class="sp-sub">currency, forecast window</span></div>
+        <div class="inline-fields" id="globalFields"></div>
       </div>
-      <p class="hint">Productive hours/FTE = contracted × (1 − non-prescribing %). Monthly cost = cost/hour × contracted hours. A group's gap is filled by its cheapest-capable role.</p>
 
-      <div class="section-title" style="margin-top:22px">Services <span class="mute" style="text-transform:none;letter-spacing:0">· category, and a list of tasks (role + time/order + how often)</span></div>
-      <div class="filterbar">
-        <input id="svcFilter" placeholder="Filter services or categories…" />
-        <span class="mute" id="svcCount"></span>
+      <div class="subpanel">
+        <div class="sp-head"><div class="sp-title"><span class="accent"></span>Clinician groups</div><span class="sp-sub">demand pools that services route work to — each has a colour used throughout</span></div>
+        <div class="chips" id="groupChips"></div>
       </div>
-      <div class="tbl-wrap tbl-scroll"><table class="dt" id="tblServices"></table></div>
-      <datalist id="catlist"></datalist>
-      <div class="card-actions" style="margin-top:10px"><button class="btn btn-ghost btn-xs" id="btnAddService">+ Add service</button></div>
-      <p class="hint">Each task is one role doing one activity. <strong>Time</strong> is seconds per order; <strong>incidence</strong> is the % of orders that need it (100% = every order; use it for prescriber/GP split, or a prescreen→consult funnel). Task hours = orders × incidence% × time ÷ 3600. An order can span many tasks across different roles (async review + messaging, or sync prescreen + consult + GP letter).</p>
+
+      <div class="subpanel">
+        <div class="sp-head"><div class="sp-title"><span class="accent"></span>Roles</div><span class="sp-sub">each belongs to a group · cost/hour, non-prescribing %, lead times</span></div>
+        <div class="tbl-wrap"><table class="dt" id="tblRoles"></table></div>
+        <div class="card-actions" style="margin-top:10px">
+          <button class="btn btn-ghost btn-xs" id="btnAddRole">+ Add role</button>
+          <button class="btn btn-ghost btn-xs" id="btnAddRoleAttr">+ Add attribute (column)</button>
+        </div>
+        <p class="hint">Productive hours/FTE = contracted × (1 − non-prescribing %). Monthly cost = cost/hour × contracted hours. A group's gap is filled by its cheapest-capable role.</p>
+      </div>
+
+      <div class="subpanel">
+        <div class="sp-head"><div class="sp-title"><span class="accent"></span>Services <span class="sp-count" id="svcCount"></span></div><span class="sp-sub">category, and a list of tasks (role + time/order + how often)</span></div>
+        <div class="filterbar"><input id="svcFilter" placeholder="Filter services or categories…" /></div>
+        <div class="tbl-wrap tbl-scroll"><table class="dt" id="tblServices"></table></div>
+        <datalist id="catlist"></datalist>
+        <div class="card-actions" style="margin-top:10px"><button class="btn btn-ghost btn-xs" id="btnAddService">+ Add service</button></div>
+        <p class="hint">Each task is one role doing one activity. <strong>Time</strong> is seconds per order; <strong>incidence</strong> is the % of orders that need it (100% = every order; use it for prescriber/GP split, or a prescreen→consult funnel). Task hours = orders × incidence% × time ÷ 3600. An order can span many tasks across different roles (async review + messaging, or sync prescreen + consult + GP letter).</p>
+      </div>
     </div>
   </section>
 
@@ -513,7 +542,23 @@ function runEngine(cfg, demand, hr){
    RENDER
    ========================================================================= */
 const $=s=>document.querySelector(s);
-function renderAll(){ renderSteps(); renderGlobal(); renderGroups(); renderRoles(); renderCatList(); renderServices(); renderServiceMap(); renderMapping(); renderResults(); renderChecks(); updateExportGate(); }
+// group colour coding (used across chips, roles and service tasks)
+const GROUP_PALETTE=[
+  {bg:'#EAF4EE',fg:'#2C6244',bd:'#BFE0CD'}, // leaf
+  {bg:'#E9EDF8',fg:'#26306E',bd:'#D2DAEE'}, // indigo
+  {bg:'#FBF1E0',fg:'#7A5C0C',bd:'#ECD6A6'}, // sand
+  {bg:'#E3F1F1',fg:'#1F6B6B',bd:'#C3E2E2'}, // teal
+  {bg:'#F3E9F4',fg:'#6B2C5F',bd:'#E3CFE3'}, // plum
+  {bg:'#EDEFF3',fg:'#3A4256',bd:'#DCE1EA'}  // slate
+];
+function groupColor(name){ const g=STATE.config.groups||[]; let i=g.indexOf(name); if(i<0){ i=0; const s=String(name||''); for(let c=0;c<s.length;c++) i+=s.charCodeAt(c); } return GROUP_PALETTE[((i%GROUP_PALETTE.length)+GROUP_PALETTE.length)%GROUP_PALETTE.length]; }
+function grpStyle(name){ const c=groupColor(name); return `background:${c.bg};color:${c.fg};border-color:${c.bd}`; }
+function renderLegend(){
+  const el=$('#cfgLegend'); if(!el) return;
+  const groups=(STATE.config.groups||[]).map(g=>`<span class="lg" style="color:${groupColor(g).fg}"><span class="sw" style="${grpStyle(g)}"></span>${esc(g)}</span>`).join('');
+  el.innerHTML=`${groups}<span class="lg" style="color:var(--mute)"><span class="sw" style="background:#eef2fa;border-color:#d7deee"></span>calculated</span><span class="lg" style="color:#7a5c0c"><span class="sw" style="background:#fff7ea;border-color:#e6c583"></span>needs a value</span>`;
+}
+function renderAll(){ renderSteps(); renderGlobal(); renderLegend(); renderGroups(); renderRoles(); renderCatList(); renderServices(); renderServiceMap(); renderMapping(); renderResults(); renderChecks(); updateExportGate(); }
 
 function renderSteps(){
   const steps=['Upload demand','Map services','HR + planned + map roles','Compare capacity','Lead-time & cost','Plan output','Export .xlsx'];
@@ -533,7 +578,7 @@ function renderGlobal(){
 }
 function renderGroups(){
   const cfg=STATE.config;
-  $('#groupChips').innerHTML=cfg.groups.map((g,i)=>`<span class="chip">${esc(g)}<span class="x" data-delg="${i}" title="Remove group">×</span></span>`).join('')
+  $('#groupChips').innerHTML=cfg.groups.map((g,i)=>`<span class="grp-pill" style="${grpStyle(g)}"><span class="grp-dot" style="background:${groupColor(g).fg}"></span>${esc(g)}<span class="x" data-delg="${i}" title="Remove group" style="cursor:pointer;margin-left:2px">×</span></span>`).join('')
     +`<button class="btn btn-ghost btn-xs" id="btnAddGroup">+ Add group</button>`;
   document.querySelectorAll('[data-delg]').forEach(x=> x.onclick=e=>{ const i=+e.target.dataset.delg; const removed=cfg.groups[i]; cfg.groups.splice(i,1); renderGroups(); renderRoles(); renderServices(); softRerun(); });
   $('#btnAddGroup').onclick=()=>{ const n=prompt('New group name (e.g. Nurse IP):'); if(!n) return; if(cfg.groups.indexOf(n)<0) cfg.groups.push(n); renderGroups(); renderRoles(); renderServices(); softRerun(); };
@@ -542,13 +587,15 @@ function renderRoles(){
   const cfg=STATE.config, attrs=cfg.roleAttrs;
   let head='<thead><tr><th>Role</th>'+attrs.map(a=>`<th>${esc(a.label)}</th>`).join('')+'<th class="num">Prod hrs</th><th class="num">Monthly £</th><th></th></tr></thead>';
   let body='<tbody>'+cfg.roles.map((r,ri)=>{
-    let cells=`<td><input value="${esc(r.name)}" data-ri="${ri}" data-k="name"/></td>`;
+    let cells=`<td class="rowaccent" style="border-left-color:${groupColor(r.group).fg}"><input value="${esc(r.name)}" data-ri="${ri}" data-k="name"/></td>`;
     cells+=attrs.map(a=>{
-      if(a.type==='group'){ return `<td><select data-ri="${ri}" data-k="group">${cfg.groups.map(g=>`<option ${r.group===g?'selected':''}>${esc(g)}</option>`).join('')}</select></td>`; }
-      return `<td><input class="w-sm" value="${esc(r[a.key]==null?'':r[a.key])}" data-ri="${ri}" data-k="${esc(a.key)}"/></td>`;
+      if(a.type==='group'){ return `<td><select class="grp-sel" style="${grpStyle(r.group)}" data-ri="${ri}" data-k="group">${cfg.groups.map(g=>`<option ${r.group===g?'selected':''}>${esc(g)}</option>`).join('')}</select></td>`; }
+      const val=r[a.key]==null?'':r[a.key];
+      const needs=((a.key==='costPerHour'||a.key==='contractedHours')&&!(num(val)>0))?' needs':'';
+      return `<td><input class="w-sm${needs}" value="${esc(val)}" data-ri="${ri}" data-k="${esc(a.key)}"/></td>`;
     }).join('');
-    cells+=`<td class="num mute">${ASSUMPTIONS.productiveHoursPerFTE(r).toFixed(0)}</td>`;
-    cells+=`<td class="num mute">${money(ASSUMPTIONS.monthlyCost(r),cfg.global.currency)}</td>`;
+    cells+=`<td class="num calc">${ASSUMPTIONS.productiveHoursPerFTE(r).toFixed(0)}</td>`;
+    cells+=`<td class="num calc">${money(ASSUMPTIONS.monthlyCost(r),cfg.global.currency)}</td>`;
     cells+=`<td><button class="cellbtn" data-del-role="${ri}">×</button></td>`;
     return '<tr>'+cells+'</tr>';
   }).join('')+'</tbody>';
@@ -563,26 +610,30 @@ function renderServices(){
   const list=cfg.services.filter(sv=> !f || sv.name.toLowerCase().includes(f) || (sv.category||'').toLowerCase().includes(f));
   $('#svcCount').textContent=list.length+' of '+cfg.services.length+' services';
   let html='<thead><tr><th>Service</th><th>Category</th><th>Task</th><th>Group</th><th class="num">Time (s)</th><th class="num">Incidence %</th><th class="num">eff min/order</th><th></th></tr></thead><tbody>';
+  let sIdx=-1;
   list.forEach(sv=>{
+    sIdx++; const alt=(sIdx%2===1)?' svc-alt':'';
     const si=cfg.services.indexOf(sv); const ts=(sv.tasks&&sv.tasks.length)?sv.tasks:[{name:'Review',group:cfg.groups[0]||'',timeSec:0,incidencePct:100}]; const n=ts.length;
+    const pg=ts[0]?ts[0].group:(cfg.groups[0]||'');
     ts.forEach((t,ti)=>{
-      html+='<tr>';
+      html+=`<tr class="${ti===0?'svc-top':''}${alt}">`;
       if(ti===0){
-        html+=`<td rowspan="${n}" style="min-width:160px"><input value="${esc(sv.name)}" data-si="${si}" data-sk="name"/><div style="margin-top:3px"><button class="cellbtn" data-del-svc="${si}" title="Remove service">× service</button></div></td>`;
+        html+=`<td rowspan="${n}" class="rowaccent" style="min-width:160px;border-left-color:${groupColor(pg).fg}"><input value="${esc(sv.name)}" data-si="${si}" data-sk="name"/><div style="margin-top:3px"><button class="cellbtn" data-del-svc="${si}" title="Remove service">× service</button></div></td>`;
         html+=`<td rowspan="${n}"><input list="catlist" value="${esc(sv.category||'')}" data-si="${si}" data-sk="category"/><div class="mute" style="font-size:11px;margin-top:3px">${esc(sv.clinicianType||'')}</div></td>`;
       }
       html+=`<td><input value="${esc(t.name||'')}" data-si="${si}" data-ti="${ti}" data-tk="name" style="min-width:110px"/></td>`;
-      html+=`<td><select data-si="${si}" data-ti="${ti}" data-tk="group">${cfg.groups.map(g=>`<option ${t.group===g?'selected':''}>${esc(g)}</option>`).join('')}${cfg.groups.indexOf(t.group)<0?`<option selected>${esc(t.group)}</option>`:''}</select></td>`;
-      html+=`<td><input class="w-sm" value="${esc(t.timeSec)}" data-si="${si}" data-ti="${ti}" data-tk="timeSec"/></td>`;
+      html+=`<td><select class="grp-sel" style="${grpStyle(t.group)}" data-si="${si}" data-ti="${ti}" data-tk="group">${cfg.groups.map(g=>`<option ${t.group===g?'selected':''}>${esc(g)}</option>`).join('')}${cfg.groups.indexOf(t.group)<0?`<option selected>${esc(t.group)}</option>`:''}</select></td>`;
+      const needs=!(num(t.timeSec)>0)?' needs':'';
+      html+=`<td><input class="w-sm${needs}" value="${esc(t.timeSec)}" data-si="${si}" data-ti="${ti}" data-tk="timeSec"/></td>`;
       html+=`<td><input class="w-sm" value="${esc(t.incidencePct==null?100:t.incidencePct)}" data-si="${si}" data-ti="${ti}" data-tk="incidencePct"/></td>`;
-      html+=`<td class="num mute">${(((num(t.incidencePct)||0)/100)*(num(t.timeSec)/60)).toFixed(2)}</td>`;
+      html+=`<td class="num calc">${(((num(t.incidencePct)||0)/100)*(num(t.timeSec)/60)).toFixed(2)}</td>`;
       html+=`<td>${n>1?`<button class="cellbtn" data-delt="${si}:${ti}" title="Remove task">×</button>`:''}<button class="cellbtn" data-addt="${si}" title="Add task" style="color:var(--leaf)">+</button></td>`;
       html+='</tr>';
     });
   });
   html+='</tbody>'; const t=$('#tblServices'); t.innerHTML=html;
   t.querySelectorAll('[data-sk]').forEach(inp=> inp.onchange=e=>{ const si=+e.target.dataset.si,k=e.target.dataset.sk; STATE.config.services[si][k]=e.target.value; if(k==='category'){ renderCatList(); } softRerun(false); });
-  t.querySelectorAll('[data-tk]').forEach(inp=> inp.onchange=e=>{ const si=+e.target.dataset.si,ti=+e.target.dataset.ti,k=e.target.dataset.tk; const tk=STATE.config.services[si].tasks[ti]; tk[k]= (k==='name'||k==='group')? e.target.value : num(e.target.value); softRerun(false); });
+  t.querySelectorAll('[data-tk]').forEach(inp=> inp.onchange=e=>{ const si=+e.target.dataset.si,ti=+e.target.dataset.ti,k=e.target.dataset.tk; const tk=STATE.config.services[si].tasks[ti]; tk[k]= (k==='name'||k==='group')? e.target.value : num(e.target.value); if(k==='group'||k==='timeSec') renderServices(); softRerun(false); });
   t.querySelectorAll('[data-addt]').forEach(b=> b.onclick=e=>{ const si=+e.target.dataset.addt; (STATE.config.services[si].tasks=STATE.config.services[si].tasks||[]).push({name:'New task',group:cfg.groups[0]||'',timeSec:60,incidencePct:100}); renderServices(); softRerun(false); });
   t.querySelectorAll('[data-delt]').forEach(b=> b.onclick=e=>{ const [si,ti]=e.target.dataset.delt.split(':').map(Number); STATE.config.services[si].tasks.splice(ti,1); renderServices(); softRerun(false); });
   t.querySelectorAll('[data-del-svc]').forEach(b=> b.onclick=e=>{ STATE.config.services.splice(+e.target.dataset.delSvc,1); renderServices(); softRerun(false); });
