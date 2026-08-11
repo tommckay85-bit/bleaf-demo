@@ -26,10 +26,15 @@ leaf, Boots Sharp type — with the fonts and [SheetJS](https://sheetjs.com)
    or synchronous *pre-screen + specialist consult + GP letter*. Incidence also
    carries the prescriber/GP order-routing split and funnels (e.g. only 60% of
    orders reach a consult).
-3. **Upload the HR extract** (current team **and** already-planned hires) and map
-   HR role names to the tool's roles. Each staff row can also carry a per-person
-   **Non-prescribing %** (seniors carry more) and **Specialisms** — the areas they
-   can work. Known role mappings **auto-apply**; unmatched roles **block export**.
+3. **Upload the team.** Two shapes are accepted:
+   - a simple **HR list** (Name · Role · Contracted hrs/mo · optional Non-prescribing % · Specialisms · Start/Ready month), mapped by **role name**; or
+   - a **people/roster export** (auto-detected by a staff-number + Cost Centre
+     column) — filtered to your **clinical Cost Centre**, mapped **by staff
+     number**. Job Name → role is seeded by editable rules; hours, non-prescribing
+     % and specialisms are held **per person** in the config and persist. New or
+     changed staff numbers are **flagged to map** before a run (export blocked).
+   Either way, each person can carry a **Non-prescribing %** (seniors carry more)
+   and **Specialisms** (the areas they can work).
 4. **Match capacity to demand, eligibility-aware.** Staff are allocated only to
    work they're **qualified for** (scarcest area first), and required vs available
    is compared per **group × category** — so a shortage in one specialism can't be
