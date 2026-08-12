@@ -136,6 +136,9 @@ table.dt select.grp-sel{font-weight:700;border-width:1px}
 table.dt td.calc{background:#eef2fa;color:var(--mute)}
 table.dt tbody tr:hover td.calc{background:#e7edf7}
 table.dt input.needs{background:#fff7ea;border-color:#e6c583}
+table.dt input.ov{background:#e9eefb;border-color:#9db4e6;font-weight:700;color:var(--navy-soft)}
+.cellflex{display:flex;align-items:center;gap:4px}
+.cellflex .cellbtn{color:var(--mute);font-size:13px}
 table.dt tbody tr.svc-top td{border-top:2px solid var(--line-2)}
 table.dt tbody tr.svc-alt td{background:#fafbfe}
 table.dt tbody tr.svc-alt:hover td{background:var(--bg-cool)}
@@ -433,7 +436,7 @@ function applyPeopleRules(){ // pre-populate peopleMap for staff not yet mapped,
   (STATE.people||[]).forEach(p=>{
     if(pm[p.staff] && pm[p.staff].role) return; // keep existing (manual) mapping
     const role=jobRuleFor(p);
-    if(role) pm[p.staff]={ role, hours:DEFAULT_PERSON_HOURS, nonPrescPct:'', specialisms:'', jobName:p.jobName, auto:true };
+    if(role) pm[p.staff]={ role, hours:'', nonPrescPct:'', specialisms:'', jobName:p.jobName, auto:true }; // blank = inherit role defaults
   });
 }
 function unmappedPeople(){ if(STATE.hrMode!=='people'||!STATE.people) return []; const pm=STATE.config.peopleMap||{}; return STATE.people.filter(p=> !pm[p.staff] || !pm[p.staff].role); }
@@ -441,15 +444,20 @@ function reapplyRules(){ // re-derive role for unmapped + auto-mapped people (ke
   const pm=STATE.config.peopleMap||(STATE.config.peopleMap={});
   (STATE.people||[]).forEach(p=>{ const m=pm[p.staff]; if(m && m.role && !m.auto) return; // keep manual
     const role=jobRuleFor(p);
-    if(role) pm[p.staff]=Object.assign({hours:DEFAULT_PERSON_HOURS,nonPrescPct:'',specialisms:''}, m||{}, {role,jobName:p.jobName,auto:true});
+    if(role) pm[p.staff]=Object.assign({hours:'',nonPrescPct:'',specialisms:''}, m||{}, {role,jobName:p.jobName,auto:true});
     else if(m&&m.auto) delete pm[p.staff]; // rule no longer matches -> back to unmapped
   });
   rebuildHrFromPeople();
 }
 function rebuildHrFromPeople(){ // build the engine's staff list from mapped, non-ignored people
   const pm=STATE.config.peopleMap||{}; const rById=roleById(STATE.config);
-  STATE.hr=(STATE.people||[]).map(p=>{ const m=pm[p.staff]; if(!m||!m.role||m.role==='__ignore__'||!rById[m.role]) return null;
-    return { name:p.name, staffNo:p.staff, jobName:p.jobName, roleId:m.role, hours: num(m.hours)||DEFAULT_PERSON_HOURS, nonPrescPct:m.nonPrescPct, specialisms:m.specialisms }; }).filter(Boolean);
+  const has=v=> v!=null && String(v).trim()!=='';
+  STATE.hr=(STATE.people||[]).map(p=>{ const m=pm[p.staff]; if(!m||!m.role||m.role==='__ignore__'||!rById[m.role]) return null; const role=rById[m.role];
+    // blank hours / non-prescribing % inherit the role default (bulk edits flow through); non-blank = per-person override
+    return { name:p.name, staffNo:p.staff, jobName:p.jobName, roleId:m.role,
+      hours: has(m.hours)? num(m.hours) : (num(role.contractedHours)||DEFAULT_PERSON_HOURS),
+      nonPrescPct: has(m.nonPrescPct)? m.nonPrescPct : role.nonPrescribingPct,
+      specialisms: m.specialisms }; }).filter(Boolean);
 }
 // --- demand service resolution (demand rows -> configured services) ---
 function resolveDemand(){
@@ -711,7 +719,7 @@ function renderRoles(){
     return '<tr>'+cells+'</tr>';
   }).join('')+'</tbody>';
   const t=$('#tblRoles'); t.innerHTML=head+body;
-  t.querySelectorAll('[data-k]').forEach(inp=> inp.onchange=e=>{ const ri=+e.target.dataset.ri,k=e.target.dataset.k; STATE.config.roles[ri][k]=e.target.value; renderRoles(); softRerun(); });
+  t.querySelectorAll('[data-k]').forEach(inp=> inp.onchange=e=>{ const ri=+e.target.dataset.ri,k=e.target.dataset.k; STATE.config.roles[ri][k]=e.target.value; renderRoles(); if(STATE.hrMode==='people') renderPeopleMap(); softRerun(); });
   t.querySelectorAll('[data-del-role]').forEach(b=> b.onclick=e=>{ STATE.config.roles.splice(+e.target.dataset.delRole,1); renderRoles(); softRerun(); });
 }
 function renderCatList(){ $('#catlist').innerHTML=serviceCategories().map(c=>`<option value="${esc(c)}">`).join(''); }
@@ -803,21 +811,29 @@ function renderPeopleMap(){
     .slice().sort((a,b)=>{ const o={unmapped:0,auto:1,manual:1,ignored:2}; return o[status(a)]-o[status(b)]; });
   let unm=0,mapped=0,ign=0; STATE.people.forEach(p=>{ const s=status(p); if(s==='unmapped')unm++; else if(s==='ignored')ign++; else mapped++; });
   const roleOpts=(sel)=>`<option value="">— map —</option><option value="__ignore__" ${sel==='__ignore__'?'selected':''}>Ignore (non-clinical)</option>`+cfg.roles.map(r=>`<option value="${esc(r.id)}" ${sel===r.id?'selected':''}>${esc(r.name)}</option>`).join('');
-  const rows=list.map(p=>{ const m=pm[p.staff]||{}; const st=status(p); const isU=st==='unmapped'; const rid=m.role||''; const grp=rById[rid]?rById[rid].group:'';
+  const has=v=> v!=null && String(v).trim()!=='';
+  let overrides=0;
+  const rows=list.map(p=>{ const m=pm[p.staff]||{}; const st=status(p); const isU=st==='unmapped'; const rid=m.role||''; const rd=rById[rid]; const grp=rd?rd.group:'';
     const tag = isU?'<span class="tag tag-unmatched">map me</span>' : st==='ignored'?'<span class="tag tag-manual">ignored</span>' : st==='auto'?'<span class="tag tag-auto">auto</span>':'<span class="tag tag-manual">manual</span>';
     const disabled = (rid===''||rid==='__ignore__');
+    const ovH=has(m.hours), ovN=has(m.nonPrescPct), ovS=has(m.specialisms); if(!disabled&&(ovH||ovN||ovS)) overrides++;
+    const effHours = rd? (num(rd.contractedHours)||DEFAULT_PERSON_HOURS) : DEFAULT_PERSON_HOURS;
+    const effNP = rd? rd.nonPrescribingPct : '';
+    const reset=(f)=> disabled?'':`<button class="cellbtn" data-clr="${esc(p.staff)}:${f}" title="Reset to role default">↺</button>`;
+    const cell=(f,val,eff,ov,extra)=>`<td><div class="cellflex"><input class="w-sm ${ov?'ov':''}" value="${esc(ov?val:'')}" placeholder="${esc(eff)}" data-ps="${esc(p.staff)}" data-pk="${f}" ${disabled?'disabled':''} ${extra||''}/>${ov?reset(f):''}</div></td>`;
     return `<tr class="${isU?'svc-alt':''}">
       <td class="rowaccent" style="border-left-color:${grp?groupColor(grp).fg:'var(--line)'}"><strong>${esc(p.name)}</strong><br><small class="mute">#${esc(p.staff)} · ${esc(p.jobCode||'')} ${esc(p.jobName||'—')}${p.location?' · '+esc(p.location):''}</small></td>
       <td><div style="display:flex;align-items:center;gap:7px"><select class="${grp?'grp-sel':''}" style="flex:1;min-width:0;${grp?grpStyle(grp):''}" data-ps="${esc(p.staff)}" data-pk="role">${roleOpts(rid)}</select>${tag}</div></td>
-      <td><input class="w-sm${disabled?'':(num(m.hours)>0?'':' needs')}" value="${esc(m.hours==null?'':m.hours)}" data-ps="${esc(p.staff)}" data-pk="hours" ${disabled?'disabled':''} placeholder="${DEFAULT_PERSON_HOURS}"/></td>
-      <td><input class="w-sm" value="${esc(m.nonPrescPct==null?'':m.nonPrescPct)}" data-ps="${esc(p.staff)}" data-pk="nonPrescPct" ${disabled?'disabled':''} placeholder="role"/></td>
-      <td><input value="${esc(m.specialisms||'')}" data-ps="${esc(p.staff)}" data-pk="specialisms" ${disabled?'disabled':''} placeholder="all" style="min-width:170px"/></td></tr>`;
+      ${cell('hours', m.hours, effHours, ovH)}
+      ${cell('nonPrescPct', m.nonPrescPct, effNP===''?'role':effNP, ovN)}
+      <td><div class="cellflex"><input class="${ovS?'ov':''}" value="${esc(ovS?m.specialisms:'')}" placeholder="all" data-ps="${esc(p.staff)}" data-pk="specialisms" ${disabled?'disabled':''} style="min-width:150px"/>${ovS?reset('specialisms'):''}</div></td></tr>`;
   }).join('');
   $('#tblPeople').innerHTML='<thead><tr><th>Person</th><th>Role</th><th class="num">Hrs/mo</th><th class="num">Non-presc %</th><th>Specialisms</th></tr></thead><tbody>'+rows+'</tbody>';
-  $('#tblPeople').querySelectorAll('[data-pk]').forEach(inp=> inp.onchange=e=>{ const s=e.target.dataset.ps,k=e.target.dataset.pk; const m=pm[s]||(pm[s]={role:'',hours:DEFAULT_PERSON_HOURS,nonPrescPct:'',specialisms:'',jobName:(STATE.people.find(p=>p.staff===s)||{}).jobName});
-    if(k==='role'){ m.role=e.target.value; m.auto=false; if(m.hours==null||m.hours==='') m.hours=DEFAULT_PERSON_HOURS; } else m[k]=e.target.value;
+  $('#tblPeople').querySelectorAll('[data-pk]').forEach(inp=> inp.onchange=e=>{ const s=e.target.dataset.ps,k=e.target.dataset.pk; const m=pm[s]||(pm[s]={role:'',hours:'',nonPrescPct:'',specialisms:'',jobName:(STATE.people.find(p=>p.staff===s)||{}).jobName});
+    if(k==='role'){ m.role=e.target.value; m.auto=false; } else m[k]=e.target.value; // blank = inherit role default
     renderPeopleMap(); rebuildHrFromPeople(); softRerun(); updateExportGate(); });
-  $('#peopleCount').textContent=`${STATE.people.length} people · ${mapped} mapped · ${ign} ignored · ${unm} to map`;
+  $('#tblPeople').querySelectorAll('[data-clr]').forEach(b=> b.onclick=e=>{ const [s,f]=e.target.dataset.clr.split(':'); if(pm[s]){ pm[s][f]=''; } renderPeopleMap(); rebuildHrFromPeople(); softRerun(); updateExportGate(); });
+  $('#peopleCount').textContent=`${STATE.people.length} people · ${mapped} mapped · ${ign} ignored · ${unm} to map${overrides?' · '+overrides+' overriding a default':''}`;
   $('#peopleBadge').textContent=`${mapped} mapped · ${ign} ignored · ${unm} to map`;
   $('#peopleWarn').classList.toggle('hidden', unm===0);
 }
@@ -1005,11 +1021,14 @@ function exportXlsx(){
     inp.push(['People roster — '+cfg.clinicalCostCentre+' only (personal data)']);
     inp.push(['Staff no','Name','Job Name','Mapped role','Group','Hrs/mo','Non-prescribing %','Prescribing hrs/mo','Specialisms','Eligible services']);
     const pm=cfg.peopleMap||{};
+    const hasv=v=> v!=null && String(v).trim()!=='';
     (STATE.people||[]).forEach(p=>{ const m=pm[p.staff]||{}; const role=rById[m.role]; const to=!m.role?'(unmapped)':(m.role==='__ignore__'?'(ignored)':(role?role.name:'(unknown)'));
-      const npFrac=role?((m.nonPrescPct!=null&&String(m.nonPrescPct).trim()!=='')?pct(m.nonPrescPct):pct(role.nonPrescribingPct)):0;
-      const presc=role?round2((num(m.hours)||DEFAULT_PERSON_HOURS)*(1-npFrac)):'';
+      const effHours=role? (hasv(m.hours)?num(m.hours):(num(role.contractedHours)||DEFAULT_PERSON_HOURS)) : '';
+      const effNP=role? (hasv(m.nonPrescPct)?m.nonPrescPct:role.nonPrescribingPct) : '';
+      const npFrac=role? pct(effNP) : 0;
+      const presc=role?round2(num(effHours)*(1-npFrac)):'';
       const elig=role?expandEligibility(m.specialisms,cfg):{all:true}; const eligN=elig.all?'all':elig.set.size;
-      inp.push([p.staff,p.name,p.jobName,to,role?role.group:'',role?(num(m.hours)||DEFAULT_PERSON_HOURS):'',role?(m.nonPrescPct||role.nonPrescribingPct):'',presc,m.specialisms||'',role?eligN:'']); });
+      inp.push([p.staff,p.name,p.jobName,to,role?role.group:'',effHours,effNP,presc,m.specialisms||'',role?eligN:'']); });
   } else {
     inp.push(['HR extract — current team + planned hires (personal data)']);
     inp.push(['Name','HR role','Contracted hrs/mo','Non-prescribing %','Prescribing hrs/mo','Specialisms','Eligible services','Start month','Ready month','Mapped to','Planned?']);
