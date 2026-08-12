@@ -33,6 +33,9 @@ leaf, Boots Sharp type — with the fonts and [SheetJS](https://sheetjs.com)
      number**. Job Name → role is seeded by editable rules; hours, non-prescribing
      % and specialisms are held **per person** in the config and persist. New or
      changed staff numbers are **flagged to map** before a run (export blocked).
+     Mapping rules match on **Job code + Location Name** (first match wins) — e.g.
+     `FRE → GP`, Location `BDH Independent Prescribers → IP`, `FRH/FRG` + `BDH CMO
+     Team → MH Nurse`, `FRI` + Independent Prescribers `→ Pharmacy Technician`.
    Either way, each person can carry a **Non-prescribing %** (seniors carry more)
    and **Specialisms** (the areas they can work).
 4. **Match capacity to demand, eligibility-aware.** Staff are allocated only to
