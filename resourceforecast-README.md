@@ -28,9 +28,13 @@ leaf, Boots Sharp type — with the fonts and [SheetJS](https://sheetjs.com)
      the IP/GP routing split and funnels.
    - **Contact work** — total orders generate **calls and messages**
      (calls/order and messages/order set in Global config; fractional values like
-     `0.25` allowed). Each handling role takes a % share at its own throughput
-     (calls/day, messages/day), converted to **hours** and added to that role's
-     group as a *Patient contact* area open to every group member.
+     `0.25` allowed). Each handling role takes a % share at its **minutes per
+     contact** (full-focus handle time, exactly like a task's time-per-order);
+     hours = volume × share × minutes ÷ 60, added to that role's group as a
+     *Patient contact* area open to every group member. There is no working-days
+     assumption anywhere — FTE = hours ÷ (contracted hours × productivity %),
+     and holiday/sickness/non-productive time live in **productivity % only**,
+     so nothing is derated twice.
 3. **Upload the team.** Two shapes are accepted:
    - a simple **HR list** (Name · Role · Contracted hrs/mo · optional Productivity % · Specialisms · Start/Ready month), mapped by **role name**; or
    - a **people/roster export** (auto-detected by a staff-number + Cost Centre
@@ -88,10 +92,9 @@ editable:
 - **Per staff:** optional **Productivity %** and **Specialisms** — a
   `;`-separated list of categories and/or services, with `-` to exclude
   (e.g. `Skin; Sexual Health; -Psoriasis`). Blank = eligible for everything.
-- **Contact model:** working days/month **per person** (~21 — days each person
-  works, *not* days the desk is open; 7-day cover is a rota question), and per
-  handling role: calls/day, messages/day, % share of calls and of messages
-  (each share column must total 100% — a self-check enforces it).
+- **Contact model:** per handling role: **minutes per call**, **minutes per
+  message**, and % share of calls and of messages (each share column must total
+  100% — a self-check enforces it).
 - **Global:** forecast horizon, currency, start month, **People Manager ratio**
   (1 : N prescribers), and **calls per order / messages per order** (fractional
   values allowed).
@@ -104,8 +107,9 @@ JSON file** you keep next to the app (top-right *Export config* / *Import
 config*). The JSON file is the source of truth, so config moves between machines
 — there is **no** localStorage dependency. Importing an **older config is
 migrated automatically** (legacy Messaging tasks removed, the FCL Patient
-Support rule added, old Non-prescribing % converted to Productivity %) and the
-import dialog lists exactly what changed.
+Support rule added, old Non-prescribing % converted to Productivity %, per-day
+contact throughputs converted to minutes per contact) and the import dialog
+lists exactly what changed.
 
 ## Auditable `.xlsx` output
 
