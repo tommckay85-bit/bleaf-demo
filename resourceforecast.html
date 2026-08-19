@@ -773,6 +773,8 @@ const GROUP_PALETTE=[
   {bg:'#FBF1E0',fg:'#7A5C0C',bd:'#ECD6A6'}, // sand
   {bg:'#E3F1F1',fg:'#1F6B6B',bd:'#C3E2E2'}, // teal
   {bg:'#F3E9F4',fg:'#6B2C5F',bd:'#E3CFE3'}, // plum
+  {bg:'#FBEAE8',fg:'#9A3B2E',bd:'#EFC7C0'}, // terracotta
+  {bg:'#EDF3E3',fg:'#4F6B1F',bd:'#D3E2BC'}, // olive
   {bg:'#EDEFF3',fg:'#3A4256',bd:'#DCE1EA'}  // slate
 ];
 function groupColor(name){ const g=STATE.config.groups||[]; let i=g.indexOf(name); if(i<0){ i=0; const s=String(name||''); for(let c=0;c<s.length;c++) i+=s.charCodeAt(c); } return GROUP_PALETTE[((i%GROUP_PALETTE.length)+GROUP_PALETTE.length)%GROUP_PALETTE.length]; }
