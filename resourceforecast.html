@@ -1046,20 +1046,28 @@ function renderResults(){
   let recRows;
   if(!R.cohorts.length){ recRows=`<tr><td colspan="7" class="mute">No hires needed — existing + planned capacity covers demand across the horizon.</td></tr>`; }
   else{
-    recRows=R.cohorts.slice().sort((a,b)=>a.recruitIdx-b.recruitIdx).map(co=>{
-      const r=R.roles.find(x=>x.id===co.roleId); const monthsActive=R.months.length-Math.max(0,co.costStartIdx);
-      const cost=co.hires*R.monthlyCostRole(co.roleId)*monthsActive;
-      const rl=co.recruitIdx<0?`ASAP · overdue ${-co.recruitIdx}mo`:ML[co.recruitIdx];
-      const cs=co.costStartIdx<0?`now · overdue`:ML[co.costStartIdx];
-      return `<tr><td class="rolecell rowaccent" style="border-left-color:${groupColor(co.group).fg}">${esc(r.name)}<br><small class="mute"><span class="grp-pill" style="${grpStyle(co.group)}">${esc(co.group)}</span> ${esc(co.category)}</small></td><td class="num">${co.hires}</td>
-        <td>${co.recruitIdx<0?`<span class="rag rag-red">${rl}</span>`:`<span class="rag rag-amber">${rl}</span>`}</td>
-        <td>${cs}</td><td>${ML[co.usefulIdx]}</td>
-        <td class="num">${r.hireLeadWeeks}+${r.usefulLeadWeeks}w</td><td class="num">${money(cost,cur)}</td></tr>`;
+    // one row per resource type per month-required: aggregate cohorts by (group, role, useful month).
+    // recruit/cost-start/useful/lead are all determined by role + useful month, so they're identical within a group.
+    const aggMap={}, aggOrder=[];
+    R.cohorts.forEach(co=>{ const key=co.group+'|'+co.roleId+'|'+co.usefulIdx;
+      if(!aggMap[key]){ aggMap[key]={group:co.group,roleId:co.roleId,usefulIdx:co.usefulIdx,costStartIdx:co.costStartIdx,recruitIdx:co.recruitIdx,hires:0,cost:0,cats:[]}; aggOrder.push(key); }
+      const a=aggMap[key]; a.hires+=co.hires; const monthsActive=R.months.length-Math.max(0,co.costStartIdx);
+      a.cost+=co.hires*R.monthlyCostRole(co.roleId)*monthsActive;
+      if(co.category && a.cats.indexOf(co.category)<0) a.cats.push(co.category); });
+    const aggs=aggOrder.map(k=>aggMap[k]).sort((a,b)=> a.recruitIdx-b.recruitIdx || a.usefulIdx-b.usefulIdx || a.group.localeCompare(b.group));
+    recRows=aggs.map(a=>{ const r=R.roles.find(x=>x.id===a.roleId);
+      const rl=a.recruitIdx<0?`ASAP · overdue ${-a.recruitIdx}mo`:ML[a.recruitIdx];
+      const cs=a.costStartIdx<0?`now · overdue`:ML[a.costStartIdx];
+      const cats=a.cats.slice().sort((x,y)=>x.localeCompare(y)).join(', ');
+      return `<tr><td class="rolecell rowaccent" style="border-left-color:${groupColor(a.group).fg}">${esc(r.name)}<br><small class="mute"><span class="grp-pill" style="${grpStyle(a.group)}">${esc(a.group)}</span> ${esc(cats)}</small></td><td class="num">${a.hires}</td>
+        <td>${a.recruitIdx<0?`<span class="rag rag-red">${rl}</span>`:`<span class="rag rag-amber">${rl}</span>`}</td>
+        <td>${cs}</td><td>${ML[a.usefulIdx]}</td>
+        <td class="num">${r.hireLeadWeeks}+${r.usefulLeadWeeks}w</td><td class="num">${money(a.cost,cur)}</td></tr>`;
     }).join('');
   }
   const recTbl=`<div class="section-title" style="margin-top:20px">Recruitment plan — recruit early enough to be useful in time</div>
-    <div class="tbl-wrap"><table class="dt"><thead><tr><th>Hire (role · area)</th><th class="num">Hires</th><th>Start recruiting</th><th>Cost starts (hire)</th><th>Useful from</th><th class="num">Lead</th><th class="num">Cost to horizon</th></tr></thead><tbody>${recRows}</tbody></table></div>
-    <p class="hint">Each recommended hire is tagged with the <strong>area</strong> (group · category) it's recruited for.</p>
+    <div class="tbl-wrap"><table class="dt"><thead><tr><th>Hire (role · areas)</th><th class="num">Hires</th><th>Start recruiting</th><th>Cost starts (hire)</th><th>Useful from</th><th class="num">Lead</th><th class="num">Cost to horizon</th></tr></thead><tbody>${recRows}</tbody></table></div>
+    <p class="hint">One row per resource type per month it's needed — hires are pooled and the <strong>areas</strong> (categories) they cover are listed in grey.</p>
     <p class="hint">Cost is booked from the <strong>hire</strong> month; capacity only counts from <strong>useful</strong>. Recruiting is back-dated by hire + useful lead.</p>`;
   const cRow=(label,arr,mute)=>`<tr><td class="${mute?'mute':'rolecell'}">${label}</td>`+arr.map(v=>`<td class="num ${mute?'mute':''}">${v>0?money(v,cur):'—'}</td>`).join('')+'</tr>';
   const costTbl=`<div class="section-title" style="margin-top:20px">Phased cost, by month</div>
