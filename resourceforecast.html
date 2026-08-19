@@ -144,6 +144,22 @@ table.dt tbody tr.svc-alt td{background:#fafbfe}
 table.dt tbody tr.svc-alt:hover td{background:var(--bg-cool)}
 table.dt tbody tr.svc-alt td.calc{background:#e9eef7}
 td.rowaccent{border-left:3px solid var(--leaf)}
+/* ---- Recruitment calendar (advertise / hire by, per month) ---- */
+.cal{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:12px;align-items:start}
+.cal-card{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.cal-card.empty{opacity:.5}
+.cal-card.od{border-color:#e6b4ad;box-shadow:0 0 0 2px rgba(178,59,46,.06)}
+.cal-m{font-weight:700;color:var(--navy);font-size:12.5px;padding:8px 12px;background:var(--bg-cool);border-bottom:1px solid var(--line-2);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.cal-m .tot{font-size:11px;font-weight:700;color:var(--mute)}
+.cal-card.od .cal-m{background:var(--rag-red-bg);color:var(--rag-red)}
+.cal-card.od .cal-m .tot{color:var(--rag-red)}
+.cal-sec{padding:8px 12px 10px;border-top:1px dashed var(--line-2)}
+.cal-sec:first-of-type{border-top:0}
+.cal-l{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);margin-bottom:5px}
+.cal-row{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12.5px;padding:2px 0}
+.cal-row .r{font-weight:700;color:var(--navy);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cal-n{font-weight:700;font-size:11.5px;border:1px solid;border-radius:999px;padding:1px 9px;flex-shrink:0;font-variant-numeric:tabular-nums}
+.cal-none{font-size:12px;color:var(--mute)}
 footer.appfoot{border-top:1px solid var(--line);background:#fff;padding:26px 0;margin-top:40px}
 .appfoot .row{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;font-size:12.5px;color:var(--mute)}.appfoot strong{color:var(--navy)}
 </style>
@@ -1065,6 +1081,34 @@ function renderResults(){
         <td class="num">${r.hireLeadWeeks}+${r.usefulLeadWeeks}w</td><td class="num">${money(a.cost,cur)}</td></tr>`;
     }).join('');
   }
+  // --- recruitment calendar: per month, what to ADVERTISE and what to have HIRED BY ---
+  // hires are pooled per role within each month/section, so a role never appears twice in one cell.
+  let recCal='';
+  if(R.cohorts.length){
+    const adv={}, hire={};
+    const bump=(map,idx,roleId,n)=>{ const k=idx<0?'od':idx; (map[k]=map[k]||{}); map[k][roleId]=(map[k][roleId]||0)+n; };
+    R.cohorts.forEach(co=>{ bump(adv,co.recruitIdx,co.roleId,co.hires); bump(hire,co.costStartIdx,co.roleId,co.hires); });
+    const sect=(label,bag)=>{
+      const ids=Object.keys(bag||{});
+      if(!ids.length) return `<div class="cal-sec"><div class="cal-l">${label}</div><div class="cal-none">—</div></div>`;
+      const rows=ids.map(rid=>{ const r=R.roles.find(x=>x.id===rid); return {name:r?r.name:rid, group:r?r.group:'', n:bag[rid]}; })
+        .sort((a,b)=> b.n-a.n || a.name.localeCompare(b.name))
+        .map(x=>{ const c=groupColor(x.group);
+          return `<div class="cal-row"><span class="r" title="${esc(x.name)}">${esc(x.name)}</span><span class="cal-n" style="${grpStyle(x.group)}">${x.n}</span></div>`; }).join('');
+      return `<div class="cal-sec"><div class="cal-l">${label}</div>${rows}</div>`;
+    };
+    const totOf=bag=> Object.keys(bag||{}).reduce((a,k)=>a+bag[k],0);
+    const card=(key,title,isOd)=>{
+      const a=adv[key], h=hire[key]; const t=totOf(a)+totOf(h);
+      return `<div class="cal-card ${isOd?'od':''} ${t?'':'empty'}"><div class="cal-m"><span>${title}</span>${t?`<span class="tot">${t}</span>`:''}</div>${sect(isOd?'Advertise now':'Advertise',a)}${sect(isOd?'Should be hired':'Hire by',h)}</div>`;
+    };
+    const cards=[];
+    if(adv['od']||hire['od']) cards.push(card('od','⚠ Overdue',true));
+    ML.forEach((l,i)=> cards.push(card(i,l,false)));
+    recCal=`<div class="section-title" style="margin-top:20px">Recruitment calendar — what to advertise, and what to have hired, each month</div>
+      <div class="cal">${cards.join('')}</div>
+      <p class="hint"><strong>Advertise</strong> = start recruiting that month (back-dated by lead-to-hire + lead-to-useful). <strong>Hire by</strong> = the month the person must be on payroll for the capacity to arrive on time — cost starts here. Counts are pooled per role, so each role appears once per section. Anything dated before the forecast start is grouped under <strong>Overdue</strong> and needs action now.</p>`;
+  }
   const recTbl=`<div class="section-title" style="margin-top:20px">Recruitment plan — recruit early enough to be useful in time</div>
     <div class="tbl-wrap"><table class="dt"><thead><tr><th>Hire (role · areas)</th><th class="num">Hires</th><th>Start recruiting</th><th>Cost starts (hire)</th><th>Useful from</th><th class="num">Lead</th><th class="num">Cost to horizon</th></tr></thead><tbody>${recRows}</tbody></table></div>
     <p class="hint">One row per resource type per month it's needed — hires are pooled and the <strong>areas</strong> (categories) they cover are listed in grey.</p>
@@ -1075,7 +1119,7 @@ function renderResults(){
       ${cRow('New recommended hires',R.newHireCost,false)}${cRow('Already-planned hires',R.plannedCost,true)}${cRow('Existing team (baseline)',R.baselineCost,true)}
     </tbody></table></div>
     <p class="hint">New-hire cost is the plan; planned + baseline are shown for context and are not double-counted in the gap.</p>`;
-  body.innerHTML=tiles+gapTbl+pmTbl+contactTbl+recTbl+costTbl;
+  body.innerHTML=tiles+gapTbl+pmTbl+contactTbl+recCal+recTbl+costTbl;
 }
 function renderChecks(){
   const el=$('#checksList'); if(!STATE.lastRun){ el.innerHTML='<div class="map-empty">Recompute to run self-checks.</div>'; return; }
