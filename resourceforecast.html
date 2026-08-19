@@ -193,7 +193,7 @@ footer.appfoot{border-top:1px solid var(--line);background:#fff;padding:26px 0;m
         <div>
           <div class="section-title">HR extract <span class="mute" style="text-transform:none;letter-spacing:0;font-weight:700">· personal data — stays local</span></div>
           <div class="drop" id="dropHr"><div class="ic">👥</div><div class="big">Team + contracted hours by role</div>
-            <div class="small">HR list (Name · Role · Contracted hrs/mo · optional Non-prescribing % · Specialisms · Start/Ready month) — or a people/roster export (auto-detected by staff number + Cost Centre)</div>
+            <div class="small">HR list (Name · Role · Contracted hrs/mo · optional Productivity % · Specialisms · Start/Ready month) — or a people/roster export (auto-detected by staff number + Cost Centre)</div>
             <div class="row"><button class="btn btn-primary btn-sm" id="btnHrFile">Choose file</button></div>
             <div class="file-status none" id="statusHr">No HR file loaded</div></div>
         </div>
@@ -220,13 +220,13 @@ footer.appfoot{border-top:1px solid var(--line);background:#fff;padding:26px 0;m
       </div>
 
       <div class="subpanel">
-        <div class="sp-head"><div class="sp-title"><span class="accent"></span>Roles</div><span class="sp-sub">each belongs to a group · cost/hour, non-prescribing %, lead times</span></div>
+        <div class="sp-head"><div class="sp-title"><span class="accent"></span>Roles</div><span class="sp-sub">each belongs to a group · cost/hour, productivity %, lead times</span></div>
         <div class="tbl-wrap"><table class="dt" id="tblRoles"></table></div>
         <div class="card-actions" style="margin-top:10px">
           <button class="btn btn-ghost btn-xs" id="btnAddRole">+ Add role</button>
           <button class="btn btn-ghost btn-xs" id="btnAddRoleAttr">+ Add attribute (column)</button>
         </div>
-        <p class="hint">Productive hours/FTE = contracted × (1 − non-prescribing %). Monthly cost = cost/hour × contracted hours. A group's gap is filled by its cheapest-capable role.</p>
+        <p class="hint">Productive hours/FTE = contracted × productivity %. Monthly cost = cost/hour × contracted hours. A group's gap is filled by its cheapest-capable role.</p>
       </div>
 
       <div class="subpanel">
@@ -323,18 +323,26 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
    without a rewrite. Config is a flexible data model (groups, roles, services &
    attributes are data rows, not code).
    ========================================================================= */
-const CONFIG_DATA = {"groups":["IP","GP","Nurse","MH Nurse","Technician"],"roles":[{"id":"gp","name":"GP","group":"GP","costPerHour":80,"nonPrescribingPct":20,"contractedHours":152,"hireLeadWeeks":12,"usefulLeadWeeks":6},{"id":"ip","name":"Independent Prescriber","group":"IP","costPerHour":45,"nonPrescribingPct":20,"contractedHours":152,"hireLeadWeeks":12,"usefulLeadWeeks":8},{"id":"mh_nurse","name":"MH Nurse","group":"MH Nurse","costPerHour":40,"nonPrescribingPct":20,"contractedHours":152,"hireLeadWeeks":10,"usefulLeadWeeks":8},{"id":"nurse","name":"Nurse","group":"Nurse","costPerHour":28,"nonPrescribingPct":25,"contractedHours":152,"hireLeadWeeks":8,"usefulLeadWeeks":4},{"id":"tech","name":"Pharmacy Technician","group":"Technician","costPerHour":22,"nonPrescribingPct":20,"contractedHours":152,"hireLeadWeeks":6,"usefulLeadWeeks":4}],"services":[{"id":"svc_map_emergency_contraception","name":"Map Emergency Contraception","category":"Urgent","clinicianType":"IP","tasks":[{"name":"Review","group":"IP","timeSec":88,"incidencePct":99.69},{"name":"Messaging","group":"IP","timeSec":41.2,"incidencePct":99.69},{"name":"Review","group":"GP","timeSec":25,"incidencePct":0.31},{"name":"Messaging","group":"GP","timeSec":50.9,"incidencePct":0.31}]},{"id":"svc_weight_loss","name":"Weight Loss","category":"Weight Loss","clinicianType":"IP/ GP if needed","tasks":[{"name":"Review","group":"IP","timeSec":183,"incidencePct":98.31},{"name":"Messaging","group":"IP","timeSec":84.6,"incidencePct":98.31},{"name":"Review","group":"GP","timeSec":196,"incidencePct":1.69},{"name":"Messaging","group":"GP","timeSec":345.9,"incidencePct":1.69}]},{"id":"svc_oral_contraception","name":"Oral Contraception","category":"Womens high volume","clinicianType":"IP","tasks":[{"name":"Review","group":"IP","timeSec":88,"incidencePct":96.34},{"name":"Messaging","group":"IP","timeSec":26.8,"incidencePct":96.34},{"name":"Review","group":"GP","timeSec":183,"incidencePct":3.66},{"name":"Messaging","group":"GP","timeSec":378.5,"incidencePct":3.66}]},{"id":"svc_cystitis","name":"Cystitis","category":"Urgent","clinicianType":"IP","tasks":[{"name":"Review","group":"IP","timeSec":91,"incidencePct":99.94},{"name":"Messaging","group":"IP","timeSec":20.5,"incidencePct":99.94},{"name":"Review","group":"GP","timeSec":81,"incidencePct":0.06},{"name":"Messaging","group":"GP","timeSec":929.1,"incidencePct":0.06}]},{"id":"svc_period_delay","name":"Period Delay","category":"Womens high volume","clinicianType":"IP","tasks":[{"name":"Review","group":"IP","timeSec":73,"incidencePct":96.38},{"name":"Messaging","group":"IP","timeSec":31.6,"incidencePct":96.38},{"name":"Review","group":"GP","timeSec":141,"incidencePct":3.62},{"name":"Messaging","group":"GP","timeSec":312.6,"incidencePct":3.62}]},{"id":"svc_chlamydia_treatment","name":"Chlamydia Treatment","category":"Sexual Health","clinicianType":"IP/GP","tasks":[{"name":"Review","group":"IP","timeSec":66,"incidencePct":91.64},{"name":"Messaging","group":"IP","timeSec":30.7,"incidencePct":91.64},{"name":"Review","group":"GP","timeSec":117,"incidencePct":8.36},{"name":"Messaging","group":"GP","timeSec":156.5,"incidencePct":8.36}]},{"id":"svc_bv_treatment","name":"BV Treatment","category":"Sexual Health","clinicianType":"IP/GP","tasks":[{"name":"Review","group":"IP","timeSec":79,"incidencePct":88.95},{"name":"Messaging","group":"IP","timeSec":18.4,"incidencePct":88.95},{"name":"Review","group":"GP","timeSec":96,"incidencePct":11.05},{"name":"Messaging","group":"GP","timeSec":89.4,"incidencePct":11.05}]},{"id":"svc_acne","name":"Acne","category":"Skin","clinicianType":"IP/GP","tasks":[{"name":"Review","group":"IP","timeSec":260,"incidencePct":3.56},{"name":"Messaging","group":"IP","timeSec":91.4,"incidencePct":3.56},{"name":"Review","group":"GP","timeSec":239,"incidencePct":96.44},{"name":"Messaging","group":"GP","timeSec":7.9,"incidencePct":96.44}]},{"id":"svc_erectile_dysfunction_subscribe_and_save","name":"Erectile Dysfunction Subscribe and Save","category":"Mens","clinicianType":"IP","tasks":[{"name":"Review","group":"IP","timeSec":59,"incidencePct":99.8},{"name":"Messaging","group":"IP","timeSec":48.5,"incidencePct":99.8},{"name":"Review","group":"GP","timeSec":256,"incidencePct":0.2},{"name":"Messaging","group":"GP","timeSec":3880.8,"incidencePct":0.2}]},{"id":"svc_hair_loss","name":"Hair Loss","category":"Mens","clinicianType":"IP","tasks":[{"name":"Review","group":"IP","timeSec":59,"incidencePct":98.57},{"name":"Messaging","group":"IP","timeSec":64.7,"incidencePct":98.57},{"name":"Review","group":"GP","timeSec":201,"incidencePct":1.43},{"name":"Messaging","group":"GP","timeSec":2456.8,"incidencePct":1.43}]},{"id":"svc_erectile_dysfunction","name":"Erectile Dysfunction","category":"Mens","clinicianType":"IP","tasks":[{"name":"Review","group":"IP","timeSec":65,"incidencePct":99.13},{"name":"Messaging","group":"IP","timeSec":66.4,"incidencePct":99.13},{"name":"Review","group":"GP","timeSec":179,"incidencePct":0.87},{"name":"Messaging","group":"GP","timeSec":3644.3,"incidencePct":0.87}]},{"id":"svc_asthma","name":"Asthma","category":"General, travel & womens","clinicianType":"IP/GP","tasks":[{"name":"Review","group":"IP","timeSec":119,"incidencePct":46.94},{"name":"Messaging","group":"IP","timeSec":34.5,"incidencePct":46.94},{"name":"Review","group":"GP","timeSec":157,"incidencePct":53.06},{"name":"Messaging","group":"GP","timeSec":35.7,"incidencePct":53.06}]},{"id":"svc_menopause","name":"Menopause","category":"Menopause","clinicianType":"IP/GP","tasks":[{"name":"Review","group":"IP","timeSec":429,"incidencePct":55.53},{"name":"Messaging","group":"IP","timeSec":263.2,"incidencePct":55.53},{"name":"Review","group":"GP","timeSec":371,"incidencePct":44.47},{"name":"Messaging","group":"GP","timeSec":389.1,"incidencePct":44.47}]},{"id":"svc_premature_ejaculation","name":"Premature Ejaculation","category":"Mens","clinicianType":"IP","tasks":[{"name":"Review","group":"IP","timeSec":64,"incidencePct":88.39},{"name":"Messaging","group":"IP","timeSec":39.7,"incidencePct":88.39},{"name":"Review","group":"GP","timeSec":33,"incidencePct":11.61},{"name":"Messaging","group":"GP","timeSec":155.5,"incidencePct":11.61}]},{"id":"svc_depression_anxiety","name":"Depression & Anxiety","category":"DAA","clinicianType":"IP/GP","tasks":[{"name":"Review","group":"IP","timeSec":1800,"incidencePct":57.14},{"name":"Messaging","group":"IP","timeSec":122.9,"incidencePct":57.14},{"name":"Review","group":"GP","timeSec":1800,"incidencePct":42.86},{"name":"Messaging","group":"GP","timeSec":128.5,"incidencePct":42.86}]},{"id":"svc_cold_sore_treatment","name":"Cold Sore Treatment","category":"Sexual Health","clinicianType":"IP/GP","tasks":[{"name":"Review","group":"IP","timeSec":88,"incidencePct":33.74},{"name":"Messaging","group":"IP","timeSec":44.3,"incidencePct":33.74},{"name":"Review","group":"GP","timeSec":103,"incidencePct":66.26},{"name":"Messaging","group":"GP","timeSec":21.4,"incidencePct":66.26}]},{"id":"svc_hayfever","name":"Hayfever","category":"General, travel & womens","clinicianType":"IP/GP","tasks":[{"name":"Review","group":"IP","timeSec":127,"incidencePct":47.5},{"name":"Messaging","group":"IP","timeSec":190.1,"incidencePct":47.5},{"name":"Review","group":"GP","timeSec":106,"incidencePct":52.5},{"name":"Messaging","group":"GP","timeSec":252.6,"incidencePct":52.5}]},{"id":"svc_genital_herpes_episodic","name":"Genital Herpes Episodic","category":"Sexual Health","clinicianType":"IP/GP","tasks":[{"name":"Review","group":"IP","timeSec":47,"incidencePct":67.8},{"name":"Messaging","group":"IP","timeSec":36.7,"incidencePct":67.8},{"name":"Review","group":"GP","timeSec":51,"incidencePct":32.2},{"name":"Messaging","group":"GP","timeSec":32,"incidencePct":32.2}]},{"id":"svc_skin_infection","name":"Skin Infection","category":"Skin","clinicianType":"GP","tasks":[{"name":"Review","group":"IP","timeSec":325,"incidencePct":0.22},{"name":"Messaging","group":"IP","timeSec":1625,"incidencePct":0.22},{"name":"Review","group":"GP","timeSec":201,"incidencePct":99.78},{"name":"Messaging","group":"GP","timeSec":36.5,"incidencePct":99.78}]},{"id":"svc_altitude_sickness","name":"Altitude Sickness","category":"General, travel & womens","clinicianType":"IP/GP","tasks":[{"name":"Review","group":"IP","timeSec":96,"incidencePct":41.32},{"name":"Messaging","group":"IP","timeSec":57.9,"incidencePct":41.32},{"name":"Review","group":"GP","timeSec":118,"incidencePct":58.68},{"name":"Messaging","group":"GP","timeSec":97.7,"incidencePct":58.68}]},{"id":"svc_eczema","name":"Eczema","category":"Skin","clinicianType":"GP","tasks":[{"name":"Review","group":"GP","timeSec":173,"incidencePct":100},{"name":"Messaging","group":"GP","timeSec":168.7,"incidencePct":100}]},{"id":"svc_rosacea","name":"Rosacea","category":"Skin","clinicianType":"IP/GP","tasks":[{"name":"Review","group":"IP","timeSec":226,"incidencePct":26.24},{"name":"Messaging","group":"IP","timeSec":262.9,"incidencePct":26.24},{"name":"Review","group":"GP","timeSec":182,"incidencePct":73.76},{"name":"Messaging","group":"GP","timeSec":328,"incidencePct":73.76}]},{"id":"svc_jet_lag","name":"Jet Lag","category":"General, travel & womens","clinicianType":"IP/GP","tasks":[{"name":"Review","group":"IP","timeSec":112,"incidencePct":49.7},{"name":"Messaging","group":"IP","timeSec":27,"incidencePct":49.7},{"name":"Review","group":"GP","timeSec":109,"incidencePct":50.3},{"name":"Messaging","group":"GP","timeSec":36.9,"incidencePct":50.3}]},{"id":"svc_genital_warts","name":"Genital Warts","category":"Sexual Health","clinicianType":"Nurse IP/GP","tasks":[{"name":"Review","group":"IP","timeSec":104,"incidencePct":67.74},{"name":"Messaging","group":"IP","timeSec":147.6,"incidencePct":67.74},{"name":"Review","group":"GP","timeSec":138,"incidencePct":32.26},{"name":"Messaging","group":"GP","timeSec":523.3,"incidencePct":32.26}]},{"id":"svc_swimmers_ear","name":"Swimmers Ear","category":"General, travel & womens","clinicianType":"GP","tasks":[{"name":"Review","group":"IP","timeSec":46,"incidencePct":40},{"name":"Messaging","group":"IP","timeSec":37.4,"incidencePct":40},{"name":"Review","group":"GP","timeSec":88,"incidencePct":60},{"name":"Messaging","group":"GP","timeSec":28.2,"incidencePct":60}]},{"id":"svc_test_kit_hb1ac","name":"Test Kit Hb1Ac","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Review","group":"Nurse","timeSec":105,"incidencePct":100},{"name":"Messaging","group":"Nurse","timeSec":15.2,"incidencePct":100}]},{"id":"svc_test_kit_thyroid_function_test_advice","name":"Test Kit Thyroid Function Test & Advice","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Review","group":"Nurse","timeSec":105,"incidencePct":100},{"name":"Messaging","group":"Nurse","timeSec":12.3,"incidencePct":100}]},{"id":"svc_migraine","name":"Migraine","category":"General, travel & womens","clinicianType":"GP","tasks":[{"name":"Review","group":"GP","timeSec":180,"incidencePct":100},{"name":"Messaging","group":"GP","timeSec":92,"incidencePct":100}]},{"id":"svc_genital_herpes_suppression","name":"Genital Herpes Suppression","category":"Sexual Health","clinicianType":"Nurse IP/GP","tasks":[{"name":"Review","group":"IP","timeSec":91,"incidencePct":54.05},{"name":"Messaging","group":"IP","timeSec":159.3,"incidencePct":54.05},{"name":"Review","group":"GP","timeSec":74,"incidencePct":45.95},{"name":"Messaging","group":"GP","timeSec":238.6,"incidencePct":45.95}]},{"id":"svc_stop_smoking","name":"Stop Smoking","category":"General, travel & womens","clinicianType":"IP/GP","tasks":[{"name":"Review","group":"IP","timeSec":101,"incidencePct":85.71},{"name":"Messaging","group":"IP","timeSec":208.9,"incidencePct":85.71},{"name":"Review","group":"GP","timeSec":182,"incidencePct":14.29},{"name":"Messaging","group":"GP","timeSec":828.1,"incidencePct":14.29}]},{"id":"svc_contact_dermatitis","name":"Contact Dermatitis","category":"Skin","clinicianType":"GP","tasks":[{"name":"Review","group":"IP","timeSec":130,"incidencePct":2.44},{"name":"Messaging","group":"IP","timeSec":296,"incidencePct":2.44},{"name":"Review","group":"GP","timeSec":157,"incidencePct":97.56},{"name":"Messaging","group":"GP","timeSec":156.2,"incidencePct":97.56}]},{"id":"svc_anaphylaxis","name":"Anaphylaxis","category":"General, travel & womens","clinicianType":"GP","tasks":[{"name":"Review","group":"GP","timeSec":179,"incidencePct":100},{"name":"Messaging","group":"GP","timeSec":376.7,"incidencePct":100}]},{"id":"svc_vaginal_dryness","name":"Vaginal Dryness","category":"General, travel & womens","clinicianType":"GP","tasks":[{"name":"Review","group":"IP","timeSec":76,"incidencePct":3.57},{"name":"Messaging","group":"IP","timeSec":2144,"incidencePct":3.57},{"name":"Review","group":"GP","timeSec":40,"incidencePct":96.43},{"name":"Messaging","group":"GP","timeSec":199.8,"incidencePct":96.43}]},{"id":"svc_trichomoniasis","name":"Trichomoniasis","category":"Sexual Health","clinicianType":"Nurse IP/GP","tasks":[{"name":"Review","group":"IP","timeSec":162,"incidencePct":45.45},{"name":"Messaging","group":"IP","timeSec":115.5,"incidencePct":45.45},{"name":"Review","group":"GP","timeSec":95,"incidencePct":54.55},{"name":"Messaging","group":"GP","timeSec":141.7,"incidencePct":54.55}]},{"id":"svc_test_kit_chlamydia_gonorrhoea_trich_fema","name":"Test Kit Chlamydia Gonorrhoea & Trich Female","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Review","group":"Nurse","timeSec":85,"incidencePct":100},{"name":"Messaging","group":"Nurse","timeSec":0.8,"incidencePct":100}]},{"id":"svc_period_pain","name":"Period Pain","category":"General, travel & womens","clinicianType":"GP","tasks":[{"name":"Review","group":"GP","timeSec":163,"incidencePct":100},{"name":"Messaging","group":"GP","timeSec":129.5,"incidencePct":100}]},{"id":"svc_facial_hair_removal","name":"Facial Hair Removal","category":"General, travel & womens","clinicianType":"GP","tasks":[{"name":"Review","group":"IP","timeSec":40,"incidencePct":7.69},{"name":"Messaging","group":"IP","timeSec":981,"incidencePct":7.69},{"name":"Review","group":"GP","timeSec":43,"incidencePct":92.31},{"name":"Messaging","group":"GP","timeSec":76,"incidencePct":92.31}]},{"id":"svc_test_kit_chlamydia_gonorrhoea_trich_male","name":"Test Kit Chlamydia Gonorrhoea & Trich Male","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Review","group":"Nurse","timeSec":85,"incidencePct":100},{"name":"Messaging","group":"Nurse","timeSec":5.8,"incidencePct":100}]},{"id":"svc_psoriasis","name":"Psoriasis","category":"Skin","clinicianType":"GP","tasks":[{"name":"Review","group":"GP","timeSec":170,"incidencePct":100},{"name":"Messaging","group":"GP","timeSec":308.3,"incidencePct":100}]},{"id":"svc_test_kit_chlamydia_gonorrhoea_male","name":"Test Kit Chlamydia & Gonorrhoea Male","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Review","group":"Nurse","timeSec":85,"incidencePct":100}]},{"id":"svc_test_kit_hiv","name":"Test Kit HIV","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Review","group":"Nurse","timeSec":85,"incidencePct":100},{"name":"Messaging","group":"Nurse","timeSec":26,"incidencePct":100}]},{"id":"svc_test_kit_chlamydia_female","name":"Test Kit Chlamydia Female","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Review","group":"Nurse","timeSec":85,"incidencePct":100},{"name":"Messaging","group":"Nurse","timeSec":0.7,"incidencePct":100}]},{"id":"svc_test_kit_chlamydia_gonorrhoea_female","name":"Test Kit Chlamydia & Gonorrhoea Female","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Review","group":"Nurse","timeSec":85,"incidencePct":100},{"name":"Messaging","group":"Nurse","timeSec":3,"incidencePct":100}]},{"id":"svc_test_kit_chlamydia_male","name":"Test Kit Chlamydia Male","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Review","group":"Nurse","timeSec":85,"incidencePct":100},{"name":"Messaging","group":"Nurse","timeSec":10,"incidencePct":100}]},{"id":"svc_hiv_prep","name":"HIV PrEP","category":"Sexual Health","clinicianType":"Nurse IP/GP","tasks":[{"name":"Review","group":"GP","timeSec":127,"incidencePct":100},{"name":"Messaging","group":"GP","timeSec":240,"incidencePct":100}]},{"id":"svc_test_kit_female_total_swab","name":"Test Kit Female Total Swab","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Review","group":"Nurse","timeSec":85,"incidencePct":100}]},{"id":"svc_test_kit_msm_chlamydia_gonorrhoea","name":"Test Kit MSM Chlamydia & Gonorrhoea","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Review","group":"Nurse","timeSec":85,"incidencePct":100}]},{"id":"svc_skin_diagnosis","name":"Skin Diagnosis","category":"Skin","clinicianType":"GP","tasks":[{"name":"Review","group":"IP","timeSec":120,"incidencePct":100}]}],"mappings":{"General Practitioner":"gp","GP":"gp","Independent Prescriber":"ip","Pharmacist Independent Prescriber":"ip","Nurse Independent Prescriber":"ip","Nurse":"nurse","Registered Nurse":"nurse","MH Nurse":"mh_nurse","Mental Health Nurse":"mh_nurse","Pharmacy Technician":"tech"},"sampleDemandBase":{"Map Emergency Contraception":3446,"Weight Loss":3985,"Oral Contraception":2052,"Cystitis":1455,"Period Delay":644,"Chlamydia Treatment":207,"BV Treatment":294,"Acne":3563,"Erectile Dysfunction Subscribe and Save":212,"Hair Loss":186,"Erectile Dysfunction":326,"Asthma":113,"Menopause":83,"Premature Ejaculation":63,"Depression & Anxiety":105,"Cold Sore Treatment":55,"Hayfever":3,"Genital Herpes Episodic":52,"Skin Infection":38,"Altitude Sickness":26,"Eczema":16,"Rosacea":18,"Jet Lag":14,"Genital Warts":8,"Swimmers Ear":5,"Test Kit Hb1Ac":10,"Test Kit Thyroid Function Test & Advice":7,"Migraine":5,"Genital Herpes Suppression":3,"Stop Smoking":16,"Contact Dermatitis":3,"Anaphylaxis":1,"Vaginal Dryness":2,"Trichomoniasis":2,"Test Kit Chlamydia Gonorrhoea & Trich Female":5,"Period Pain":2,"Facial Hair Removal":1,"Test Kit Chlamydia Gonorrhoea & Trich Male":5,"Psoriasis":2,"Test Kit Chlamydia & Gonorrhoea Male":4,"Test Kit HIV":3,"Test Kit Chlamydia Female":3,"Test Kit Chlamydia & Gonorrhoea Female":4,"Test Kit Chlamydia Male":2,"HIV PrEP":1,"Test Kit Female Total Swab":1,"Test Kit MSM Chlamydia & Gonorrhoea":1,"Skin Diagnosis":1},"sampleHr":[{"name":"A. Okafor","role":"General Practitioner","hours":152,"nonPrescPct":40},{"name":"B. Rossi","role":"General Practitioner","hours":114},{"name":"C. Patel","role":"Independent Prescriber","hours":152,"specialisms":"Sexual Health; Skin"},{"name":"D. Nguyen","role":"Independent Prescriber","hours":152,"specialisms":"Weight Loss; Mens"},{"name":"E. Khan","role":"Independent Prescriber","hours":152,"specialisms":"Womens high volume; Urgent"},{"name":"F. Silva","role":"Independent Prescriber","hours":114,"nonPrescPct":45,"specialisms":"Sexual Health"},{"name":"G. Adeyemi","role":"Nurse","hours":152,"specialisms":"Sexual Health"},{"name":"H. Murphy","role":"Nurse","hours":152,"specialisms":"Test kits; Sexual Health"},{"name":"I. Zhang","role":"Nurse","hours":152,"specialisms":"Test kits"},{"name":"J. Brown","role":"Nurse","hours":114,"specialisms":"Test kits"},{"name":"K. Ahmed (planned)","role":"Independent Prescriber","hours":152,"startMonth":1,"readyMonth":3,"specialisms":"Weight Loss"},{"name":"L. Osei","role":"Advanced Nurse Practitioner","hours":152}]};
+const CONFIG_DATA = {"groups":["IP","GP","Nurse","MH Nurse","Technician","Management"],"roles":[{"id":"gp","name":"GP","group":"GP","costPerHour":80,"productivityPct":58,"contractedHours":152,"hireLeadWeeks":12,"usefulLeadWeeks":6},{"id":"ip","name":"Independent Prescriber","group":"IP","costPerHour":45,"productivityPct":67,"contractedHours":152,"hireLeadWeeks":12,"usefulLeadWeeks":8},{"id":"mh_nurse","name":"MH Nurse","group":"MH Nurse","costPerHour":40,"productivityPct":67,"contractedHours":152,"hireLeadWeeks":10,"usefulLeadWeeks":8},{"id":"nurse","name":"Nurse","group":"Nurse","costPerHour":28,"productivityPct":70,"contractedHours":152,"hireLeadWeeks":8,"usefulLeadWeeks":4},{"id":"tech","name":"Pharmacy Technician","group":"Technician","costPerHour":22,"productivityPct":75,"contractedHours":152,"hireLeadWeeks":6,"usefulLeadWeeks":4},{"id":"pm_role","name":"People Manager","group":"Management","costPerHour":42,"productivityPct":100,"contractedHours":152,"hireLeadWeeks":10,"usefulLeadWeeks":4}],"services":[{"id":"svc_map_emergency_contraception","name":"Map Emergency Contraception","category":"Urgent","clinicianType":"IP","tasks":[{"name":"Review","group":"IP","timeSec":88,"incidencePct":99.69},{"name":"Messaging","group":"IP","timeSec":41.2,"incidencePct":99.69},{"name":"Review","group":"GP","timeSec":25,"incidencePct":0.31},{"name":"Messaging","group":"GP","timeSec":50.9,"incidencePct":0.31}]},{"id":"svc_weight_loss","name":"Weight Loss","category":"Weight Loss","clinicianType":"IP/ GP if needed","tasks":[{"name":"Review","group":"IP","timeSec":183,"incidencePct":98.31},{"name":"Messaging","group":"IP","timeSec":84.6,"incidencePct":98.31},{"name":"Review","group":"GP","timeSec":196,"incidencePct":1.69},{"name":"Messaging","group":"GP","timeSec":345.9,"incidencePct":1.69}]},{"id":"svc_oral_contraception","name":"Oral Contraception","category":"Womens high volume","clinicianType":"IP","tasks":[{"name":"Review","group":"IP","timeSec":88,"incidencePct":96.34},{"name":"Messaging","group":"IP","timeSec":26.8,"incidencePct":96.34},{"name":"Review","group":"GP","timeSec":183,"incidencePct":3.66},{"name":"Messaging","group":"GP","timeSec":378.5,"incidencePct":3.66}]},{"id":"svc_cystitis","name":"Cystitis","category":"Urgent","clinicianType":"IP","tasks":[{"name":"Review","group":"IP","timeSec":91,"incidencePct":99.94},{"name":"Messaging","group":"IP","timeSec":20.5,"incidencePct":99.94},{"name":"Review","group":"GP","timeSec":81,"incidencePct":0.06},{"name":"Messaging","group":"GP","timeSec":929.1,"incidencePct":0.06}]},{"id":"svc_period_delay","name":"Period Delay","category":"Womens high volume","clinicianType":"IP","tasks":[{"name":"Review","group":"IP","timeSec":73,"incidencePct":96.38},{"name":"Messaging","group":"IP","timeSec":31.6,"incidencePct":96.38},{"name":"Review","group":"GP","timeSec":141,"incidencePct":3.62},{"name":"Messaging","group":"GP","timeSec":312.6,"incidencePct":3.62}]},{"id":"svc_chlamydia_treatment","name":"Chlamydia Treatment","category":"Sexual Health","clinicianType":"IP/GP","tasks":[{"name":"Review","group":"IP","timeSec":66,"incidencePct":91.64},{"name":"Messaging","group":"IP","timeSec":30.7,"incidencePct":91.64},{"name":"Review","group":"GP","timeSec":117,"incidencePct":8.36},{"name":"Messaging","group":"GP","timeSec":156.5,"incidencePct":8.36}]},{"id":"svc_bv_treatment","name":"BV Treatment","category":"Sexual Health","clinicianType":"IP/GP","tasks":[{"name":"Review","group":"IP","timeSec":79,"incidencePct":88.95},{"name":"Messaging","group":"IP","timeSec":18.4,"incidencePct":88.95},{"name":"Review","group":"GP","timeSec":96,"incidencePct":11.05},{"name":"Messaging","group":"GP","timeSec":89.4,"incidencePct":11.05}]},{"id":"svc_acne","name":"Acne","category":"Skin","clinicianType":"IP/GP","tasks":[{"name":"Review","group":"IP","timeSec":260,"incidencePct":3.56},{"name":"Messaging","group":"IP","timeSec":91.4,"incidencePct":3.56},{"name":"Review","group":"GP","timeSec":239,"incidencePct":96.44},{"name":"Messaging","group":"GP","timeSec":7.9,"incidencePct":96.44}]},{"id":"svc_erectile_dysfunction_subscribe_and_save","name":"Erectile Dysfunction Subscribe and Save","category":"Mens","clinicianType":"IP","tasks":[{"name":"Review","group":"IP","timeSec":59,"incidencePct":99.8},{"name":"Messaging","group":"IP","timeSec":48.5,"incidencePct":99.8},{"name":"Review","group":"GP","timeSec":256,"incidencePct":0.2},{"name":"Messaging","group":"GP","timeSec":3880.8,"incidencePct":0.2}]},{"id":"svc_hair_loss","name":"Hair Loss","category":"Mens","clinicianType":"IP","tasks":[{"name":"Review","group":"IP","timeSec":59,"incidencePct":98.57},{"name":"Messaging","group":"IP","timeSec":64.7,"incidencePct":98.57},{"name":"Review","group":"GP","timeSec":201,"incidencePct":1.43},{"name":"Messaging","group":"GP","timeSec":2456.8,"incidencePct":1.43}]},{"id":"svc_erectile_dysfunction","name":"Erectile Dysfunction","category":"Mens","clinicianType":"IP","tasks":[{"name":"Review","group":"IP","timeSec":65,"incidencePct":99.13},{"name":"Messaging","group":"IP","timeSec":66.4,"incidencePct":99.13},{"name":"Review","group":"GP","timeSec":179,"incidencePct":0.87},{"name":"Messaging","group":"GP","timeSec":3644.3,"incidencePct":0.87}]},{"id":"svc_asthma","name":"Asthma","category":"General, travel & womens","clinicianType":"IP/GP","tasks":[{"name":"Review","group":"IP","timeSec":119,"incidencePct":46.94},{"name":"Messaging","group":"IP","timeSec":34.5,"incidencePct":46.94},{"name":"Review","group":"GP","timeSec":157,"incidencePct":53.06},{"name":"Messaging","group":"GP","timeSec":35.7,"incidencePct":53.06}]},{"id":"svc_menopause","name":"Menopause","category":"Menopause","clinicianType":"IP/GP","tasks":[{"name":"Review","group":"IP","timeSec":429,"incidencePct":55.53},{"name":"Messaging","group":"IP","timeSec":263.2,"incidencePct":55.53},{"name":"Review","group":"GP","timeSec":371,"incidencePct":44.47},{"name":"Messaging","group":"GP","timeSec":389.1,"incidencePct":44.47}]},{"id":"svc_premature_ejaculation","name":"Premature Ejaculation","category":"Mens","clinicianType":"IP","tasks":[{"name":"Review","group":"IP","timeSec":64,"incidencePct":88.39},{"name":"Messaging","group":"IP","timeSec":39.7,"incidencePct":88.39},{"name":"Review","group":"GP","timeSec":33,"incidencePct":11.61},{"name":"Messaging","group":"GP","timeSec":155.5,"incidencePct":11.61}]},{"id":"svc_depression_anxiety","name":"Depression & Anxiety","category":"DAA","clinicianType":"IP/GP","tasks":[{"name":"Review","group":"IP","timeSec":1800,"incidencePct":57.14},{"name":"Messaging","group":"IP","timeSec":122.9,"incidencePct":57.14},{"name":"Review","group":"GP","timeSec":1800,"incidencePct":42.86},{"name":"Messaging","group":"GP","timeSec":128.5,"incidencePct":42.86}]},{"id":"svc_cold_sore_treatment","name":"Cold Sore Treatment","category":"Sexual Health","clinicianType":"IP/GP","tasks":[{"name":"Review","group":"IP","timeSec":88,"incidencePct":33.74},{"name":"Messaging","group":"IP","timeSec":44.3,"incidencePct":33.74},{"name":"Review","group":"GP","timeSec":103,"incidencePct":66.26},{"name":"Messaging","group":"GP","timeSec":21.4,"incidencePct":66.26}]},{"id":"svc_hayfever","name":"Hayfever","category":"General, travel & womens","clinicianType":"IP/GP","tasks":[{"name":"Review","group":"IP","timeSec":127,"incidencePct":47.5},{"name":"Messaging","group":"IP","timeSec":190.1,"incidencePct":47.5},{"name":"Review","group":"GP","timeSec":106,"incidencePct":52.5},{"name":"Messaging","group":"GP","timeSec":252.6,"incidencePct":52.5}]},{"id":"svc_genital_herpes_episodic","name":"Genital Herpes Episodic","category":"Sexual Health","clinicianType":"IP/GP","tasks":[{"name":"Review","group":"IP","timeSec":47,"incidencePct":67.8},{"name":"Messaging","group":"IP","timeSec":36.7,"incidencePct":67.8},{"name":"Review","group":"GP","timeSec":51,"incidencePct":32.2},{"name":"Messaging","group":"GP","timeSec":32,"incidencePct":32.2}]},{"id":"svc_skin_infection","name":"Skin Infection","category":"Skin","clinicianType":"GP","tasks":[{"name":"Review","group":"IP","timeSec":325,"incidencePct":0.22},{"name":"Messaging","group":"IP","timeSec":1625,"incidencePct":0.22},{"name":"Review","group":"GP","timeSec":201,"incidencePct":99.78},{"name":"Messaging","group":"GP","timeSec":36.5,"incidencePct":99.78}]},{"id":"svc_altitude_sickness","name":"Altitude Sickness","category":"General, travel & womens","clinicianType":"IP/GP","tasks":[{"name":"Review","group":"IP","timeSec":96,"incidencePct":41.32},{"name":"Messaging","group":"IP","timeSec":57.9,"incidencePct":41.32},{"name":"Review","group":"GP","timeSec":118,"incidencePct":58.68},{"name":"Messaging","group":"GP","timeSec":97.7,"incidencePct":58.68}]},{"id":"svc_eczema","name":"Eczema","category":"Skin","clinicianType":"GP","tasks":[{"name":"Review","group":"GP","timeSec":173,"incidencePct":100},{"name":"Messaging","group":"GP","timeSec":168.7,"incidencePct":100}]},{"id":"svc_rosacea","name":"Rosacea","category":"Skin","clinicianType":"IP/GP","tasks":[{"name":"Review","group":"IP","timeSec":226,"incidencePct":26.24},{"name":"Messaging","group":"IP","timeSec":262.9,"incidencePct":26.24},{"name":"Review","group":"GP","timeSec":182,"incidencePct":73.76},{"name":"Messaging","group":"GP","timeSec":328,"incidencePct":73.76}]},{"id":"svc_jet_lag","name":"Jet Lag","category":"General, travel & womens","clinicianType":"IP/GP","tasks":[{"name":"Review","group":"IP","timeSec":112,"incidencePct":49.7},{"name":"Messaging","group":"IP","timeSec":27,"incidencePct":49.7},{"name":"Review","group":"GP","timeSec":109,"incidencePct":50.3},{"name":"Messaging","group":"GP","timeSec":36.9,"incidencePct":50.3}]},{"id":"svc_genital_warts","name":"Genital Warts","category":"Sexual Health","clinicianType":"Nurse IP/GP","tasks":[{"name":"Review","group":"IP","timeSec":104,"incidencePct":67.74},{"name":"Messaging","group":"IP","timeSec":147.6,"incidencePct":67.74},{"name":"Review","group":"GP","timeSec":138,"incidencePct":32.26},{"name":"Messaging","group":"GP","timeSec":523.3,"incidencePct":32.26}]},{"id":"svc_swimmers_ear","name":"Swimmers Ear","category":"General, travel & womens","clinicianType":"GP","tasks":[{"name":"Review","group":"IP","timeSec":46,"incidencePct":40},{"name":"Messaging","group":"IP","timeSec":37.4,"incidencePct":40},{"name":"Review","group":"GP","timeSec":88,"incidencePct":60},{"name":"Messaging","group":"GP","timeSec":28.2,"incidencePct":60}]},{"id":"svc_test_kit_hb1ac","name":"Test Kit Hb1Ac","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Review","group":"Nurse","timeSec":105,"incidencePct":100},{"name":"Messaging","group":"Nurse","timeSec":15.2,"incidencePct":100}]},{"id":"svc_test_kit_thyroid_function_test_advice","name":"Test Kit Thyroid Function Test & Advice","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Review","group":"Nurse","timeSec":105,"incidencePct":100},{"name":"Messaging","group":"Nurse","timeSec":12.3,"incidencePct":100}]},{"id":"svc_migraine","name":"Migraine","category":"General, travel & womens","clinicianType":"GP","tasks":[{"name":"Review","group":"GP","timeSec":180,"incidencePct":100},{"name":"Messaging","group":"GP","timeSec":92,"incidencePct":100}]},{"id":"svc_genital_herpes_suppression","name":"Genital Herpes Suppression","category":"Sexual Health","clinicianType":"Nurse IP/GP","tasks":[{"name":"Review","group":"IP","timeSec":91,"incidencePct":54.05},{"name":"Messaging","group":"IP","timeSec":159.3,"incidencePct":54.05},{"name":"Review","group":"GP","timeSec":74,"incidencePct":45.95},{"name":"Messaging","group":"GP","timeSec":238.6,"incidencePct":45.95}]},{"id":"svc_stop_smoking","name":"Stop Smoking","category":"General, travel & womens","clinicianType":"IP/GP","tasks":[{"name":"Review","group":"IP","timeSec":101,"incidencePct":85.71},{"name":"Messaging","group":"IP","timeSec":208.9,"incidencePct":85.71},{"name":"Review","group":"GP","timeSec":182,"incidencePct":14.29},{"name":"Messaging","group":"GP","timeSec":828.1,"incidencePct":14.29}]},{"id":"svc_contact_dermatitis","name":"Contact Dermatitis","category":"Skin","clinicianType":"GP","tasks":[{"name":"Review","group":"IP","timeSec":130,"incidencePct":2.44},{"name":"Messaging","group":"IP","timeSec":296,"incidencePct":2.44},{"name":"Review","group":"GP","timeSec":157,"incidencePct":97.56},{"name":"Messaging","group":"GP","timeSec":156.2,"incidencePct":97.56}]},{"id":"svc_anaphylaxis","name":"Anaphylaxis","category":"General, travel & womens","clinicianType":"GP","tasks":[{"name":"Review","group":"GP","timeSec":179,"incidencePct":100},{"name":"Messaging","group":"GP","timeSec":376.7,"incidencePct":100}]},{"id":"svc_vaginal_dryness","name":"Vaginal Dryness","category":"General, travel & womens","clinicianType":"GP","tasks":[{"name":"Review","group":"IP","timeSec":76,"incidencePct":3.57},{"name":"Messaging","group":"IP","timeSec":2144,"incidencePct":3.57},{"name":"Review","group":"GP","timeSec":40,"incidencePct":96.43},{"name":"Messaging","group":"GP","timeSec":199.8,"incidencePct":96.43}]},{"id":"svc_trichomoniasis","name":"Trichomoniasis","category":"Sexual Health","clinicianType":"Nurse IP/GP","tasks":[{"name":"Review","group":"IP","timeSec":162,"incidencePct":45.45},{"name":"Messaging","group":"IP","timeSec":115.5,"incidencePct":45.45},{"name":"Review","group":"GP","timeSec":95,"incidencePct":54.55},{"name":"Messaging","group":"GP","timeSec":141.7,"incidencePct":54.55}]},{"id":"svc_test_kit_chlamydia_gonorrhoea_trich_fema","name":"Test Kit Chlamydia Gonorrhoea & Trich Female","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Review","group":"Nurse","timeSec":85,"incidencePct":100},{"name":"Messaging","group":"Nurse","timeSec":0.8,"incidencePct":100}]},{"id":"svc_period_pain","name":"Period Pain","category":"General, travel & womens","clinicianType":"GP","tasks":[{"name":"Review","group":"GP","timeSec":163,"incidencePct":100},{"name":"Messaging","group":"GP","timeSec":129.5,"incidencePct":100}]},{"id":"svc_facial_hair_removal","name":"Facial Hair Removal","category":"General, travel & womens","clinicianType":"GP","tasks":[{"name":"Review","group":"IP","timeSec":40,"incidencePct":7.69},{"name":"Messaging","group":"IP","timeSec":981,"incidencePct":7.69},{"name":"Review","group":"GP","timeSec":43,"incidencePct":92.31},{"name":"Messaging","group":"GP","timeSec":76,"incidencePct":92.31}]},{"id":"svc_test_kit_chlamydia_gonorrhoea_trich_male","name":"Test Kit Chlamydia Gonorrhoea & Trich Male","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Review","group":"Nurse","timeSec":85,"incidencePct":100},{"name":"Messaging","group":"Nurse","timeSec":5.8,"incidencePct":100}]},{"id":"svc_psoriasis","name":"Psoriasis","category":"Skin","clinicianType":"GP","tasks":[{"name":"Review","group":"GP","timeSec":170,"incidencePct":100},{"name":"Messaging","group":"GP","timeSec":308.3,"incidencePct":100}]},{"id":"svc_test_kit_chlamydia_gonorrhoea_male","name":"Test Kit Chlamydia & Gonorrhoea Male","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Review","group":"Nurse","timeSec":85,"incidencePct":100}]},{"id":"svc_test_kit_hiv","name":"Test Kit HIV","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Review","group":"Nurse","timeSec":85,"incidencePct":100},{"name":"Messaging","group":"Nurse","timeSec":26,"incidencePct":100}]},{"id":"svc_test_kit_chlamydia_female","name":"Test Kit Chlamydia Female","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Review","group":"Nurse","timeSec":85,"incidencePct":100},{"name":"Messaging","group":"Nurse","timeSec":0.7,"incidencePct":100}]},{"id":"svc_test_kit_chlamydia_gonorrhoea_female","name":"Test Kit Chlamydia & Gonorrhoea Female","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Review","group":"Nurse","timeSec":85,"incidencePct":100},{"name":"Messaging","group":"Nurse","timeSec":3,"incidencePct":100}]},{"id":"svc_test_kit_chlamydia_male","name":"Test Kit Chlamydia Male","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Review","group":"Nurse","timeSec":85,"incidencePct":100},{"name":"Messaging","group":"Nurse","timeSec":10,"incidencePct":100}]},{"id":"svc_hiv_prep","name":"HIV PrEP","category":"Sexual Health","clinicianType":"Nurse IP/GP","tasks":[{"name":"Review","group":"GP","timeSec":127,"incidencePct":100},{"name":"Messaging","group":"GP","timeSec":240,"incidencePct":100}]},{"id":"svc_test_kit_female_total_swab","name":"Test Kit Female Total Swab","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Review","group":"Nurse","timeSec":85,"incidencePct":100}]},{"id":"svc_test_kit_msm_chlamydia_gonorrhoea","name":"Test Kit MSM Chlamydia & Gonorrhoea","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Review","group":"Nurse","timeSec":85,"incidencePct":100}]},{"id":"svc_skin_diagnosis","name":"Skin Diagnosis","category":"Skin","clinicianType":"GP","tasks":[{"name":"Review","group":"IP","timeSec":120,"incidencePct":100}]}],"mappings":{"General Practitioner":"gp","GP":"gp","Independent Prescriber":"ip","Pharmacist Independent Prescriber":"ip","Nurse Independent Prescriber":"ip","Nurse":"nurse","Registered Nurse":"nurse","MH Nurse":"mh_nurse","Mental Health Nurse":"mh_nurse","Pharmacy Technician":"tech","People Manager":"pm_role","Manager":"pm_role"},"sampleDemandBase":{"Map Emergency Contraception":3446,"Weight Loss":3985,"Oral Contraception":2052,"Cystitis":1455,"Period Delay":644,"Chlamydia Treatment":207,"BV Treatment":294,"Acne":3563,"Erectile Dysfunction Subscribe and Save":212,"Hair Loss":186,"Erectile Dysfunction":326,"Asthma":113,"Menopause":83,"Premature Ejaculation":63,"Depression & Anxiety":105,"Cold Sore Treatment":55,"Hayfever":3,"Genital Herpes Episodic":52,"Skin Infection":38,"Altitude Sickness":26,"Eczema":16,"Rosacea":18,"Jet Lag":14,"Genital Warts":8,"Swimmers Ear":5,"Test Kit Hb1Ac":10,"Test Kit Thyroid Function Test & Advice":7,"Migraine":5,"Genital Herpes Suppression":3,"Stop Smoking":16,"Contact Dermatitis":3,"Anaphylaxis":1,"Vaginal Dryness":2,"Trichomoniasis":2,"Test Kit Chlamydia Gonorrhoea & Trich Female":5,"Period Pain":2,"Facial Hair Removal":1,"Test Kit Chlamydia Gonorrhoea & Trich Male":5,"Psoriasis":2,"Test Kit Chlamydia & Gonorrhoea Male":4,"Test Kit HIV":3,"Test Kit Chlamydia Female":3,"Test Kit Chlamydia & Gonorrhoea Female":4,"Test Kit Chlamydia Male":2,"HIV PrEP":1,"Test Kit Female Total Swab":1,"Test Kit MSM Chlamydia & Gonorrhoea":1,"Skin Diagnosis":1},"sampleHr":[{"name":"A. Okafor","role":"General Practitioner","hours":152,"nonPrescPct":40},{"name":"B. Rossi","role":"General Practitioner","hours":114},{"name":"C. Patel","role":"Independent Prescriber","hours":152,"specialisms":"Sexual Health; Skin"},{"name":"D. Nguyen","role":"Independent Prescriber","hours":152,"specialisms":"Weight Loss; Mens"},{"name":"E. Khan","role":"Independent Prescriber","hours":152,"specialisms":"Womens high volume; Urgent"},{"name":"F. Silva","role":"Independent Prescriber","hours":114,"nonPrescPct":45,"specialisms":"Sexual Health"},{"name":"G. Adeyemi","role":"Nurse","hours":152,"specialisms":"Sexual Health"},{"name":"H. Murphy","role":"Nurse","hours":152,"specialisms":"Test kits; Sexual Health"},{"name":"I. Zhang","role":"Nurse","hours":152,"specialisms":"Test kits"},{"name":"J. Brown","role":"Nurse","hours":114,"specialisms":"Test kits"},{"name":"K. Ahmed (planned)","role":"Independent Prescriber","hours":152,"startMonth":1,"readyMonth":3,"specialisms":"Weight Loss"},{"name":"L. Osei","role":"Advanced Nurse Practitioner","hours":152}]};
 const WEEKS_PER_MONTH = 52/12;
 
 /* ---------- Assumptions (swap to change the model) ---------- */
 const ASSUMPTIONS = {
-  productiveHoursPerFTE(role){ return num(role.contractedHours) * (1 - pct(role.nonPrescribingPct)); },
+  // productive hours per FTE per month = contracted hours × productivity %
+  productiveHoursPerFTE(role){ return num(role.contractedHours) * pct(role.productivityPct); },
   monthlyCost(role){ return num(role.costPerHour) * num(role.contractedHours); },
-  costPerProductiveHour(role){ const d=(1-pct(role.nonPrescribingPct)); return d>0? num(role.costPerHour)/d : Infinity; },
+  costPerProductiveHour(role){ const d=pct(role.productivityPct); return d>0? num(role.costPerHour)/d : Infinity; },
   // hours a task consumes: orders that hit the task (incidence) × its time per order
   taskHours(orders, timeSec, incidencePct){ return num(orders) * (num(incidencePct)/100) * (num(timeSec)/3600); },
   monthsFromWeeks(w){ return Math.round(num(w) * 12 / 52); },
-  roundFTE(fte){ return Math.ceil(fte - 1e-9); }
+  roundFTE(fte){ return Math.ceil(fte - 1e-9); },
+  // post-hire productivity ramp: 0% for the first 2 weeks, then linear up to full at usefulLeadWeeks.
+  // returns the AVERAGE productivity fraction (0..1) during month `mi` after hire (0 = hire month).
+  rampFraction(mi, usefulLeadWeeks){
+    if(mi<0) return 0; const W=num(usefulLeadWeeks); const WPM=WEEKS_PER_MONTH; const a=mi*WPM, b=(mi+1)*WPM;
+    const F = x => { if(W<=2) return Math.max(0,x-W); if(x<=2) return 0; if(x<=W) return (x-2)*(x-2)/(2*(W-2)); return (W-2)/2+(x-W); };
+    return Math.max(0, Math.min(1, (F(b)-F(a))/WPM));
+  }
 };
 
 /* ---------- helpers ---------- */
@@ -359,7 +367,7 @@ function defaultConfig(){
     roleAttrs:[
       {key:'group',label:'Group',type:'group'},
       {key:'costPerHour',label:'Cost / hour',type:'number'},
-      {key:'nonPrescribingPct',label:'Non-Prescribing time %',type:'number'},
+      {key:'productivityPct',label:'Productivity %',type:'number'},
       {key:'contractedHours',label:'Contracted hrs/mo',type:'number'},
       {key:'hireLeadWeeks',label:'Lead to hire (wks)',type:'number'},
       {key:'usefulLeadWeeks',label:'Lead to useful (wks)',type:'number'}
@@ -370,19 +378,21 @@ function defaultConfig(){
     serviceAliases: {},   // demand service name -> config service id, or '__ignore__'
     // --- people-file (roster) support ---
     clinicalCostCentre: 'BDH Clinical team',   // only people in this Cost Centre Name are considered
-    peopleMap: {},        // staff number -> {roleId, hours, nonPrescPct, specialisms, jobName}
-    // Roster mapping rules (from the client's rules screenshot). Evaluated top-down;
-    // first match wins. A rule matches when the person's Job code is in jobCodes
-    // (or jobCodes is empty) AND their Location Name equals location (or blank).
-    // The 'Managers' ignore rule is inferred (not in the screenshot) so managers at
-    // the IP location don't fall through to the IP rule — confirm/adjust.
+    peopleMap: {},        // staff number -> {roleId, hours, productivityPct, specialisms, jobName}
+    // Roster mapping rules (from the client's rules screenshots). Evaluated top-down;
+    // first match wins. A rule matches when: staff number is in staffNumbers (or empty)
+    // AND Job code is in jobCodes (or empty) AND Location Name equals location (or blank).
     jobRules: [
-      {label:'MH Nurse',  role:'mh_nurse', jobCodes:['FRH','FRG'], location:'BDH CMO Team'},
-      {label:'Pharm Tech', role:'tech',    jobCodes:['FRI'],       location:'BDH Independent Prescribers'},
-      {label:'GP',        role:'gp',       jobCodes:['FRE'],       location:''},
-      {label:'Managers (inferred)', role:'__ignore__', jobCodes:['FEP','FHJ','FIO'], location:''},
-      {label:'IP (nurse or pharmacist)', role:'ip', jobCodes:[], location:'BDH Independent Prescribers'}
-    ]
+      {label:'IP (exception)',  role:'ip',      staffNumbers:['40237001'], jobCodes:[], location:''},
+      {label:'People Manager',  role:'pm_role', staffNumbers:[], jobCodes:['FEP'], location:'BDH Independent Prescribers'},
+      {label:'MH Nurse',        role:'mh_nurse',staffNumbers:[], jobCodes:['FRH','FRG'], location:'BDH CMO Team'},
+      {label:'Pharm Tech',      role:'tech',    staffNumbers:[], jobCodes:['FRI'], location:'BDH Independent Prescribers'},
+      {label:'GP',              role:'gp',      staffNumbers:[], jobCodes:['FRE'], location:''},
+      {label:'Managers (inferred ignore)', role:'__ignore__', staffNumbers:[], jobCodes:['FHJ','FIO'], location:''},
+      {label:'IP (nurse or pharmacist)',   role:'ip', staffNumbers:[], jobCodes:[], location:'BDH Independent Prescribers'}
+    ],
+    // People Manager: headcount scales with number of prescribers (editable ratio).
+    peopleManager: { roleId:'pm_role', ratio:22, prescriberRoles:['ip','gp','mh_nurse'] }
   };
 }
 const DEFAULT_PERSON_HOURS = 152;   // default contracted hrs/mo for an auto-mapped person (edit per staff)
@@ -421,13 +431,15 @@ function roleById(cfg){ const m={}; cfg.roles.forEach(r=>m[r.id]=r); return m; }
 function distinctHrRoles(){ const s=[]; if(STATE.hr) STATE.hr.forEach(x=>{ if(s.indexOf(x.role)<0) s.push(x.role); }); return s; }
 function unmatchedRoles(){ if(STATE.hrMode==='people') return []; const map=STATE.config.mappings||{}; return distinctHrRoles().filter(r=> !map[r]); }
 // --- people (roster) mapping: staff number -> role/hours/specialisms ---
-function jobRuleFor(person){ // person = {jobCode, jobName, location}
-  const jc=String(person.jobCode||'').trim().toLowerCase(); const loc=String(person.location||'').trim().toLowerCase();
+function jobRuleFor(person){ // person = {staff, jobCode, jobName, location}
+  const staff=String(person.staff||'').trim(); const jc=String(person.jobCode||'').trim().toLowerCase(); const loc=String(person.location||'').trim().toLowerCase();
   for(const r of (STATE.config.jobRules||[])){
+    const nums=(r.staffNumbers||[]).map(x=>String(x).trim()).filter(Boolean);
     const codes=(r.jobCodes||[]).map(x=>String(x).trim().toLowerCase()).filter(Boolean);
+    const okNum = !nums.length || nums.indexOf(staff)>=0;
     const okCode = !codes.length || codes.indexOf(jc)>=0;
     const okLoc = !r.location || String(r.location).trim().toLowerCase()===loc;
-    if(okCode && okLoc) return r.role;
+    if(okNum && okCode && okLoc) return r.role;
   }
   return null;
 }
@@ -436,7 +448,7 @@ function applyPeopleRules(){ // pre-populate peopleMap for staff not yet mapped,
   (STATE.people||[]).forEach(p=>{
     if(pm[p.staff] && pm[p.staff].role) return; // keep existing (manual) mapping
     const role=jobRuleFor(p);
-    if(role) pm[p.staff]={ role, hours:'', nonPrescPct:'', specialisms:'', jobName:p.jobName, auto:true }; // blank = inherit role defaults
+    if(role) pm[p.staff]={ role, hours:'', productivityPct:'', specialisms:'', jobName:p.jobName, auto:true }; // blank = inherit role defaults
   });
 }
 function unmappedPeople(){ if(STATE.hrMode!=='people'||!STATE.people) return []; const pm=STATE.config.peopleMap||{}; return STATE.people.filter(p=> !pm[p.staff] || !pm[p.staff].role); }
@@ -444,7 +456,7 @@ function reapplyRules(){ // re-derive role for unmapped + auto-mapped people (ke
   const pm=STATE.config.peopleMap||(STATE.config.peopleMap={});
   (STATE.people||[]).forEach(p=>{ const m=pm[p.staff]; if(m && m.role && !m.auto) return; // keep manual
     const role=jobRuleFor(p);
-    if(role) pm[p.staff]=Object.assign({hours:'',nonPrescPct:'',specialisms:''}, m||{}, {role,jobName:p.jobName,auto:true});
+    if(role) pm[p.staff]=Object.assign({hours:'',productivityPct:'',specialisms:''}, m||{}, {role,jobName:p.jobName,auto:true});
     else if(m&&m.auto) delete pm[p.staff]; // rule no longer matches -> back to unmapped
   });
   rebuildHrFromPeople();
@@ -456,7 +468,7 @@ function rebuildHrFromPeople(){ // build the engine's staff list from mapped, no
     // blank hours / non-prescribing % inherit the role default (bulk edits flow through); non-blank = per-person override
     return { name:p.name, staffNo:p.staff, jobName:p.jobName, roleId:m.role,
       hours: has(m.hours)? num(m.hours) : (num(role.contractedHours)||DEFAULT_PERSON_HOURS),
-      nonPrescPct: has(m.nonPrescPct)? m.nonPrescPct : role.nonPrescribingPct,
+      productivityPct: has(m.productivityPct)? m.productivityPct : role.productivityPct,
       specialisms: m.specialisms }; }).filter(Boolean);
 }
 // --- demand service resolution (demand rows -> configured services) ---
@@ -567,14 +579,17 @@ function runEngine(cfg, demand, hr){
     const rid=s.roleId||map[s.role];
     if(!rid||rid==='__ignore__'||!rById[rid]){ droppedHours+=num(s.hours); return; }
     const role=rById[rid];
-    const np=(s.nonPrescPct!=null && String(s.nonPrescPct).trim()!=='')? pct(s.nonPrescPct) : pct(role.nonPrescribingPct);
-    const presc=num(s.hours)*(1-np);
+    const prod=(s.productivityPct!=null && String(s.productivityPct).trim()!=='')? pct(s.productivityPct) : pct(role.productivityPct);
+    const presc=num(s.hours)*prod;
     const startIdx=fieldToIdx(s.startMonth,start); const readyIdxRaw=fieldToIdx(s.readyMonth,start);
     const planned=(startIdx!=null)||(readyIdxRaw!=null);
     const readyIdx=readyIdxRaw!=null? readyIdxRaw : (planned && startIdx!=null ? startIdx+ASSUMPTIONS.monthsFromWeeks(role.usefulLeadWeeks) : 0);
     const elig=expandEligibility(s.specialisms, cfg);
-    const rec={staff:s, roleId:rid, group:role.group, presc, elig, npUsed:np, readyIdx:Math.max(0,readyIdx),
-      costStartIdx: startIdx!=null?startIdx:(planned?Math.max(0,readyIdx):0), monthly:num(role.costPerHour)*num(s.hours), planned};
+    const csIdx = startIdx!=null?startIdx:(planned?Math.max(0,readyIdx):0);
+    const rec={staff:s, roleId:rid, group:role.group, presc, elig, prodUsed:prod, readyIdx:Math.max(0,readyIdx),
+      costStartIdx: csIdx, monthly:num(role.costPerHour)*num(s.hours), planned,
+      // planned staff ramp their productivity from the start (hire) month; existing staff are full
+      rampAnchor: planned? Math.max(0,csIdx) : null, rampW: num(role.usefulLeadWeeks) };
     (planned?plannedStaff:currentStaff).push(rec);
   });
   const allStaff=currentStaff.concat(plannedStaff);
@@ -584,11 +599,13 @@ function runEngine(cfg, demand, hr){
   const ensureB=(g,c)=>{ const k=bkey(g,c); if(!bset[k]){ bset[k]={group:g,category:c}; buckets.push(bset[k]); reqB[k]=new Array(N).fill(0); allocB[k]=new Array(N).fill(0); gapB[k]=new Array(N).fill(0); } return k; };
   const reqB={}, allocB={}, gapB={};
   const servicesInGroup={}; groups.forEach(g=> servicesInGroup[g]=Object.keys(reqSG[g]));
+  // staff productivity factor in month m: existing = full; planned = ramp from their start month
+  const staffFactor=(x,m)=> x.rampAnchor==null? 1 : ASSUMPTIONS.rampFraction(m - x.rampAnchor, x.rampW);
   for(let m=0;m<N;m++){
     groups.forEach(g=>{
       const svcs=servicesInGroup[g].filter(sv=> reqSG[g][sv][m]>1e-9);
-      const st=allStaff.filter(x=> x.group===g && x.readyIdx<=m && x.presc>0);
-      const rem=st.map(x=>x.presc);
+      const st=allStaff.filter(x=> x.group===g && x.presc>0 && staffFactor(x,m)>1e-9);
+      const rem=st.map(x=>x.presc*staffFactor(x,m));
       const specCount=st.map(x=> svcs.filter(sv=> staffEligible(x.elig,sv)).length);   // fewer = more specialised
       const eligCap={}; svcs.forEach(sv=>{ let c=0; st.forEach((x,i)=>{ if(staffEligible(x.elig,sv)) c+=rem[i]; }); eligCap[sv]=c; });
       // fill scarcest services first (lowest slack = eligible capacity − demand)
@@ -608,21 +625,44 @@ function runEngine(cfg, demand, hr){
   const roleIdx={}; cfg.roles.forEach((r,i)=> roleIdx[r.id]=i);
   const hireRole={}; groups.forEach(g=>{ const rs=rolesInGroup[g].slice().sort((a,b)=>{ const d=ASSUMPTIONS.costPerProductiveHour(a)-ASSUMPTIONS.costPerProductiveHour(b); return Math.abs(d)>1e-9? d : (roleIdx[a.id]-roleIdx[b.id]); }); hireRole[g]=rs[0]||null; });
   const cohorts=[]; const unfillable=[]; const addedB={}; buckets.forEach(b=> addedB[bkey(b.group,b.category)]=new Array(N).fill(0));
+  const monthsCeil=w=> Math.ceil(num(w)*12/52 - 1e-9); // round UP so the ramp is full by the useful month
   buckets.forEach(b=>{ const g=b.group, k=bkey(g,b.category); const role=hireRole[g];
-    const hph=role?ASSUMPTIONS.productiveHoursPerFTE(role):0;
-    const usefulLag=role?ASSUMPTIONS.monthsFromWeeks(role.usefulLeadWeeks):0;
+    const hph=role?ASSUMPTIONS.productiveHoursPerFTE(role):0; const W=role?num(role.usefulLeadWeeks):0;
+    const usefulLag=role?monthsCeil(role.usefulLeadWeeks):0;
     const hireLag=role?ASSUMPTIONS.monthsFromWeeks(role.hireLeadWeeks):0;
+    const eff=addedB[k]; // per-month effective (ramped) hours from recommended hires
     for(let m=0;m<N;m++){
-      let usefulAdded=0; for(let x=0;x<m;x++) usefulAdded+=addedB[k][x];
-      const deficit=reqB[k][m]-(allocB[k][m]+usefulAdded);
+      const deficit=reqB[k][m]-(allocB[k][m]+eff[m]);
       if(deficit>1e-6){
-        if(role&&hph>0){ const hires=ceil(deficit/hph); addedB[k][m]+=hires*hph;
-          cohorts.push({group:g,category:b.category,roleId:role.id,hires,usefulIdx:m,costStartIdx:m-usefulLag,recruitIdx:m-usefulLag-hireLag}); }
+        if(role&&hph>0){ const hires=ceil(deficit/hph); const hireIdx=m-usefulLag;
+          for(let t=Math.max(0,hireIdx);t<N;t++) eff[t]+=hires*hph*ASSUMPTIONS.rampFraction(t-hireIdx, W);
+          cohorts.push({group:g,category:b.category,roleId:role.id,hires,usefulIdx:m,costStartIdx:hireIdx,recruitIdx:hireIdx-hireLag}); }
         else unfillable.push({group:g,category:b.category,monthIdx:m,hours:deficit});
       }
     }
   });
-  const recAddB={}; buckets.forEach(b=>{ const k=bkey(b.group,b.category); let run=0; recAddB[k]=addedB[k].map(v=>{run+=v;return run;}); });
+  const recAddB={}; buckets.forEach(b=>{ const k=bkey(b.group,b.category); recAddB[k]=addedB[k].slice(); }); // per-month effective (ramp-adjusted)
+
+  // --- People Manager: required headcount scales with prescriber headcount (editable ratio) ---
+  const pmCfg = cfg.peopleManager || {roleId:'pm_role', ratio:22, prescriberRoles:['ip','gp','mh_nurse']};
+  const pmRole = rById[pmCfg.roleId]; const presSet=new Set(pmCfg.prescriberRoles||[]);
+  const isPresc = rid=> presSet.has(rid);
+  const existPresc = currentStaff.filter(s=>isPresc(s.roleId)).length;
+  const prescHeads = months.map((_,m)=>{ let h=existPresc;
+    plannedStaff.forEach(p=>{ if(isPresc(p.roleId)&&Math.max(0,p.costStartIdx)<=m) h++; });
+    cohorts.forEach(co=>{ if(isPresc(co.roleId)&&Math.max(0,co.costStartIdx)<=m) h+=co.hires; }); return h; });
+  const pmRatio = Math.max(1, num(pmCfg.ratio)||22);
+  const pmRequired = prescHeads.map(h=> Math.ceil(h/pmRatio));
+  const existPM = currentStaff.filter(s=>s.roleId===pmCfg.roleId).length;
+  const pmAvail = months.map((_,m)=>{ let a=existPM; plannedStaff.forEach(p=>{ if(p.roleId===pmCfg.roleId&&Math.max(0,p.costStartIdx)<=m) a++; }); return a; });
+  const pmRec = new Array(N).fill(0); const pmCohorts=[];
+  if(pmRole){ const uLag=monthsCeil(pmRole.usefulLeadWeeks), hLag=ASSUMPTIONS.monthsFromWeeks(pmRole.hireLeadWeeks); let cum=0;
+    for(let m=0;m<N;m++){ const need=pmRequired[m], have=pmAvail[m]+cum;
+      if(need>have){ const hires=need-have; cum+=hires; pmCohorts.push({group:'Management',category:'People Manager',roleId:pmCfg.roleId,hires,usefulIdx:m,costStartIdx:m-uLag,recruitIdx:m-uLag-hLag}); }
+      pmRec[m]=cum; }
+  }
+  pmCohorts.forEach(c=> cohorts.push(c)); // include in cost + recruitment output
+  const pmGap = months.map((_,m)=> Math.max(0, pmRequired[m]-pmAvail[m]));
 
   // group totals (for tiles / summary)
   const reqGroupTot={}, gapGroupTot={}; groups.forEach(g=>{ reqGroupTot[g]=new Array(N).fill(0); gapGroupTot[g]=new Array(N).fill(0); });
@@ -653,6 +693,7 @@ function runEngine(cfg, demand, hr){
   return { months, monthLabels:months.map(monthLabel), groups, roles:cfg.roles.slice(), rolesInGroup, hireRole, bkey,
     buckets, reqB, allocB, gapB, recAddB, reqGroupTot, gapGroupTot, svcCat,
     svcCalc, cohorts, unfillable, newHireCost, plannedCost, baselineCost, plannedStaff, currentStaff, allStaff, droppedHours,
+    pm:{ role:pmRole, ratio:pmRatio, prescHeads, required:pmRequired, avail:pmAvail, rec:pmRec, gap:pmGap, cohorts:pmCohorts },
     checks, currency:cfg.global.currency, sumNewHireCost:sumPhased, monthlyCostRole };
 }
 
@@ -687,13 +728,16 @@ function renderSteps(){
 }
 function renderGlobal(){
   const g=STATE.config.global;
+  const pmr=(STATE.config.peopleManager&&STATE.config.peopleManager.ratio)||22;
   $('#globalFields').innerHTML=`
     <div class="field"><label>Currency</label><input id="g_currency" value="${esc(g.currency)}"/></div>
     <div class="field"><label>Forecast horizon (months)</label><input id="g_horizon" type="number" min="1" max="60" value="${esc(g.horizonMonths)}"/></div>
-    <div class="field"><label>Start month (YYYY-MM)</label><input id="g_start" value="${esc(g.startMonth)}"/></div>`;
+    <div class="field"><label>Start month (YYYY-MM)</label><input id="g_start" value="${esc(g.startMonth)}"/></div>
+    <div class="field"><label>People Manager ratio (1 : N prescribers)</label><input id="g_pmratio" type="number" min="1" value="${esc(pmr)}"/></div>`;
   $('#g_currency').onchange=e=>{ g.currency=e.target.value||'£'; softRerun(); };
   $('#g_horizon').onchange=e=>{ g.horizonMonths=Math.max(1,Math.min(60,parseInt(e.target.value,10)||12)); softRerun(); };
   $('#g_start').onchange=e=>{ g.startMonth=/^\d{4}-\d{2}$/.test(e.target.value)?e.target.value:g.startMonth; softRerun(); };
+  $('#g_pmratio').onchange=e=>{ STATE.config.peopleManager=STATE.config.peopleManager||{roleId:'pm_role',prescriberRoles:['ip','gp','mh_nurse']}; STATE.config.peopleManager.ratio=Math.max(1,parseInt(e.target.value,10)||22); softRerun(); };
 }
 function renderGroups(){
   const cfg=STATE.config;
@@ -793,15 +837,16 @@ function renderPeopleMap(){
   const cfg=STATE.config, pm=cfg.peopleMap||(cfg.peopleMap={}), rById=roleById(cfg);
   // job rules editor
   const jr=$('#tblJobRules');
-  jr.innerHTML='<thead><tr><th>Label</th><th>Job codes (any of)</th><th>Location Name</th><th>Maps to</th><th></th></tr></thead><tbody>'+
+  jr.innerHTML='<thead><tr><th>Label</th><th>Staff #(s)</th><th>Job codes (any of)</th><th>Location Name</th><th>Maps to</th><th></th></tr></thead><tbody>'+
     (cfg.jobRules||[]).map((ru,i)=>`<tr>
-      <td><input value="${esc(ru.label||'')}" data-jr="${i}" data-jk="label" style="min-width:110px"/></td>
-      <td><input value="${esc((ru.jobCodes||[]).join(', '))}" data-jr="${i}" data-jk="jobCodes" placeholder="e.g. FRE" style="min-width:110px"/></td>
-      <td><input value="${esc(ru.location||'')}" data-jr="${i}" data-jk="location" placeholder="(any)" style="min-width:150px"/></td>
+      <td><input value="${esc(ru.label||'')}" data-jr="${i}" data-jk="label" style="min-width:100px"/></td>
+      <td><input value="${esc((ru.staffNumbers||[]).join(', '))}" data-jr="${i}" data-jk="staffNumbers" placeholder="(any)" style="min-width:90px"/></td>
+      <td><input value="${esc((ru.jobCodes||[]).join(', '))}" data-jr="${i}" data-jk="jobCodes" placeholder="e.g. FRE" style="min-width:100px"/></td>
+      <td><input value="${esc(ru.location||'')}" data-jr="${i}" data-jk="location" placeholder="(any)" style="min-width:140px"/></td>
       <td><select data-jr="${i}" data-jk="role"><option value="__ignore__" ${ru.role==='__ignore__'?'selected':''}>Ignore (non-clinical)</option>${cfg.roles.map(r=>`<option value="${esc(r.id)}" ${ru.role===r.id?'selected':''}>${esc(r.name)} (${esc(r.group)})</option>`).join('')}</select></td>
       <td><button class="cellbtn" data-deljr="${i}">×</button></td></tr>`).join('')+'</tbody>';
   jr.querySelectorAll('[data-jk]').forEach(inp=> inp.onchange=e=>{ const i=+e.target.dataset.jr,k=e.target.dataset.jk;
-    if(k==='jobCodes') cfg.jobRules[i].jobCodes=e.target.value.split(',').map(x=>x.trim()).filter(Boolean); else cfg.jobRules[i][k]=e.target.value;
+    if(k==='jobCodes'||k==='staffNumbers') cfg.jobRules[i][k]=e.target.value.split(',').map(x=>x.trim()).filter(Boolean); else cfg.jobRules[i][k]=e.target.value;
     reapplyRules(); renderPeopleMap(); softRerun(); updateExportGate(); });
   jr.querySelectorAll('[data-deljr]').forEach(b=> b.onclick=e=>{ cfg.jobRules.splice(+e.target.dataset.deljr,1); renderPeopleMap(); });
   // people table (unmapped first)
@@ -816,20 +861,20 @@ function renderPeopleMap(){
   const rows=list.map(p=>{ const m=pm[p.staff]||{}; const st=status(p); const isU=st==='unmapped'; const rid=m.role||''; const rd=rById[rid]; const grp=rd?rd.group:'';
     const tag = isU?'<span class="tag tag-unmatched">map me</span>' : st==='ignored'?'<span class="tag tag-manual">ignored</span>' : st==='auto'?'<span class="tag tag-auto">auto</span>':'<span class="tag tag-manual">manual</span>';
     const disabled = (rid===''||rid==='__ignore__');
-    const ovH=has(m.hours), ovN=has(m.nonPrescPct), ovS=has(m.specialisms); if(!disabled&&(ovH||ovN||ovS)) overrides++;
+    const ovH=has(m.hours), ovN=has(m.productivityPct), ovS=has(m.specialisms); if(!disabled&&(ovH||ovN||ovS)) overrides++;
     const effHours = rd? (num(rd.contractedHours)||DEFAULT_PERSON_HOURS) : DEFAULT_PERSON_HOURS;
-    const effNP = rd? rd.nonPrescribingPct : '';
+    const effNP = rd? rd.productivityPct : '';
     const reset=(f)=> disabled?'':`<button class="cellbtn" data-clr="${esc(p.staff)}:${f}" title="Reset to role default">↺</button>`;
     const cell=(f,val,eff,ov,extra)=>`<td><div class="cellflex"><input class="w-sm ${ov?'ov':''}" value="${esc(ov?val:'')}" placeholder="${esc(eff)}" data-ps="${esc(p.staff)}" data-pk="${f}" ${disabled?'disabled':''} ${extra||''}/>${ov?reset(f):''}</div></td>`;
     return `<tr class="${isU?'svc-alt':''}">
       <td class="rowaccent" style="border-left-color:${grp?groupColor(grp).fg:'var(--line)'}"><strong>${esc(p.name)}</strong><br><small class="mute">#${esc(p.staff)} · ${esc(p.jobCode||'')} ${esc(p.jobName||'—')}${p.location?' · '+esc(p.location):''}</small></td>
       <td><div style="display:flex;align-items:center;gap:7px"><select class="${grp?'grp-sel':''}" style="flex:1;min-width:0;${grp?grpStyle(grp):''}" data-ps="${esc(p.staff)}" data-pk="role">${roleOpts(rid)}</select>${tag}</div></td>
       ${cell('hours', m.hours, effHours, ovH)}
-      ${cell('nonPrescPct', m.nonPrescPct, effNP===''?'role':effNP, ovN)}
+      ${cell('productivityPct', m.productivityPct, effNP===''?'role':effNP, ovN)}
       <td><div class="cellflex"><input class="${ovS?'ov':''}" value="${esc(ovS?m.specialisms:'')}" placeholder="all" data-ps="${esc(p.staff)}" data-pk="specialisms" ${disabled?'disabled':''} style="min-width:150px"/>${ovS?reset('specialisms'):''}</div></td></tr>`;
   }).join('');
-  $('#tblPeople').innerHTML='<thead><tr><th>Person</th><th>Role</th><th class="num">Hrs/mo</th><th class="num">Non-presc %</th><th>Specialisms</th></tr></thead><tbody>'+rows+'</tbody>';
-  $('#tblPeople').querySelectorAll('[data-pk]').forEach(inp=> inp.onchange=e=>{ const s=e.target.dataset.ps,k=e.target.dataset.pk; const m=pm[s]||(pm[s]={role:'',hours:'',nonPrescPct:'',specialisms:'',jobName:(STATE.people.find(p=>p.staff===s)||{}).jobName});
+  $('#tblPeople').innerHTML='<thead><tr><th>Person</th><th>Role</th><th class="num">Hrs/mo</th><th class="num">Productivity %</th><th>Specialisms</th></tr></thead><tbody>'+rows+'</tbody>';
+  $('#tblPeople').querySelectorAll('[data-pk]').forEach(inp=> inp.onchange=e=>{ const s=e.target.dataset.ps,k=e.target.dataset.pk; const m=pm[s]||(pm[s]={role:'',hours:'',productivityPct:'',specialisms:'',jobName:(STATE.people.find(p=>p.staff===s)||{}).jobName});
     if(k==='role'){ m.role=e.target.value; m.auto=false; } else m[k]=e.target.value; // blank = inherit role default
     renderPeopleMap(); rebuildHrFromPeople(); softRerun(); updateExportGate(); });
   $('#tblPeople').querySelectorAll('[data-clr]').forEach(b=> b.onclick=e=>{ const [s,f]=e.target.dataset.clr.split(':'); if(pm[s]){ pm[s][f]=''; } renderPeopleMap(); rebuildHrFromPeople(); softRerun(); updateExportGate(); });
@@ -888,7 +933,22 @@ function renderResults(){
   });
   const gapTbl=`<div class="section-title" style="margin-top:20px">Capacity gap — shortfall hours by <strong>group × category</strong>, by month</div>
     <div class="tbl-wrap"><table class="dt"><thead><tr><th>Area (group · category)</th>${mh}</tr></thead><tbody>${gapRows}</tbody></table></div>
-    <p class="hint">Each cell is the shortfall of <em>eligible</em> capacity for that clinician group in that category (hover for required / staffed / recommended-hire hours). Existing staff are allocated to the work they're qualified for, scarcest area first. <span class="rag rag-amber">amber</span> small gap · <span class="rag rag-red">red</span> &gt;15% of demand.</p>`;
+    <p class="hint">Each cell is the shortfall of <em>eligible</em> capacity for that clinician group in that category (hover for required / staffed / recommended-hire hours). Existing staff are allocated to the work they're qualified for, scarcest area first. New hires ramp up (0% for 2 weeks, then linearly to full by their useful date). <span class="rag rag-amber">amber</span> small gap · <span class="rag rag-red">red</span> &gt;15% of demand.</p>`;
+  // People Manager headcount (scales with prescribers)
+  let pmTbl='';
+  if(R.pm && R.pm.role){ const P=R.pm; const c=groupColor('Management');
+    const row=(lbl,arr,cls)=>`<tr><td class="${cls||'mute'}" style="${cls?'':'padding-left:18px'}">${lbl}</td>`+arr.map(v=>`<td class="num ${cls?'':'mute'}">${v>0?Math.round(v):(cls?0:'—')}</td>`).join('')+'</tr>';
+    const gapRow=`<tr><td style="padding-left:18px;font-weight:700">manager gap</td>`+P.gap.map((v,i)=>`<td class="cell-gap"><span class="rag ${v>0.5?'rag-red':'rag-zero'}">${v>0.5?Math.round(v):0}</span></td>`).join('')+'</tr>';
+    pmTbl=`<div class="section-title" style="margin-top:20px">People Managers — headcount at 1 : ${P.ratio} prescribers</div>
+      <div class="tbl-wrap"><table class="dt"><thead><tr><th>Metric</th>${mh}</tr></thead><tbody>
+        `+`<tr><td class="rolecell"><span class="grp-pill" style="${grpStyle('Management')}">Management</span> Prescriber headcount</td>`+P.prescHeads.map(v=>`<td class="num">${Math.round(v)}</td>`).join('')+`</tr>`
+        +row('required managers',P.required,'rolecell')
+        +row('available (existing+planned)',P.avail)
+        +row('+ recommended (cumulative)',P.rec)
+        +gapRow
+      +`</tbody></table></div>
+      <p class="hint">Required = ⌈ prescriber headcount ÷ ratio ⌉ (prescribers = ${esc((STATE.config.peopleManager&&STATE.config.peopleManager.prescriberRoles||[]).join(', '))}). Managers don't take orders; they scale with team size. Change the ratio in Config → Global.</p>`;
+  }
   let recRows;
   if(!R.cohorts.length){ recRows=`<tr><td colspan="7" class="mute">No hires needed — existing + planned capacity covers demand across the horizon.</td></tr>`; }
   else{
@@ -913,7 +973,7 @@ function renderResults(){
       ${cRow('New recommended hires',R.newHireCost,false)}${cRow('Already-planned hires',R.plannedCost,true)}${cRow('Existing team (baseline)',R.baselineCost,true)}
     </tbody></table></div>
     <p class="hint">New-hire cost is the plan; planned + baseline are shown for context and are not double-counted in the gap.</p>`;
-  body.innerHTML=tiles+gapTbl+recTbl+costTbl;
+  body.innerHTML=tiles+gapTbl+pmTbl+recTbl+costTbl;
 }
 function renderChecks(){
   const el=$('#checksList'); if(!STATE.lastRun){ el.innerHTML='<div class="map-empty">Recompute to run self-checks.</div>'; return; }
@@ -971,13 +1031,13 @@ function parseHr(aoa){
   const header=aoa[0].map(h=>String(h).trim().toLowerCase());
   const find=(...names)=>{ for(const n of names){ const i=header.findIndex(h=>h.includes(n)); if(i>=0) return i; } return -1; };
   const ci={ name:find('name'), role:find('role','job','title'), hours:find('contract','hour','fte'), start:find('start','join'), ready:find('ready','useful','productive'),
-             nonpresc:find('non-prescrib','nonprescrib','non prescrib','admin %','admin%'), spec:find('special','skill','eligib','covers') };
+             prod:find('productiv','productivity'), spec:find('special','skill','eligib','covers') };
   if(ci.role<0||ci.hours<0){ alert('HR file needs a Role column and a Contracted-hours column.'); return; }
   const hr=[]; for(let i=1;i<aoa.length;i++){ const row=aoa[i]; const role=String(row[ci.role]).trim(); if(!role) continue;
     const rec={ name: ci.name>=0?String(row[ci.name]).trim():'—', role, hours:num(row[ci.hours]) };
     if(ci.start>=0 && String(row[ci.start]).trim()!=='') rec.startMonth=String(row[ci.start]).trim();
     if(ci.ready>=0 && String(row[ci.ready]).trim()!=='') rec.readyMonth=String(row[ci.ready]).trim();
-    if(ci.nonpresc>=0 && String(row[ci.nonpresc]).trim()!=='') rec.nonPrescPct=String(row[ci.nonpresc]).trim();
+    if(ci.prod>=0 && String(row[ci.prod]).trim()!=='') rec.productivityPct=String(row[ci.prod]).trim();
     if(ci.spec>=0 && String(row[ci.spec]).trim()!=='') rec.specialisms=String(row[ci.spec]).trim();
     hr.push(rec); }
   STATE.hrMode='roles'; STATE.people=null; STATE.hr=hr;
@@ -1019,23 +1079,23 @@ function exportXlsx(){
   inp.push([]);
   if(STATE.hrMode==='people'){
     inp.push(['People roster — '+cfg.clinicalCostCentre+' only (personal data)']);
-    inp.push(['Staff no','Name','Job Name','Mapped role','Group','Hrs/mo','Non-prescribing %','Prescribing hrs/mo','Specialisms','Eligible services']);
+    inp.push(['Staff no','Name','Job Name','Mapped role','Group','Hrs/mo','Productivity %','Productive hrs/mo','Specialisms','Eligible services']);
     const pm=cfg.peopleMap||{};
     const hasv=v=> v!=null && String(v).trim()!=='';
     (STATE.people||[]).forEach(p=>{ const m=pm[p.staff]||{}; const role=rById[m.role]; const to=!m.role?'(unmapped)':(m.role==='__ignore__'?'(ignored)':(role?role.name:'(unknown)'));
       const effHours=role? (hasv(m.hours)?num(m.hours):(num(role.contractedHours)||DEFAULT_PERSON_HOURS)) : '';
-      const effNP=role? (hasv(m.nonPrescPct)?m.nonPrescPct:role.nonPrescribingPct) : '';
+      const effNP=role? (hasv(m.productivityPct)?m.productivityPct:role.productivityPct) : '';
       const npFrac=role? pct(effNP) : 0;
-      const presc=role?round2(num(effHours)*(1-npFrac)):'';
+      const presc=role?round2(num(effHours)*npFrac):'';
       const elig=role?expandEligibility(m.specialisms,cfg):{all:true}; const eligN=elig.all?'all':elig.set.size;
       inp.push([p.staff,p.name,p.jobName,to,role?role.group:'',effHours,effNP,presc,m.specialisms||'',role?eligN:'']); });
   } else {
     inp.push(['HR extract — current team + planned hires (personal data)']);
-    inp.push(['Name','HR role','Contracted hrs/mo','Non-prescribing %','Prescribing hrs/mo','Specialisms','Eligible services','Start month','Ready month','Mapped to','Planned?']);
+    inp.push(['Name','HR role','Contracted hrs/mo','Productivity %','Productive hrs/mo','Specialisms','Eligible services','Start month','Ready month','Mapped to','Planned?']);
     STATE.hr.forEach(s=>{ const rid=cfg.mappings[s.role]; const role=rById[rid]; const to=rid==='__ignore__'?'(ignored)':(role?role.name:'(unmapped)');
-      const npRaw=(s.nonPrescPct!=null&&String(s.nonPrescPct).trim()!=='')?s.nonPrescPct:(role?role.nonPrescribingPct:'');
-      const npFrac=role?((s.nonPrescPct!=null&&String(s.nonPrescPct).trim()!=='')?pct(s.nonPrescPct):pct(role.nonPrescribingPct)):0;
-      const presc=role?round2(num(s.hours)*(1-npFrac)):'';
+      const npRaw=(s.productivityPct!=null&&String(s.productivityPct).trim()!=='')?s.productivityPct:(role?role.productivityPct:'');
+      const npFrac=role?((s.productivityPct!=null&&String(s.productivityPct).trim()!=='')?pct(s.productivityPct):pct(role.productivityPct)):0;
+      const presc=role?round2(num(s.hours)*npFrac):'';
       const elig=role?expandEligibility(s.specialisms,cfg):{all:true}; const eligN=elig.all?'all':elig.set.size;
       inp.push([s.name,s.role,s.hours,npRaw,presc,s.specialisms||'',eligN,s.startMonth||'',s.readyMonth||'',to,(s.startMonth||s.readyMonth)?'yes':'no']); });
   }
@@ -1044,8 +1104,8 @@ function exportXlsx(){
   // Config
   const con=[['CONFIG — parameters as used in this run'],[],['Global'],['Currency',cur],['Forecast horizon (months)',R.months.length],['Start month',cfg.global.startMonth],[]];
   con.push(['Groups',cfg.groups.join(', ')]); con.push([]);
-  con.push(['Roles']); con.push(['Role','Group','Cost/hour','Non-Prescribing %','Contracted hrs/mo','Lead to hire (wks)','Lead to useful (wks)','Productive hrs/FTE','Monthly cost']);
-  cfg.roles.forEach(r=> con.push([r.name,r.group,num(r.costPerHour),num(r.nonPrescribingPct),num(r.contractedHours),num(r.hireLeadWeeks),num(r.usefulLeadWeeks),round2(ASSUMPTIONS.productiveHoursPerFTE(r)),round2(ASSUMPTIONS.monthlyCost(r))]));
+  con.push(['Roles']); con.push(['Role','Group','Cost/hour','Productivity %','Contracted hrs/mo','Lead to hire (wks)','Lead to useful (wks)','Productive hrs/FTE','Monthly cost']);
+  cfg.roles.forEach(r=> con.push([r.name,r.group,num(r.costPerHour),num(r.productivityPct),num(r.contractedHours),num(r.hireLeadWeeks),num(r.usefulLeadWeeks),round2(ASSUMPTIONS.productiveHoursPerFTE(r)),round2(ASSUMPTIONS.monthlyCost(r))]));
   con.push([]); con.push(['Services (task breakdown)']); con.push(['Service','Category','Clinician type','Task','Group','Time (s)','Incidence %','Eff. min/order']);
   cfg.services.forEach(sv=> (sv.tasks||[]).forEach(t=> con.push([sv.name,sv.category,sv.clinicianType||'',t.name,t.group,num(t.timeSec),num(t.incidencePct),round2((num(t.incidencePct)/100)*(num(t.timeSec)/60))])));
   add('Config',con);
@@ -1053,8 +1113,8 @@ function exportXlsx(){
   // Mapping
   let mp;
   if(STATE.hrMode==='people'){
-    mp=[['MAPPING — person (staff number) → clinician role'],['Rules applied top-down (first match wins) on Job code + Location Name; manual overrides preserved.'],[],['Rule','Job codes','Location Name','Maps to']];
-    (cfg.jobRules||[]).forEach(ru=>{ const role=rById[ru.role]; mp.push([ru.label||'', (ru.jobCodes||[]).join(' / '), ru.location||'(any)', ru.role==='__ignore__'?'(ignored)':(role?role.name:ru.role)]); });
+    mp=[['MAPPING — person (staff number) → clinician role'],['Rules applied top-down (first match wins) on Staff # + Job code + Location Name; manual overrides preserved.'],[],['Rule','Staff #(s)','Job codes','Location Name','Maps to']];
+    (cfg.jobRules||[]).forEach(ru=>{ const role=rById[ru.role]; mp.push([ru.label||'', (ru.staffNumbers||[]).join(' / ')||'(any)', (ru.jobCodes||[]).join(' / ')||'(any)', ru.location||'(any)', ru.role==='__ignore__'?'(ignored)':(role?role.name:ru.role)]); });
     mp.push([]); mp.push(['Per person']); mp.push(['Staff no','Job code','Job Name','Location Name','Mapped role','Method']);
     const pm=cfg.peopleMap||{};
     (STATE.people||[]).forEach(p=>{ const m=pm[p.staff]||{}; const role=rById[m.role]; const to=!m.role?'UNMAPPED':(m.role==='__ignore__'?'(ignored)':(role?role.name:'(unknown)')); const method=!m.role?'UNMAPPED':(m.auto?'Auto (rule)':'Manual'); mp.push([p.staff,p.jobCode||'',p.jobName,p.location||'',to,method]); });
@@ -1075,6 +1135,12 @@ function exportXlsx(){
   // Capacity & Gap (group × category)
   const cap=[['CAPACITY & GAP — required vs staffed vs recommended vs gap (hours), by group × category by month'],['Staffed = existing + planned staff ELIGIBLE for that category, allocated scarcest-area-first. Gap = Required − (Staffed + Recommended hires).'],[],['Group','Category','Metric'].concat(ML)];
   R.buckets.forEach(b=>{ const k=R.bkey(b.group,b.category); cap.push([b.group,b.category,'Required h'].concat(R.reqB[k].map(round2))); cap.push(['','','Staffed h (existing+planned, eligible)'].concat(R.allocB[k].map(round2))); cap.push(['','','Recommended hires h (cumulative)'].concat(R.recAddB[k].map(round2))); cap.push(['','','Gap h'].concat(R.gapB[k].map(round2))); cap.push([]); });
+  if(R.pm && R.pm.role){ cap.push([]); cap.push(['People Managers — headcount at 1 : '+R.pm.ratio+' prescribers']); cap.push(['Metric'].concat(ML));
+    cap.push(['Prescriber headcount'].concat(R.pm.prescHeads.map(v=>Math.round(v))));
+    cap.push(['Required managers'].concat(R.pm.required));
+    cap.push(['Available (existing+planned)'].concat(R.pm.avail));
+    cap.push(['+ Recommended (cumulative)'].concat(R.pm.rec));
+    cap.push(['Manager gap'].concat(R.pm.gap)); }
   add('Capacity & Gap',cap);
 
   // Recruitment & Cost
@@ -1100,7 +1166,9 @@ function exportXlsx(){
   const met=[['METHODOLOGY — plain-English explanation of every calculation'],[]];
   [['1. Demand → hours','Each service is a list of tasks. For each task, month: hours = orders × incidence% × time-per-order ÷ 3600, attributed to the task\'s group. An order can span several tasks across different roles (e.g. async review + messaging; or sync prescreen + specialist consult + GP letter).'],
    ['2. Groups','Tasks are performed by clinician groups (e.g. IP, GP, Nurse, Specialist, Admin). Incidence carries both order-routing (IP vs GP share) and funnels (only some orders reach a later step). A role belongs to a group; a group pools all its roles\' capacity.'],
-   ['3. Productive hours','Non-Prescribing time % reduces contracted hours to prescribing/productive hours: productive = contracted × (1 − non-prescribing %). This can be set per staff member (seniors carry more non-prescribing time); otherwise the role default applies.'],
+   ['3. Productive hours','Productivity % is the fraction of contracted hours that is productive/prescribing time: productive hours = contracted × productivity %. Set per role, or overridden per staff member.'],
+   ['3c. Productivity ramp','A new hire is 0% productive for the first 2 weeks, then ramps linearly to the role\'s full productivity by its lead-to-useful (in weeks). Averaged into each month. Cost is paid in full from the hire month regardless.'],
+   ['3d. People Manager','People Managers line-manage prescribers and do not take orders; the required number scales with prescriber headcount at an editable ratio (default 1 per 22 prescribers).'],
    ['3b. Specialisms & allocation','Each clinician has a specialism set (categories, with per-service include/exclude; blank = all). Existing + planned staff are allocated to the demand they are ELIGIBLE for, scarcest area first and most-specialised staff first, so a gap in one area cannot be masked by spare capacity that is not qualified for it. Demand and gaps are compared per group × category.'],
    ['4. Capacity','Each mapped staff member adds productive hours to their role\'s group. Already-planned hires count from their Ready month, so they are not re-recommended.'],
    ['5. Gap','Gap = required − available, per group per month (hours).'],
@@ -1119,7 +1187,12 @@ function exportXlsx(){
    CONFIG JSON EXPORT / IMPORT
    ========================================================================= */
 function exportConfig(){ const clean=JSON.parse(JSON.stringify(STATE.config)); delete clean._sessionManual; const blob=new Blob([JSON.stringify(clean,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='resourceforecast-config.json'; a.click(); URL.revokeObjectURL(a.href); }
-function importConfig(file){ const rd=new FileReader(); rd.onload=e=>{ try{ const cfg=JSON.parse(e.target.result); if(!cfg.roles||!cfg.services) throw new Error('missing roles/services'); cfg.global=cfg.global||{currency:'£',horizonMonths:12,startMonth:'2026-09'}; cfg.groups=cfg.groups||['IP','GP','Nurse']; cfg.roleAttrs=cfg.roleAttrs||defaultConfig().roleAttrs; cfg.mappings=cfg.mappings||{}; cfg.serviceAliases=cfg.serviceAliases||{}; cfg.peopleMap=cfg.peopleMap||{}; cfg.jobRules=cfg.jobRules||defaultConfig().jobRules; cfg.clinicalCostCentre=cfg.clinicalCostCentre||'BDH Clinical team'; (cfg.services||[]).forEach(sv=>migrateService(sv,cfg.groups)); STATE.config=cfg; STATE.lastRun=null; if(STATE.hrMode==='people'){ applyPeopleRules(); rebuildHrFromPeople(); } renderAll(); alert('Config imported.'); }catch(err){ alert('That config file could not be read: '+err.message); } }; rd.readAsText(file); }
+function importConfig(file){ const rd=new FileReader(); rd.onload=e=>{ try{ const cfg=JSON.parse(e.target.result); if(!cfg.roles||!cfg.services) throw new Error('missing roles/services'); cfg.global=cfg.global||{currency:'£',horizonMonths:12,startMonth:'2026-09'}; cfg.groups=cfg.groups||['IP','GP','Nurse']; cfg.roleAttrs=cfg.roleAttrs||defaultConfig().roleAttrs; cfg.mappings=cfg.mappings||{}; cfg.serviceAliases=cfg.serviceAliases||{}; cfg.peopleMap=cfg.peopleMap||{}; cfg.jobRules=cfg.jobRules||defaultConfig().jobRules; cfg.clinicalCostCentre=cfg.clinicalCostCentre||'BDH Clinical team'; cfg.peopleManager=cfg.peopleManager||defaultConfig().peopleManager;
+      // migrate non-prescribing % -> productivity % (productive = 100 - nonPresc) for older configs
+      (cfg.roles||[]).forEach(r=>{ if(r.productivityPct==null && r.nonPrescribingPct!=null){ r.productivityPct=100-num(r.nonPrescribingPct); delete r.nonPrescribingPct; } });
+      Object.keys(cfg.peopleMap||{}).forEach(k=>{ const m=cfg.peopleMap[k]; if(m&&m.productivityPct==null&&m.nonPrescPct!=null&&String(m.nonPrescPct).trim()!==''){ m.productivityPct=100-num(m.nonPrescPct); } if(m) delete m.nonPrescPct; });
+      (cfg.roleAttrs||[]).forEach(a=>{ if(a.key==='nonPrescribingPct'){ a.key='productivityPct'; a.label='Productivity %'; } });
+      (cfg.services||[]).forEach(sv=>migrateService(sv,cfg.groups)); STATE.config=cfg; STATE.lastRun=null; if(STATE.hrMode==='people'){ applyPeopleRules(); rebuildHrFromPeople(); } renderAll(); alert('Config imported.'); }catch(err){ alert('That config file could not be read: '+err.message); } }; rd.readAsText(file); }
 
 /* =========================================================================
    WIRING
@@ -1139,12 +1212,12 @@ function wire(){
     STATE.hrMode='roles'; STATE.people=null;
     $('#statusHr').className='file-status ok'; $('#statusHr').textContent='✓ sample: '+STATE.hr.length+' staff · '+planned+' planned · 1 unmatched'; renderAll(); };
   $('#btnClearData').onclick=()=>{ STATE.demandRaw=null; STATE.hr=null; STATE.people=null; STATE.hrMode='roles'; STATE.lastRun=null; $('#statusDemand').className='file-status none'; $('#statusDemand').textContent='No demand file loaded'; $('#statusHr').className='file-status none'; $('#statusHr').textContent='No HR file loaded'; renderAll(); };
-  $('#btnAddRole').onclick=()=>{ STATE.config.roles.push({id:uid('role'),name:'New role',group:STATE.config.groups[0]||'',costPerHour:40,nonPrescribingPct:25,contractedHours:152,hireLeadWeeks:10,usefulLeadWeeks:6}); renderRoles(); softRerun(); };
+  $('#btnAddRole').onclick=()=>{ STATE.config.roles.push({id:uid('role'),name:'New role',group:STATE.config.groups[0]||'',costPerHour:40,productivityPct:25,contractedHours:152,hireLeadWeeks:10,usefulLeadWeeks:6}); renderRoles(); softRerun(); };
   $('#btnAddRoleAttr').onclick=()=>{ const k=prompt('New role attribute key:'); if(!k) return; const label=prompt('Column label:',k)||k; STATE.config.roleAttrs.push({key:k,label:label,type:'text'}); renderRoles(); };
   $('#btnAddService').onclick=()=>{ STATE.config.services.push({id:uid('svc'),name:'New service',category:'',clinicianType:'',tasks:[{name:'Review',group:STATE.config.groups[0]||'',timeSec:120,incidencePct:100}]}); SVC_FILTER=''; $('#svcFilter').value=''; renderServices(); softRerun(); };
   $('#svcFilter').oninput=e=>{ SVC_FILTER=e.target.value||''; renderServices(); };
   $('#peopleFilter').oninput=e=>{ PEOPLE_FILTER=e.target.value||''; renderPeopleMap(); };
-  $('#btnAddJobRule').onclick=()=>{ (STATE.config.jobRules=STATE.config.jobRules||[]).push({label:'New rule',jobCodes:[],location:'',role:'__ignore__'}); renderPeopleMap(); };
+  $('#btnAddJobRule').onclick=()=>{ (STATE.config.jobRules=STATE.config.jobRules||[]).push({label:'New rule',staffNumbers:[],jobCodes:[],location:'',role:'__ignore__'}); renderPeopleMap(); };
   $('#btnApplyRules').onclick=()=>{ reapplyRules(); renderPeopleMap(); softRerun(); updateExportGate(); };
   $('#btnRun').onclick=doRun;
   $('#btnExportXlsx').onclick=exportXlsx; $('#btnExportXlsx2').onclick=exportXlsx;
