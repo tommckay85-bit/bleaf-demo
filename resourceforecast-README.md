@@ -21,9 +21,11 @@ leaf, Boots Sharp type — with the fonts and [SheetJS](https://sheetjs.com)
 2. **Demand → required hours by task** — each service is a **list of tasks**;
    every task is one role doing one activity, with a **time per order** and an
    **incidence %** (how many orders need it). Task hours =
-   `orders × incidence% × time ÷ 3600`, attributed to the task's group. An order
-   can span several tasks across **different roles** — async *review + messaging*,
-   or synchronous *pre-screen + specialist consult + GP letter*. Incidence also
+   `orders × incidence% × time ÷ 3600`, attributed to the task's group. Services
+   drive **prescriber (order-handling) resource only** — the prescribing time per
+   order; contact work (calls & messages) is modelled separately from total orders
+   (step 6). An order can still span several tasks across **different roles**
+   (e.g. synchronous *pre-screen + specialist consult + GP letter*). Incidence
    carries the prescriber/GP order-routing split and funnels (e.g. only 60% of
    orders reach a consult).
 3. **Upload the team.** Two shapes are accepted:
@@ -35,7 +37,12 @@ leaf, Boots Sharp type — with the fonts and [SheetJS](https://sheetjs.com)
      changed staff numbers are **flagged to map** before a run (export blocked).
      Mapping rules match on **Job code + Location Name** (first match wins) — e.g.
      `FRE → GP`, Location `BDH Independent Prescribers → IP`, `FRH/FRG` + `BDH CMO
-     Team → MH Nurse`, `FRI` + Independent Prescribers `→ Pharmacy Technician`.
+     Team → MH Nurse`, `FRI` + Independent Prescribers `→ Pharmacy Technician`,
+     `FCL → Patient Support`. People sit in a **primary clinical Cost Centre** (all
+     considered; unmatched flagged) plus optional **support Cost Centre(s)** where
+     only rule-matched people are pulled in — so the Patient Support team (job code
+     `FCL`, in a non-clinical cost centre) is included without dragging in unrelated
+     non-clinical staff.
    Either way, each person can carry a **Non-prescribing %** (seniors carry more)
    and **Specialisms** (the areas they can work).
 4. **Match capacity to demand, eligibility-aware.** Staff are allocated only to
@@ -48,8 +55,14 @@ leaf, Boots Sharp type — with the fonts and [SheetJS](https://sheetjs.com)
    month; capacity only counts from the useful month.** Each gap is filled by the
    group's **cheapest-capable role**, and the hire is **tagged to the area**
    (group × category) it's recruited for.
-6. **Resource plan + cost forecast** — gaps, recommended hires with recruit /
-   hire / useful dates, and phased cost (new hires, planned, baseline).
+6. **Resource plan + cost forecast** — a **single line per resource type** giving
+   the **total headcount needed** each month (no split by order category):
+   clinicians from order volume, **People Managers** scaled to prescriber headcount,
+   and **patient-support** roles sized from the calls & messages those orders
+   generate (**calls/order** and **messages/order** are set in Global config and can
+   be fractional). Cells flag where current + planned staff fall short; recommended
+   hires follow with recruit / hire / useful dates and phased cost (new hires,
+   planned, baseline).
 7. **Export** everything to an auditable `.xlsx`.
 
 The default config is seeded from the client's **AssumptionsBacking Data** tab
