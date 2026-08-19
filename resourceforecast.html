@@ -227,7 +227,7 @@ footer.appfoot{border-top:1px solid var(--line);background:#fff;padding:26px 0;m
       <div class="cfg-legend" id="cfgLegend"></div>
 
       <div class="subpanel">
-        <div class="sp-head"><div class="sp-title"><span class="accent"></span>Global</div><span class="sp-sub">currency, forecast window</span></div>
+        <div class="sp-head"><div class="sp-title"><span class="accent"></span>Global</div><span class="sp-sub">currency, forecast window, manager ratio, calls &amp; messages per order</span></div>
         <div class="inline-fields" id="globalFields"></div>
       </div>
 
@@ -247,12 +247,12 @@ footer.appfoot{border-top:1px solid var(--line);background:#fff;padding:26px 0;m
       </div>
 
       <div class="subpanel">
-        <div class="sp-head"><div class="sp-title"><span class="accent"></span>Services <span class="sp-count" id="svcCount"></span></div><span class="sp-sub">category, and a list of tasks (role + time/order + how often)</span></div>
+        <div class="sp-head"><div class="sp-title"><span class="accent"></span>Services <span class="sp-count" id="svcCount"></span></div><span class="sp-sub">category, and a list of tasks (group + time/order + how often) — drives prescriber resource; contact work is modelled separately</span></div>
         <div class="filterbar"><input id="svcFilter" placeholder="Filter services or categories…" /></div>
         <div class="tbl-wrap tbl-scroll"><table class="dt" id="tblServices"></table></div>
         <datalist id="catlist"></datalist>
         <div class="card-actions" style="margin-top:10px"><button class="btn btn-ghost btn-xs" id="btnAddService">+ Add service</button></div>
-        <p class="hint">Each task is one role doing one activity. <strong>Time</strong> is seconds per order; <strong>incidence</strong> is the % of orders that need it (100% = every order; use it for prescriber/GP split, or a prescreen→consult funnel). Task hours = orders × incidence% × time ÷ 3600. An order can span many tasks across different roles (async review + messaging, or sync prescreen + consult + GP letter).</p>
+        <p class="hint">Each task is one group doing one order-handling activity. <strong>Time</strong> is seconds per order; <strong>incidence</strong> is the % of orders that need it (100% = every order; use it for prescriber/GP split, or a prescreen→consult funnel). Task hours = orders × incidence% × time ÷ 3600. An order can span several tasks across different groups (e.g. prescreen + specialist consult + GP letter). Calls &amp; messages are <em>not</em> service tasks — they're modelled from total orders in the Contact model below.</p>
       </div>
 
       <div class="subpanel">
@@ -275,10 +275,10 @@ footer.appfoot{border-top:1px solid var(--line);background:#fff;padding:26px 0;m
   </section>
 
   <section class="card hidden" id="card-people">
-    <div class="card-head"><div class="ttl"><h2>4 · People mapping</h2><span class="sub">Roster people (filtered to your clinical Cost Centre) → clinician role, hours &amp; specialisms, by <strong>staff number</strong>. New/changed people are flagged to map before a run; mappings persist in your config.</span></div><span class="badge" id="peopleBadge">—</span></div>
+    <div class="card-head"><div class="ttl"><h2>4 · People mapping</h2><span class="sub">Roster people (your clinical Cost Centre, plus rule-matched people from the support Cost Centre) → clinician role, hours &amp; specialisms, by <strong>staff number</strong>. New/changed people are flagged to map before a run; mappings persist in your config.</span></div><span class="badge" id="peopleBadge">—</span></div>
     <div class="card-body">
       <div class="notice warn hidden" id="peopleWarn"><span class="ic">⚠️</span><div><strong>Map the flagged people first.</strong> New staff numbers (no rule matched) are highlighted and block export until each is given a role (or set to Ignore).</div></div>
-      <details style="margin-bottom:12px"><summary style="cursor:pointer;font-weight:700;color:var(--navy);font-size:13px">Mapping rules — Job code + Location Name → role (first match wins; edit to match your policy)</summary>
+      <details style="margin-bottom:12px"><summary style="cursor:pointer;font-weight:700;color:var(--navy);font-size:13px">Mapping rules — Staff # + Job code + Location Name → role (first match wins; edit to match your policy)</summary>
         <div class="tbl-wrap" style="margin-top:8px"><table class="dt" id="tblJobRules"></table></div>
         <div class="card-actions" style="margin-top:8px"><button class="btn btn-ghost btn-xs" id="btnAddJobRule">+ Add rule</button><button class="btn btn-ghost btn-xs" id="btnApplyRules">Re-apply rules to unmapped</button></div>
       </details>
@@ -298,7 +298,7 @@ footer.appfoot{border-top:1px solid var(--line);background:#fff;padding:26px 0;m
   </section>
 
   <section class="card" id="card-results">
-    <div class="card-head"><div class="ttl"><h2>Resource plan &amp; cost forecast</h2><span class="sub">Steps 5–6 · Group capacity vs required, gaps, recommended hires with recruit/start/ready dates, and phased cost.</span></div><button class="btn btn-primary btn-sm" id="btnRun">Recompute</button></div>
+    <div class="card-head"><div class="ttl"><h2>Resource plan &amp; cost forecast</h2><span class="sub">Steps 5–6 · Total headcount needed per resource type by month (orders + contact in one pool), recruitment calendar &amp; plan, and phased cost.</span></div><button class="btn btn-primary btn-sm" id="btnRun">Recompute</button></div>
     <div class="card-body" id="resultsBody"><div class="map-empty">Load data and map roles, then Recompute.</div></div>
   </section>
 
@@ -348,7 +348,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
    without a rewrite. Config is a flexible data model (groups, roles, services &
    attributes are data rows, not code).
    ========================================================================= */
-const CONFIG_DATA = {"groups":["IP","GP","Nurse","MH Nurse","Technician","Management","Support"],"roles":[{"id":"gp","name":"GP","group":"GP","costPerHour":80,"productivityPct":58,"contractedHours":152,"hireLeadWeeks":12,"usefulLeadWeeks":6},{"id":"ip","name":"Independent Prescriber","group":"IP","costPerHour":45,"productivityPct":67,"contractedHours":152,"hireLeadWeeks":12,"usefulLeadWeeks":8},{"id":"mh_nurse","name":"MH Nurse","group":"MH Nurse","costPerHour":40,"productivityPct":67,"contractedHours":152,"hireLeadWeeks":10,"usefulLeadWeeks":8},{"id":"nurse","name":"Nurse","group":"Nurse","costPerHour":28,"productivityPct":70,"contractedHours":152,"hireLeadWeeks":8,"usefulLeadWeeks":4},{"id":"tech","name":"Pharmacy Technician","group":"Technician","costPerHour":22,"productivityPct":75,"contractedHours":152,"hireLeadWeeks":6,"usefulLeadWeeks":4},{"id":"pm_role","name":"People Manager","group":"Management","costPerHour":42,"productivityPct":100,"contractedHours":152,"hireLeadWeeks":10,"usefulLeadWeeks":4},{"id":"patient_support","name":"Patient Support","group":"Support","costPerHour":16,"productivityPct":75,"contractedHours":152,"hireLeadWeeks":4,"usefulLeadWeeks":3}],"services":[{"id":"svc_map_emergency_contraception","name":"Map Emergency Contraception","category":"Urgent","clinicianType":"IP","tasks":[{"name":"Prescribing","group":"IP","timeSec":88,"incidencePct":99.69},{"name":"Prescribing","group":"GP","timeSec":25,"incidencePct":0.31}]},{"id":"svc_weight_loss","name":"Weight Loss","category":"Weight Loss","clinicianType":"IP/ GP if needed","tasks":[{"name":"Prescribing","group":"IP","timeSec":183,"incidencePct":98.31},{"name":"Prescribing","group":"GP","timeSec":196,"incidencePct":1.69}]},{"id":"svc_oral_contraception","name":"Oral Contraception","category":"Womens high volume","clinicianType":"IP","tasks":[{"name":"Prescribing","group":"IP","timeSec":88,"incidencePct":96.34},{"name":"Prescribing","group":"GP","timeSec":183,"incidencePct":3.66}]},{"id":"svc_cystitis","name":"Cystitis","category":"Urgent","clinicianType":"IP","tasks":[{"name":"Prescribing","group":"IP","timeSec":91,"incidencePct":99.94},{"name":"Prescribing","group":"GP","timeSec":81,"incidencePct":0.06}]},{"id":"svc_period_delay","name":"Period Delay","category":"Womens high volume","clinicianType":"IP","tasks":[{"name":"Prescribing","group":"IP","timeSec":73,"incidencePct":96.38},{"name":"Prescribing","group":"GP","timeSec":141,"incidencePct":3.62}]},{"id":"svc_chlamydia_treatment","name":"Chlamydia Treatment","category":"Sexual Health","clinicianType":"IP/GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":66,"incidencePct":91.64},{"name":"Prescribing","group":"GP","timeSec":117,"incidencePct":8.36}]},{"id":"svc_bv_treatment","name":"BV Treatment","category":"Sexual Health","clinicianType":"IP/GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":79,"incidencePct":88.95},{"name":"Prescribing","group":"GP","timeSec":96,"incidencePct":11.05}]},{"id":"svc_acne","name":"Acne","category":"Skin","clinicianType":"IP/GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":260,"incidencePct":3.56},{"name":"Prescribing","group":"GP","timeSec":239,"incidencePct":96.44}]},{"id":"svc_erectile_dysfunction_subscribe_and_save","name":"Erectile Dysfunction Subscribe and Save","category":"Mens","clinicianType":"IP","tasks":[{"name":"Prescribing","group":"IP","timeSec":59,"incidencePct":99.8},{"name":"Prescribing","group":"GP","timeSec":256,"incidencePct":0.2}]},{"id":"svc_hair_loss","name":"Hair Loss","category":"Mens","clinicianType":"IP","tasks":[{"name":"Prescribing","group":"IP","timeSec":59,"incidencePct":98.57},{"name":"Prescribing","group":"GP","timeSec":201,"incidencePct":1.43}]},{"id":"svc_erectile_dysfunction","name":"Erectile Dysfunction","category":"Mens","clinicianType":"IP","tasks":[{"name":"Prescribing","group":"IP","timeSec":65,"incidencePct":99.13},{"name":"Prescribing","group":"GP","timeSec":179,"incidencePct":0.87}]},{"id":"svc_asthma","name":"Asthma","category":"General, travel & womens","clinicianType":"IP/GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":119,"incidencePct":46.94},{"name":"Prescribing","group":"GP","timeSec":157,"incidencePct":53.06}]},{"id":"svc_menopause","name":"Menopause","category":"Menopause","clinicianType":"IP/GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":429,"incidencePct":55.53},{"name":"Prescribing","group":"GP","timeSec":371,"incidencePct":44.47}]},{"id":"svc_premature_ejaculation","name":"Premature Ejaculation","category":"Mens","clinicianType":"IP","tasks":[{"name":"Prescribing","group":"IP","timeSec":64,"incidencePct":88.39},{"name":"Prescribing","group":"GP","timeSec":33,"incidencePct":11.61}]},{"id":"svc_depression_anxiety","name":"Depression & Anxiety","category":"DAA","clinicianType":"IP/GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":1800,"incidencePct":57.14},{"name":"Prescribing","group":"GP","timeSec":1800,"incidencePct":42.86}]},{"id":"svc_cold_sore_treatment","name":"Cold Sore Treatment","category":"Sexual Health","clinicianType":"IP/GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":88,"incidencePct":33.74},{"name":"Prescribing","group":"GP","timeSec":103,"incidencePct":66.26}]},{"id":"svc_hayfever","name":"Hayfever","category":"General, travel & womens","clinicianType":"IP/GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":127,"incidencePct":47.5},{"name":"Prescribing","group":"GP","timeSec":106,"incidencePct":52.5}]},{"id":"svc_genital_herpes_episodic","name":"Genital Herpes Episodic","category":"Sexual Health","clinicianType":"IP/GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":47,"incidencePct":67.8},{"name":"Prescribing","group":"GP","timeSec":51,"incidencePct":32.2}]},{"id":"svc_skin_infection","name":"Skin Infection","category":"Skin","clinicianType":"GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":325,"incidencePct":0.22},{"name":"Prescribing","group":"GP","timeSec":201,"incidencePct":99.78}]},{"id":"svc_altitude_sickness","name":"Altitude Sickness","category":"General, travel & womens","clinicianType":"IP/GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":96,"incidencePct":41.32},{"name":"Prescribing","group":"GP","timeSec":118,"incidencePct":58.68}]},{"id":"svc_eczema","name":"Eczema","category":"Skin","clinicianType":"GP","tasks":[{"name":"Prescribing","group":"GP","timeSec":173,"incidencePct":100}]},{"id":"svc_rosacea","name":"Rosacea","category":"Skin","clinicianType":"IP/GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":226,"incidencePct":26.24},{"name":"Prescribing","group":"GP","timeSec":182,"incidencePct":73.76}]},{"id":"svc_jet_lag","name":"Jet Lag","category":"General, travel & womens","clinicianType":"IP/GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":112,"incidencePct":49.7},{"name":"Prescribing","group":"GP","timeSec":109,"incidencePct":50.3}]},{"id":"svc_genital_warts","name":"Genital Warts","category":"Sexual Health","clinicianType":"Nurse IP/GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":104,"incidencePct":67.74},{"name":"Prescribing","group":"GP","timeSec":138,"incidencePct":32.26}]},{"id":"svc_swimmers_ear","name":"Swimmers Ear","category":"General, travel & womens","clinicianType":"GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":46,"incidencePct":40},{"name":"Prescribing","group":"GP","timeSec":88,"incidencePct":60}]},{"id":"svc_test_kit_hb1ac","name":"Test Kit Hb1Ac","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Prescribing","group":"Nurse","timeSec":105,"incidencePct":100}]},{"id":"svc_test_kit_thyroid_function_test_advice","name":"Test Kit Thyroid Function Test & Advice","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Prescribing","group":"Nurse","timeSec":105,"incidencePct":100}]},{"id":"svc_migraine","name":"Migraine","category":"General, travel & womens","clinicianType":"GP","tasks":[{"name":"Prescribing","group":"GP","timeSec":180,"incidencePct":100}]},{"id":"svc_genital_herpes_suppression","name":"Genital Herpes Suppression","category":"Sexual Health","clinicianType":"Nurse IP/GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":91,"incidencePct":54.05},{"name":"Prescribing","group":"GP","timeSec":74,"incidencePct":45.95}]},{"id":"svc_stop_smoking","name":"Stop Smoking","category":"General, travel & womens","clinicianType":"IP/GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":101,"incidencePct":85.71},{"name":"Prescribing","group":"GP","timeSec":182,"incidencePct":14.29}]},{"id":"svc_contact_dermatitis","name":"Contact Dermatitis","category":"Skin","clinicianType":"GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":130,"incidencePct":2.44},{"name":"Prescribing","group":"GP","timeSec":157,"incidencePct":97.56}]},{"id":"svc_anaphylaxis","name":"Anaphylaxis","category":"General, travel & womens","clinicianType":"GP","tasks":[{"name":"Prescribing","group":"GP","timeSec":179,"incidencePct":100}]},{"id":"svc_vaginal_dryness","name":"Vaginal Dryness","category":"General, travel & womens","clinicianType":"GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":76,"incidencePct":3.57},{"name":"Prescribing","group":"GP","timeSec":40,"incidencePct":96.43}]},{"id":"svc_trichomoniasis","name":"Trichomoniasis","category":"Sexual Health","clinicianType":"Nurse IP/GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":162,"incidencePct":45.45},{"name":"Prescribing","group":"GP","timeSec":95,"incidencePct":54.55}]},{"id":"svc_test_kit_chlamydia_gonorrhoea_trich_fema","name":"Test Kit Chlamydia Gonorrhoea & Trich Female","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Prescribing","group":"Nurse","timeSec":85,"incidencePct":100}]},{"id":"svc_period_pain","name":"Period Pain","category":"General, travel & womens","clinicianType":"GP","tasks":[{"name":"Prescribing","group":"GP","timeSec":163,"incidencePct":100}]},{"id":"svc_facial_hair_removal","name":"Facial Hair Removal","category":"General, travel & womens","clinicianType":"GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":40,"incidencePct":7.69},{"name":"Prescribing","group":"GP","timeSec":43,"incidencePct":92.31}]},{"id":"svc_test_kit_chlamydia_gonorrhoea_trich_male","name":"Test Kit Chlamydia Gonorrhoea & Trich Male","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Prescribing","group":"Nurse","timeSec":85,"incidencePct":100}]},{"id":"svc_psoriasis","name":"Psoriasis","category":"Skin","clinicianType":"GP","tasks":[{"name":"Prescribing","group":"GP","timeSec":170,"incidencePct":100}]},{"id":"svc_test_kit_chlamydia_gonorrhoea_male","name":"Test Kit Chlamydia & Gonorrhoea Male","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Prescribing","group":"Nurse","timeSec":85,"incidencePct":100}]},{"id":"svc_test_kit_hiv","name":"Test Kit HIV","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Prescribing","group":"Nurse","timeSec":85,"incidencePct":100}]},{"id":"svc_test_kit_chlamydia_female","name":"Test Kit Chlamydia Female","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Prescribing","group":"Nurse","timeSec":85,"incidencePct":100}]},{"id":"svc_test_kit_chlamydia_gonorrhoea_female","name":"Test Kit Chlamydia & Gonorrhoea Female","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Prescribing","group":"Nurse","timeSec":85,"incidencePct":100}]},{"id":"svc_test_kit_chlamydia_male","name":"Test Kit Chlamydia Male","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Prescribing","group":"Nurse","timeSec":85,"incidencePct":100}]},{"id":"svc_hiv_prep","name":"HIV PrEP","category":"Sexual Health","clinicianType":"Nurse IP/GP","tasks":[{"name":"Prescribing","group":"GP","timeSec":127,"incidencePct":100}]},{"id":"svc_test_kit_female_total_swab","name":"Test Kit Female Total Swab","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Prescribing","group":"Nurse","timeSec":85,"incidencePct":100}]},{"id":"svc_test_kit_msm_chlamydia_gonorrhoea","name":"Test Kit MSM Chlamydia & Gonorrhoea","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Prescribing","group":"Nurse","timeSec":85,"incidencePct":100}]},{"id":"svc_skin_diagnosis","name":"Skin Diagnosis","category":"Skin","clinicianType":"GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":120,"incidencePct":100}]}],"mappings":{"General Practitioner":"gp","GP":"gp","Independent Prescriber":"ip","Pharmacist Independent Prescriber":"ip","Nurse Independent Prescriber":"ip","Nurse":"nurse","Registered Nurse":"nurse","MH Nurse":"mh_nurse","Mental Health Nurse":"mh_nurse","Pharmacy Technician":"tech","People Manager":"pm_role","Manager":"pm_role","Patient Support":"patient_support","Patient Support Advisor":"patient_support"},"sampleDemandBase":{"Map Emergency Contraception":3446,"Weight Loss":3985,"Oral Contraception":2052,"Cystitis":1455,"Period Delay":644,"Chlamydia Treatment":207,"BV Treatment":294,"Acne":3563,"Erectile Dysfunction Subscribe and Save":212,"Hair Loss":186,"Erectile Dysfunction":326,"Asthma":113,"Menopause":83,"Premature Ejaculation":63,"Depression & Anxiety":105,"Cold Sore Treatment":55,"Hayfever":3,"Genital Herpes Episodic":52,"Skin Infection":38,"Altitude Sickness":26,"Eczema":16,"Rosacea":18,"Jet Lag":14,"Genital Warts":8,"Swimmers Ear":5,"Test Kit Hb1Ac":10,"Test Kit Thyroid Function Test & Advice":7,"Migraine":5,"Genital Herpes Suppression":3,"Stop Smoking":16,"Contact Dermatitis":3,"Anaphylaxis":1,"Vaginal Dryness":2,"Trichomoniasis":2,"Test Kit Chlamydia Gonorrhoea & Trich Female":5,"Period Pain":2,"Facial Hair Removal":1,"Test Kit Chlamydia Gonorrhoea & Trich Male":5,"Psoriasis":2,"Test Kit Chlamydia & Gonorrhoea Male":4,"Test Kit HIV":3,"Test Kit Chlamydia Female":3,"Test Kit Chlamydia & Gonorrhoea Female":4,"Test Kit Chlamydia Male":2,"HIV PrEP":1,"Test Kit Female Total Swab":1,"Test Kit MSM Chlamydia & Gonorrhoea":1,"Skin Diagnosis":1},"sampleHr":[{"name":"A. Okafor","role":"General Practitioner","hours":152,"nonPrescPct":40},{"name":"B. Rossi","role":"General Practitioner","hours":114},{"name":"C. Patel","role":"Independent Prescriber","hours":152,"specialisms":"Sexual Health; Skin"},{"name":"D. Nguyen","role":"Independent Prescriber","hours":152,"specialisms":"Weight Loss; Mens"},{"name":"E. Khan","role":"Independent Prescriber","hours":152,"specialisms":"Womens high volume; Urgent"},{"name":"F. Silva","role":"Independent Prescriber","hours":114,"nonPrescPct":45,"specialisms":"Sexual Health"},{"name":"G. Adeyemi","role":"Nurse","hours":152,"specialisms":"Sexual Health"},{"name":"H. Murphy","role":"Nurse","hours":152,"specialisms":"Test kits; Sexual Health"},{"name":"I. Zhang","role":"Nurse","hours":152,"specialisms":"Test kits"},{"name":"J. Brown","role":"Nurse","hours":114,"specialisms":"Test kits"},{"name":"K. Ahmed (planned)","role":"Independent Prescriber","hours":152,"startMonth":1,"readyMonth":3,"specialisms":"Weight Loss"},{"name":"L. Osei","role":"Advanced Nurse Practitioner","hours":152}]};
+const CONFIG_DATA = {"groups":["IP","GP","Nurse","MH Nurse","Technician","Management","Support"],"roles":[{"id":"gp","name":"GP","group":"GP","costPerHour":80,"productivityPct":58,"contractedHours":152,"hireLeadWeeks":12,"usefulLeadWeeks":6},{"id":"ip","name":"Independent Prescriber","group":"IP","costPerHour":45,"productivityPct":67,"contractedHours":152,"hireLeadWeeks":12,"usefulLeadWeeks":8},{"id":"mh_nurse","name":"MH Nurse","group":"MH Nurse","costPerHour":40,"productivityPct":67,"contractedHours":152,"hireLeadWeeks":10,"usefulLeadWeeks":8},{"id":"nurse","name":"Nurse","group":"Nurse","costPerHour":28,"productivityPct":70,"contractedHours":152,"hireLeadWeeks":8,"usefulLeadWeeks":4},{"id":"tech","name":"Pharmacy Technician","group":"Technician","costPerHour":22,"productivityPct":75,"contractedHours":152,"hireLeadWeeks":6,"usefulLeadWeeks":4},{"id":"pm_role","name":"People Manager","group":"Management","costPerHour":42,"productivityPct":100,"contractedHours":152,"hireLeadWeeks":10,"usefulLeadWeeks":4},{"id":"patient_support","name":"Patient Support","group":"Support","costPerHour":16,"productivityPct":75,"contractedHours":152,"hireLeadWeeks":4,"usefulLeadWeeks":3}],"services":[{"id":"svc_map_emergency_contraception","name":"Map Emergency Contraception","category":"Urgent","clinicianType":"IP","tasks":[{"name":"Prescribing","group":"IP","timeSec":88,"incidencePct":99.69},{"name":"Prescribing","group":"GP","timeSec":25,"incidencePct":0.31}]},{"id":"svc_weight_loss","name":"Weight Loss","category":"Weight Loss","clinicianType":"IP/ GP if needed","tasks":[{"name":"Prescribing","group":"IP","timeSec":183,"incidencePct":98.31},{"name":"Prescribing","group":"GP","timeSec":196,"incidencePct":1.69}]},{"id":"svc_oral_contraception","name":"Oral Contraception","category":"Womens high volume","clinicianType":"IP","tasks":[{"name":"Prescribing","group":"IP","timeSec":88,"incidencePct":96.34},{"name":"Prescribing","group":"GP","timeSec":183,"incidencePct":3.66}]},{"id":"svc_cystitis","name":"Cystitis","category":"Urgent","clinicianType":"IP","tasks":[{"name":"Prescribing","group":"IP","timeSec":91,"incidencePct":99.94},{"name":"Prescribing","group":"GP","timeSec":81,"incidencePct":0.06}]},{"id":"svc_period_delay","name":"Period Delay","category":"Womens high volume","clinicianType":"IP","tasks":[{"name":"Prescribing","group":"IP","timeSec":73,"incidencePct":96.38},{"name":"Prescribing","group":"GP","timeSec":141,"incidencePct":3.62}]},{"id":"svc_chlamydia_treatment","name":"Chlamydia Treatment","category":"Sexual Health","clinicianType":"IP/GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":66,"incidencePct":91.64},{"name":"Prescribing","group":"GP","timeSec":117,"incidencePct":8.36}]},{"id":"svc_bv_treatment","name":"BV Treatment","category":"Sexual Health","clinicianType":"IP/GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":79,"incidencePct":88.95},{"name":"Prescribing","group":"GP","timeSec":96,"incidencePct":11.05}]},{"id":"svc_acne","name":"Acne","category":"Skin","clinicianType":"IP/GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":260,"incidencePct":3.56},{"name":"Prescribing","group":"GP","timeSec":239,"incidencePct":96.44}]},{"id":"svc_erectile_dysfunction_subscribe_and_save","name":"Erectile Dysfunction Subscribe and Save","category":"Mens","clinicianType":"IP","tasks":[{"name":"Prescribing","group":"IP","timeSec":59,"incidencePct":99.8},{"name":"Prescribing","group":"GP","timeSec":256,"incidencePct":0.2}]},{"id":"svc_hair_loss","name":"Hair Loss","category":"Mens","clinicianType":"IP","tasks":[{"name":"Prescribing","group":"IP","timeSec":59,"incidencePct":98.57},{"name":"Prescribing","group":"GP","timeSec":201,"incidencePct":1.43}]},{"id":"svc_erectile_dysfunction","name":"Erectile Dysfunction","category":"Mens","clinicianType":"IP","tasks":[{"name":"Prescribing","group":"IP","timeSec":65,"incidencePct":99.13},{"name":"Prescribing","group":"GP","timeSec":179,"incidencePct":0.87}]},{"id":"svc_asthma","name":"Asthma","category":"General, travel & womens","clinicianType":"IP/GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":119,"incidencePct":46.94},{"name":"Prescribing","group":"GP","timeSec":157,"incidencePct":53.06}]},{"id":"svc_menopause","name":"Menopause","category":"Menopause","clinicianType":"IP/GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":429,"incidencePct":55.53},{"name":"Prescribing","group":"GP","timeSec":371,"incidencePct":44.47}]},{"id":"svc_premature_ejaculation","name":"Premature Ejaculation","category":"Mens","clinicianType":"IP","tasks":[{"name":"Prescribing","group":"IP","timeSec":64,"incidencePct":88.39},{"name":"Prescribing","group":"GP","timeSec":33,"incidencePct":11.61}]},{"id":"svc_depression_anxiety","name":"Depression & Anxiety","category":"DAA","clinicianType":"IP/GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":1800,"incidencePct":57.14},{"name":"Prescribing","group":"GP","timeSec":1800,"incidencePct":42.86}]},{"id":"svc_cold_sore_treatment","name":"Cold Sore Treatment","category":"Sexual Health","clinicianType":"IP/GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":88,"incidencePct":33.74},{"name":"Prescribing","group":"GP","timeSec":103,"incidencePct":66.26}]},{"id":"svc_hayfever","name":"Hayfever","category":"General, travel & womens","clinicianType":"IP/GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":127,"incidencePct":47.5},{"name":"Prescribing","group":"GP","timeSec":106,"incidencePct":52.5}]},{"id":"svc_genital_herpes_episodic","name":"Genital Herpes Episodic","category":"Sexual Health","clinicianType":"IP/GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":47,"incidencePct":67.8},{"name":"Prescribing","group":"GP","timeSec":51,"incidencePct":32.2}]},{"id":"svc_skin_infection","name":"Skin Infection","category":"Skin","clinicianType":"GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":325,"incidencePct":0.22},{"name":"Prescribing","group":"GP","timeSec":201,"incidencePct":99.78}]},{"id":"svc_altitude_sickness","name":"Altitude Sickness","category":"General, travel & womens","clinicianType":"IP/GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":96,"incidencePct":41.32},{"name":"Prescribing","group":"GP","timeSec":118,"incidencePct":58.68}]},{"id":"svc_eczema","name":"Eczema","category":"Skin","clinicianType":"GP","tasks":[{"name":"Prescribing","group":"GP","timeSec":173,"incidencePct":100}]},{"id":"svc_rosacea","name":"Rosacea","category":"Skin","clinicianType":"IP/GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":226,"incidencePct":26.24},{"name":"Prescribing","group":"GP","timeSec":182,"incidencePct":73.76}]},{"id":"svc_jet_lag","name":"Jet Lag","category":"General, travel & womens","clinicianType":"IP/GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":112,"incidencePct":49.7},{"name":"Prescribing","group":"GP","timeSec":109,"incidencePct":50.3}]},{"id":"svc_genital_warts","name":"Genital Warts","category":"Sexual Health","clinicianType":"Nurse IP/GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":104,"incidencePct":67.74},{"name":"Prescribing","group":"GP","timeSec":138,"incidencePct":32.26}]},{"id":"svc_swimmers_ear","name":"Swimmers Ear","category":"General, travel & womens","clinicianType":"GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":46,"incidencePct":40},{"name":"Prescribing","group":"GP","timeSec":88,"incidencePct":60}]},{"id":"svc_test_kit_hb1ac","name":"Test Kit Hb1Ac","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Prescribing","group":"Nurse","timeSec":105,"incidencePct":100}]},{"id":"svc_test_kit_thyroid_function_test_advice","name":"Test Kit Thyroid Function Test & Advice","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Prescribing","group":"Nurse","timeSec":105,"incidencePct":100}]},{"id":"svc_migraine","name":"Migraine","category":"General, travel & womens","clinicianType":"GP","tasks":[{"name":"Prescribing","group":"GP","timeSec":180,"incidencePct":100}]},{"id":"svc_genital_herpes_suppression","name":"Genital Herpes Suppression","category":"Sexual Health","clinicianType":"Nurse IP/GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":91,"incidencePct":54.05},{"name":"Prescribing","group":"GP","timeSec":74,"incidencePct":45.95}]},{"id":"svc_stop_smoking","name":"Stop Smoking","category":"General, travel & womens","clinicianType":"IP/GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":101,"incidencePct":85.71},{"name":"Prescribing","group":"GP","timeSec":182,"incidencePct":14.29}]},{"id":"svc_contact_dermatitis","name":"Contact Dermatitis","category":"Skin","clinicianType":"GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":130,"incidencePct":2.44},{"name":"Prescribing","group":"GP","timeSec":157,"incidencePct":97.56}]},{"id":"svc_anaphylaxis","name":"Anaphylaxis","category":"General, travel & womens","clinicianType":"GP","tasks":[{"name":"Prescribing","group":"GP","timeSec":179,"incidencePct":100}]},{"id":"svc_vaginal_dryness","name":"Vaginal Dryness","category":"General, travel & womens","clinicianType":"GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":76,"incidencePct":3.57},{"name":"Prescribing","group":"GP","timeSec":40,"incidencePct":96.43}]},{"id":"svc_trichomoniasis","name":"Trichomoniasis","category":"Sexual Health","clinicianType":"Nurse IP/GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":162,"incidencePct":45.45},{"name":"Prescribing","group":"GP","timeSec":95,"incidencePct":54.55}]},{"id":"svc_test_kit_chlamydia_gonorrhoea_trich_fema","name":"Test Kit Chlamydia Gonorrhoea & Trich Female","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Prescribing","group":"Nurse","timeSec":85,"incidencePct":100}]},{"id":"svc_period_pain","name":"Period Pain","category":"General, travel & womens","clinicianType":"GP","tasks":[{"name":"Prescribing","group":"GP","timeSec":163,"incidencePct":100}]},{"id":"svc_facial_hair_removal","name":"Facial Hair Removal","category":"General, travel & womens","clinicianType":"GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":40,"incidencePct":7.69},{"name":"Prescribing","group":"GP","timeSec":43,"incidencePct":92.31}]},{"id":"svc_test_kit_chlamydia_gonorrhoea_trich_male","name":"Test Kit Chlamydia Gonorrhoea & Trich Male","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Prescribing","group":"Nurse","timeSec":85,"incidencePct":100}]},{"id":"svc_psoriasis","name":"Psoriasis","category":"Skin","clinicianType":"GP","tasks":[{"name":"Prescribing","group":"GP","timeSec":170,"incidencePct":100}]},{"id":"svc_test_kit_chlamydia_gonorrhoea_male","name":"Test Kit Chlamydia & Gonorrhoea Male","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Prescribing","group":"Nurse","timeSec":85,"incidencePct":100}]},{"id":"svc_test_kit_hiv","name":"Test Kit HIV","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Prescribing","group":"Nurse","timeSec":85,"incidencePct":100}]},{"id":"svc_test_kit_chlamydia_female","name":"Test Kit Chlamydia Female","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Prescribing","group":"Nurse","timeSec":85,"incidencePct":100}]},{"id":"svc_test_kit_chlamydia_gonorrhoea_female","name":"Test Kit Chlamydia & Gonorrhoea Female","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Prescribing","group":"Nurse","timeSec":85,"incidencePct":100}]},{"id":"svc_test_kit_chlamydia_male","name":"Test Kit Chlamydia Male","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Prescribing","group":"Nurse","timeSec":85,"incidencePct":100}]},{"id":"svc_hiv_prep","name":"HIV PrEP","category":"Sexual Health","clinicianType":"Nurse IP/GP","tasks":[{"name":"Prescribing","group":"GP","timeSec":127,"incidencePct":100}]},{"id":"svc_test_kit_female_total_swab","name":"Test Kit Female Total Swab","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Prescribing","group":"Nurse","timeSec":85,"incidencePct":100}]},{"id":"svc_test_kit_msm_chlamydia_gonorrhoea","name":"Test Kit MSM Chlamydia & Gonorrhoea","category":"Test kits","clinicianType":"Nurse","tasks":[{"name":"Prescribing","group":"Nurse","timeSec":85,"incidencePct":100}]},{"id":"svc_skin_diagnosis","name":"Skin Diagnosis","category":"Skin","clinicianType":"GP","tasks":[{"name":"Prescribing","group":"IP","timeSec":120,"incidencePct":100}]}],"mappings":{"General Practitioner":"gp","GP":"gp","Independent Prescriber":"ip","Pharmacist Independent Prescriber":"ip","Nurse Independent Prescriber":"ip","Nurse":"nurse","Registered Nurse":"nurse","MH Nurse":"mh_nurse","Mental Health Nurse":"mh_nurse","Pharmacy Technician":"tech","People Manager":"pm_role","Manager":"pm_role","Patient Support":"patient_support","Patient Support Advisor":"patient_support"},"sampleDemandBase":{"Map Emergency Contraception":3446,"Weight Loss":3985,"Oral Contraception":2052,"Cystitis":1455,"Period Delay":644,"Chlamydia Treatment":207,"BV Treatment":294,"Acne":3563,"Erectile Dysfunction Subscribe and Save":212,"Hair Loss":186,"Erectile Dysfunction":326,"Asthma":113,"Menopause":83,"Premature Ejaculation":63,"Depression & Anxiety":105,"Cold Sore Treatment":55,"Hayfever":3,"Genital Herpes Episodic":52,"Skin Infection":38,"Altitude Sickness":26,"Eczema":16,"Rosacea":18,"Jet Lag":14,"Genital Warts":8,"Swimmers Ear":5,"Test Kit Hb1Ac":10,"Test Kit Thyroid Function Test & Advice":7,"Migraine":5,"Genital Herpes Suppression":3,"Stop Smoking":16,"Contact Dermatitis":3,"Anaphylaxis":1,"Vaginal Dryness":2,"Trichomoniasis":2,"Test Kit Chlamydia Gonorrhoea & Trich Female":5,"Period Pain":2,"Facial Hair Removal":1,"Test Kit Chlamydia Gonorrhoea & Trich Male":5,"Psoriasis":2,"Test Kit Chlamydia & Gonorrhoea Male":4,"Test Kit HIV":3,"Test Kit Chlamydia Female":3,"Test Kit Chlamydia & Gonorrhoea Female":4,"Test Kit Chlamydia Male":2,"HIV PrEP":1,"Test Kit Female Total Swab":1,"Test Kit MSM Chlamydia & Gonorrhoea":1,"Skin Diagnosis":1},"sampleHr":[{"name":"A. Okafor","role":"General Practitioner","hours":152,"productivityPct":50},{"name":"B. Rossi","role":"General Practitioner","hours":114},{"name":"C. Patel","role":"Independent Prescriber","hours":152,"specialisms":"Sexual Health; Skin"},{"name":"D. Nguyen","role":"Independent Prescriber","hours":152,"specialisms":"Weight Loss; Mens"},{"name":"E. Khan","role":"Independent Prescriber","hours":152,"specialisms":"Womens high volume; Urgent"},{"name":"F. Silva","role":"Independent Prescriber","hours":114,"productivityPct":55,"specialisms":"Sexual Health"},{"name":"G. Adeyemi","role":"Nurse","hours":152,"specialisms":"Sexual Health"},{"name":"H. Murphy","role":"Nurse","hours":152,"specialisms":"Test kits; Sexual Health"},{"name":"I. Zhang","role":"Nurse","hours":152,"specialisms":"Test kits"},{"name":"J. Brown","role":"Nurse","hours":114,"specialisms":"Test kits"},{"name":"K. Ahmed (planned)","role":"Independent Prescriber","hours":152,"startMonth":1,"readyMonth":3,"specialisms":"Weight Loss"},{"name":"L. Osei","role":"Advanced Nurse Practitioner","hours":152}]};
 const WEEKS_PER_MONTH = 52/12;
 
 /* ---------- Assumptions (swap to change the model) ---------- */
@@ -359,7 +359,7 @@ const ASSUMPTIONS = {
   costPerProductiveHour(role){ const d=pct(role.productivityPct); return d>0? num(role.costPerHour)/d : Infinity; },
   // hours a task consumes: orders that hit the task (incidence) × its time per order
   taskHours(orders, timeSec, incidencePct){ return num(orders) * (num(incidencePct)/100) * (num(timeSec)/3600); },
-  monthsFromWeeks(w){ return Math.round(num(w) * 12 / 52); },
+  monthsFromWeeks(w){ return Math.ceil(num(w) * 12 / 52 - 1e-9); },  // round UP: recruiting late is the costly error
   roundFTE(fte){ return Math.ceil(fte - 1e-9); },
   // post-hire productivity ramp: 0% for the first 2 weeks, then linear up to full at usefulLeadWeeks.
   // returns the AVERAGE productivity fraction (0..1) during month `mi` after hire (0 = hire month).
@@ -372,7 +372,7 @@ const ASSUMPTIONS = {
 
 /* ---------- helpers ---------- */
 function num(v){ const n=parseFloat(v); return isFinite(n)?n:0; }
-function pct(v){ const n=num(v); return n>1? n/100 : n; }
+function pct(v){ return num(v)/100; }  // all % config values are percentage-scale (67 = 67%); never guess fractions
 function ceil(n){ return Math.ceil(n-1e-9); }
 function money(n,cur){ return (cur||'£')+Math.round(n).toLocaleString('en-GB'); }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
@@ -423,8 +423,10 @@ function defaultConfig(){
     // People Manager: headcount scales with number of prescribers (editable ratio).
     peopleManager: { roleId:'pm_role', ratio:22, prescriberRoles:['ip','gp','mh_nurse'] },
     // Contact model: orders generate calls + messages, handled by support roles (throughput per day).
+    // workingDaysPerMonth = days each PERSON works per month (~21), NOT days the desk is open.
+    // 7-day/365 cover is a rota question; monthly volume already includes weekend contacts.
     contactModel: {
-      callsPerOrder: 0.25, messagesPerOrder: 1.5, workingDaysPerMonth: 30,
+      callsPerOrder: 0.25, messagesPerOrder: 1.5, workingDaysPerMonth: 21,
       handlers: [
         { roleId:'patient_support', callsPerDay:40, messagesPerDay:90, callSharePct:100, msgSharePct:35 },
         { roleId:'tech',            callsPerDay:35, messagesPerDay:75, callSharePct:0,   msgSharePct:18 },
@@ -613,6 +615,37 @@ function runEngine(cfg, demand, hr){
     });
   });
 
+  // --- contact demand: orders → calls + messages → HOURS, pooled with order work ---
+  // Contact work competes for the same people as order work (one person's time is spent once).
+  // Per handler: person-days = calls×share/callsPerDay + msgs×share/msgsPerDay; converted to hours at the
+  // handling role's contracted hours per working day. Fed into the group's demand pool as a pseudo-service
+  // that every group member is eligible for (contact work is not specialism-restricted).
+  const cm = cfg.contactModel || {callsPerOrder:0,messagesPerOrder:0,workingDaysPerMonth:21,handlers:[]};
+  const CONTACT_SVC='Patient contact (calls & messages)', CONTACT_CAT='Patient contact';
+  svcCat[CONTACT_SVC]=CONTACT_CAT;
+  const wDays = Math.max(1, num(cm.workingDaysPerMonth)||21);
+  const totalOrders = months.map(mk=> cfg.services.reduce((a,sv)=> a + ((demand[sv.name]&&demand[sv.name][mk])||0), 0));
+  const totalCalls = totalOrders.map(o=> o*num(cm.callsPerOrder));
+  const totalMsgs  = totalOrders.map(o=> o*num(cm.messagesPerOrder));
+  const badHandlers=[]; let callShareSum=0, msgShareSum=0;
+  const contactHoursByGroup={};
+  (cm.handlers||[]).forEach(h=>{
+    const role=rById[h.roleId];
+    if(!role){ badHandlers.push(String(h.roleId||'(blank)')); return; }
+    callShareSum+=num(h.callSharePct); msgShareSum+=num(h.msgSharePct);
+    const g=role.group; if(reqGroup[g]==null) return;
+    const cpd=Math.max(1e-6,num(h.callsPerDay)), mpd=Math.max(1e-6,num(h.messagesPerDay));
+    const cs=pct(h.callSharePct), ms=pct(h.msgSharePct);
+    const hoursPerDay=(num(role.contractedHours)||DEFAULT_PERSON_HOURS)/wDays;
+    for(let m=0;m<N;m++){
+      const hrs=((totalCalls[m]*cs)/cpd + (totalMsgs[m]*ms)/mpd)*hoursPerDay;
+      if(hrs<=1e-9 && m>0) continue;
+      reqGroup[g][m]+=hrs; const bag=reqSG[g]; (bag[CONTACT_SVC]=bag[CONTACT_SVC]||new Array(N).fill(0))[m]+=hrs;
+      (contactHoursByGroup[g]=contactHoursByGroup[g]||new Array(N).fill(0))[m]+=hrs;
+      svcCalc.push({service:CONTACT_SVC,category:CONTACT_CAT,task:role.name+' contact handling',group:g,monthIdx:m,orders:totalOrders[m],incidence:0,timeSec:0,hours:hrs});
+    }
+  });
+
   // --- staff (current + planned) with per-staff prescribing time + eligibility ---
   let droppedHours=0; const plannedStaff=[]; const currentStaff=[];
   (hr||[]).forEach(s=>{
@@ -628,7 +661,9 @@ function runEngine(cfg, demand, hr){
     const csIdx = startIdx!=null?startIdx:(planned?Math.max(0,readyIdx):0);
     const rec={staff:s, roleId:rid, group:role.group, presc, elig, prodUsed:prod, readyIdx:Math.max(0,readyIdx),
       costStartIdx: csIdx, monthly:num(role.costPerHour)*num(s.hours), planned,
-      // planned staff ramp their productivity from the start (hire) month; existing staff are full
+      // An EXPLICIT Ready month is authoritative: 0 capacity before it, full from it (the planner already
+      // judged when this person is productive). Otherwise planned staff ramp from their start month.
+      hardReady: readyIdxRaw!=null? Math.max(0,readyIdxRaw) : null,
       rampAnchor: planned? Math.max(0,csIdx) : null, rampW: num(role.usefulLeadWeeks) };
     (planned?plannedStaff:currentStaff).push(rec);
   });
@@ -639,20 +674,23 @@ function runEngine(cfg, demand, hr){
   const ensureB=(g,c)=>{ const k=bkey(g,c); if(!bset[k]){ bset[k]={group:g,category:c}; buckets.push(bset[k]); reqB[k]=new Array(N).fill(0); allocB[k]=new Array(N).fill(0); gapB[k]=new Array(N).fill(0); } return k; };
   const reqB={}, allocB={}, gapB={};
   const servicesInGroup={}; groups.forEach(g=> servicesInGroup[g]=Object.keys(reqSG[g]));
-  // staff productivity factor in month m: existing = full; planned = ramp from their start month
-  const staffFactor=(x,m)=> x.rampAnchor==null? 1 : ASSUMPTIONS.rampFraction(m - x.rampAnchor, x.rampW);
+  // staff productivity factor in month m: explicit Ready month = step function; else planned ramp; existing = full
+  const staffFactor=(x,m)=>{ if(x.hardReady!=null) return m>=x.hardReady?1:0;
+    return x.rampAnchor==null? 1 : ASSUMPTIONS.rampFraction(m - x.rampAnchor, x.rampW); };
+  // contact work is open to every group member regardless of specialism
+  const canDo=(x,sv)=> sv===CONTACT_SVC || staffEligible(x.elig,sv);
   for(let m=0;m<N;m++){
     groups.forEach(g=>{
       const svcs=servicesInGroup[g].filter(sv=> reqSG[g][sv][m]>1e-9);
       const st=allStaff.filter(x=> x.group===g && x.presc>0 && staffFactor(x,m)>1e-9);
       const rem=st.map(x=>x.presc*staffFactor(x,m));
-      const specCount=st.map(x=> svcs.filter(sv=> staffEligible(x.elig,sv)).length);   // fewer = more specialised
-      const eligCap={}; svcs.forEach(sv=>{ let c=0; st.forEach((x,i)=>{ if(staffEligible(x.elig,sv)) c+=rem[i]; }); eligCap[sv]=c; });
+      const specCount=st.map(x=> svcs.filter(sv=> canDo(x,sv)).length);   // fewer = more specialised
+      const eligCap={}; svcs.forEach(sv=>{ let c=0; st.forEach((x,i)=>{ if(canDo(x,sv)) c+=rem[i]; }); eligCap[sv]=c; });
       // fill scarcest services first (lowest slack = eligible capacity − demand)
       const order=svcs.slice().sort((a,b)=> (eligCap[a]-reqSG[g][a][m])-(eligCap[b]-reqSG[g][b][m]) || reqSG[g][b][m]-reqSG[g][a][m]);
       order.forEach(sv=>{
         const dem=reqSG[g][sv][m]; let need=dem;
-        const idxs=st.map((x,i)=>i).filter(i=> staffEligible(st[i].elig,sv) && rem[i]>1e-9).sort((i,j)=> specCount[i]-specCount[j]);
+        const idxs=st.map((x,i)=>i).filter(i=> canDo(st[i],sv) && rem[i]>1e-9).sort((i,j)=> specCount[i]-specCount[j]);
         for(const i of idxs){ if(need<=1e-9) break; const take=Math.min(need,rem[i]); rem[i]-=take; need-=take; }
         const k=ensureB(g,svcCat[sv]);
         reqB[k][m]+=dem; allocB[k][m]+=(dem-Math.max(0,need)); gapB[k][m]+=Math.max(0,need);
@@ -660,28 +698,38 @@ function runEngine(cfg, demand, hr){
     });
   }
 
-  // --- dedicated hiring per (group,category) bucket, lead-time aware ---
+  // --- hiring: pooled per GROUP, lead-time aware. A new hire is a generalist within their group ---
+  // (existing staff keep their specialism restrictions; a recommended hire can be pointed at any area in the
+  // group, so the group's shortfalls are summed and rounded up ONCE — not once per category, which would
+  // over-hire badly when many small category gaps each rounded up to a whole person).
   // default hire role per group = cheapest per productive hour; ties broken by config order (so a preferred role listed first wins)
   const roleIdx={}; cfg.roles.forEach((r,i)=> roleIdx[r.id]=i);
   const hireRole={}; groups.forEach(g=>{ const rs=rolesInGroup[g].slice().sort((a,b)=>{ const d=ASSUMPTIONS.costPerProductiveHour(a)-ASSUMPTIONS.costPerProductiveHour(b); return Math.abs(d)>1e-9? d : (roleIdx[a.id]-roleIdx[b.id]); }); hireRole[g]=rs[0]||null; });
-  const cohorts=[]; const unfillable=[]; const addedB={}; buckets.forEach(b=> addedB[bkey(b.group,b.category)]=new Array(N).fill(0));
+  const cohorts=[]; const unfillable=[];
   const monthsCeil=w=> Math.ceil(num(w)*12/52 - 1e-9); // round UP so the ramp is full by the useful month
-  buckets.forEach(b=>{ const g=b.group, k=bkey(g,b.category); const role=hireRole[g];
+  const bucketsInGroup={}; groups.forEach(g=> bucketsInGroup[g]=buckets.filter(b=>b.group===g));
+  const recAddG={}; // per-group, per-month effective (ramped) hours from recommended hires
+  groups.forEach(g=>{ const role=hireRole[g];
     const hph=role?ASSUMPTIONS.productiveHoursPerFTE(role):0; const W=role?num(role.usefulLeadWeeks):0;
     const usefulLag=role?monthsCeil(role.usefulLeadWeeks):0;
     const hireLag=role?ASSUMPTIONS.monthsFromWeeks(role.hireLeadWeeks):0;
-    const eff=addedB[k]; // per-month effective (ramped) hours from recommended hires
+    const eff=new Array(N).fill(0); recAddG[g]=eff;
     for(let m=0;m<N;m++){
-      const deficit=reqB[k][m]-(allocB[k][m]+eff[m]);
-      if(deficit>1e-6){
-        if(role&&hph>0){ const hires=ceil(deficit/hph); const hireIdx=m-usefulLag;
+      let D=0; const areas=[];
+      bucketsInGroup[g].forEach(b=>{ const k=bkey(g,b.category); const d=reqB[k][m]-allocB[k][m]; if(d>1e-6){ D+=d; areas.push(b.category); } });
+      D-=eff[m];
+      if(D>1e-6){
+        if(role&&hph>0){ const hires=ceil(D/hph); const hireIdx=m-usefulLag;
           for(let t=Math.max(0,hireIdx);t<N;t++) eff[t]+=hires*hph*ASSUMPTIONS.rampFraction(t-hireIdx, W);
-          cohorts.push({group:g,category:b.category,roleId:role.id,hires,usefulIdx:m,costStartIdx:hireIdx,recruitIdx:hireIdx-hireLag}); }
-        else unfillable.push({group:g,category:b.category,monthIdx:m,hours:deficit});
+          cohorts.push({group:g,category:areas.join(', '),cats:areas.slice(),roleId:role.id,hires,usefulIdx:m,costStartIdx:hireIdx,recruitIdx:hireIdx-hireLag}); }
+        else bucketsInGroup[g].forEach(b=>{ const k=bkey(g,b.category); const d=reqB[k][m]-allocB[k][m]; if(d>1e-6) unfillable.push({group:g,category:b.category,monthIdx:m,hours:d}); });
       }
     }
   });
-  const recAddB={}; buckets.forEach(b=>{ const k=bkey(b.group,b.category); recAddB[k]=addedB[k].slice(); }); // per-month effective (ramp-adjusted)
+  // distribute each group's hire-pool hours across its buckets (audit view): fill deficits in bucket order
+  const recAddB={}; buckets.forEach(b=> recAddB[bkey(b.group,b.category)]=new Array(N).fill(0));
+  groups.forEach(g=>{ for(let m=0;m<N;m++){ let pool=recAddG[g][m];
+    for(const b of bucketsInGroup[g]){ if(pool<=1e-9) break; const k=bkey(g,b.category); const d=Math.max(0,reqB[k][m]-allocB[k][m]); const take=Math.min(d,pool); recAddB[k][m]=take; pool-=take; } } });
 
   // --- People Manager: required headcount scales with prescriber headcount (editable ratio) ---
   const pmCfg = cfg.peopleManager || {roleId:'pm_role', ratio:22, prescriberRoles:['ip','gp','mh_nurse']};
@@ -704,51 +752,35 @@ function runEngine(cfg, demand, hr){
   pmCohorts.forEach(c=> cohorts.push(c)); // include in cost + recruitment output
   const pmGap = months.map((_,m)=> Math.max(0, pmRequired[m]-pmAvail[m]));
 
-  // --- Contact support forecast: orders → calls + messages → support-role headcount (throughput model) ---
-  const cm = cfg.contactModel || {callsPerOrder:0,messagesPerOrder:0,workingDaysPerMonth:21,handlers:[]};
-  const totalOrders = months.map((mk,m)=> cfg.services.reduce((a,sv)=> a + ((demand[sv.name]&&demand[sv.name][mk])||0), 0));
-  const wDays = Math.max(1, num(cm.workingDaysPerMonth)||21);
-  const totalCalls = totalOrders.map(o=> o*num(cm.callsPerOrder));
-  const totalMsgs  = totalOrders.map(o=> o*num(cm.messagesPerOrder));
-  const fteWeight = (s,role)=> num(s.staff.hours)/(num(role.contractedHours)||DEFAULT_PERSON_HOURS);
-  const support = (cm.handlers||[]).map(h=>{ const role=rById[h.roleId]; if(!role) return null;
-    const prod=Math.max(1e-6,pct(role.productivityPct)); const cpd=Math.max(1e-6,num(h.callsPerDay)), mpd=Math.max(1e-6,num(h.messagesPerDay));
-    const cs=pct(h.callSharePct), ms=pct(h.msgSharePct);
-    const required = months.map((_,m)=> ((totalCalls[m]*cs)/cpd + (totalMsgs[m]*ms)/mpd) / (wDays*prod));
-    const existF = currentStaff.filter(s=>s.roleId===h.roleId).reduce((a,s)=> a+fteWeight(s,role), 0);
-    const plannedS = plannedStaff.filter(s=>s.roleId===h.roleId);
-    const avail = months.map((_,m)=> existF + plannedS.reduce((a,s)=> a + fteWeight(s,role)*staffFactor(s,m), 0));
-    const W=num(role.usefulLeadWeeks), uLag=monthsCeil(role.usefulLeadWeeks), hLag=ASSUMPTIONS.monthsFromWeeks(role.hireLeadWeeks);
-    const eff=new Array(N).fill(0); const chorts=[];
-    for(let m=0;m<N;m++){ const deficit=required[m]-(avail[m]+eff[m]); if(deficit>1e-6){ const hires=ceil(deficit); const hireIdx=m-uLag;
-      for(let t=Math.max(0,hireIdx);t<N;t++) eff[t]+=hires*ASSUMPTIONS.rampFraction(t-hireIdx,W);
-      chorts.push({group:'Support',category:role.name,roleId:h.roleId,hires,usefulIdx:m,costStartIdx:hireIdx,recruitIdx:hireIdx-hLag}); } }
-    chorts.forEach(c=>cohorts.push(c));
-    const gap = months.map((_,m)=> Math.max(0, required[m]-avail[m]));
-    return { roleId:h.roleId, name:role.name, callSharePct:num(h.callSharePct), msgSharePct:num(h.msgSharePct), required, avail, rec:eff, gap };
-  }).filter(Boolean);
-
   // group totals (for tiles / summary)
   const reqGroupTot={}, gapGroupTot={}; groups.forEach(g=>{ reqGroupTot[g]=new Array(N).fill(0); gapGroupTot[g]=new Array(N).fill(0); });
-  buckets.forEach(b=>{ const k=bkey(b.group,b.category); for(let m=0;m<N;m++){ reqGroupTot[b.group][m]+=reqB[k][m]; gapGroupTot[b.group][m]+=gapB[k][m]; } });
+  const allocGroupTot={}; groups.forEach(g=> allocGroupTot[g]=new Array(N).fill(0));
+  buckets.forEach(b=>{ const k=bkey(b.group,b.category); for(let m=0;m<N;m++){ reqGroupTot[b.group][m]+=reqB[k][m]; gapGroupTot[b.group][m]+=gapB[k][m]; allocGroupTot[b.group][m]+=allocB[k][m]; } });
 
   // --- consolidated resource requirement: one row per resource TYPE, total headcount needed each month ---
-  // (no category split). Clinicians from order hours ÷ productive hours/FTE; People Managers from headcount;
-  // support roles from call & message volume.
+  // Order work AND contact work now sit in the same hours pool, so each group appears exactly once.
+  // need = staff-FTE actually consumed + recommended hires useful by that month — this reconciles exactly
+  // with the recruitment plan (hires are dedicated per specialism area, so need can exceed pooled-hours ÷ hph).
   const resourceRows=[];
   const ceilHead=x=> Math.max(0, Math.ceil(x-1e-9));
+  const recHeadsG={}; groups.forEach(g=> recHeadsG[g]=new Array(N).fill(0));
+  cohorts.forEach(co=>{ if(recHeadsG[co.group]) for(let m=Math.max(0,co.usefulIdx);m<N;m++) recHeadsG[co.group][m]+=co.hires; });
   groups.forEach(g=>{
-    if(!reqGroupTot[g].some(h=>h>1e-6)) return;   // only groups with order demand
+    if(!reqGroupTot[g].some(h=>h>1e-6)) return;   // only groups with demand (orders or contact)
     const role=hireRole[g]; const hph=role?ASSUMPTIONS.productiveHoursPerFTE(role):0;
-    const req = reqGroupTot[g].map(h=> hph>0? ceilHead(h/hph) : 0);
-    const availH = months.map((_,m)=> allStaff.filter(x=>x.group===g).reduce((a,x)=> a+x.presc*staffFactor(x,m), 0));
-    const avail = availH.map(h=> hph>0? h/hph : 0);
-    const gap = gapGroupTot[g].map(h=> hph>0? ceilHead(h/hph) : 0);
-    const sub = role && role.name!==g ? ('from order volume · via '+role.name) : 'from order volume';
-    resourceRows.push({ kind:'order', group:g, label:g, sub, req, avail, gap });
+    const noRole = !(role&&hph>0);
+    const availF = months.map((_,m)=>{ const h=allStaff.filter(x=>x.group===g).reduce((a,x)=> a+x.presc*staffFactor(x,m), 0); return hph>0? h/hph : 0; });
+    const workload = reqGroupTot[g].map(h=> hph>0? h/hph : 0);            // pooled-hours FTE (context)
+    const usedF   = allocGroupTot[g].map(h=> hph>0? h/hph : 0);           // staff FTE actually consumed
+    const need    = months.map((_,m)=> noRole? 0 : ceilHead(usedF[m]+recHeadsG[g][m]));
+    const short   = gapGroupTot[g].map(h=> hph>0? ceilHead(h/hph) : 0);   // pre-hire shortfall, heads
+    const hasContact = !!contactHoursByGroup[g];
+    const sub = noRole? '⚠ no role to hire — demand cannot be met'
+      : (hasContact? 'orders + calls & messages' : 'from order volume') + (role.name!==g? ' · via '+role.name : '');
+    resourceRows.push({ kind:'group', group:g, label:g, sub, noRole, need, have:availF, hire:recHeadsG[g].slice(), short, workload, reqHours:reqGroupTot[g].slice() });
   });
-  if(pmRole) resourceRows.push({ kind:'pm', group:'Management', label:pmRole.name, sub:'1 : '+pmRatio+' prescribers', req:pmRequired.slice(), avail:pmAvail.map(v=>v), gap:pmGap.slice() });
-  support.forEach(s=>{ resourceRows.push({ kind:'support', group:'Support', label:s.name, sub:'calls & messages', req:s.required.map(ceilHead), avail:s.avail.slice(), gap:s.gap.map(ceilHead) }); });
+  if(pmRole) resourceRows.push({ kind:'pm', group:'Management', label:pmRole.name, sub:'1 : '+pmRatio+' prescribers', noRole:false,
+    need:pmRequired.slice(), have:pmAvail.map(v=>v), hire:pmRec.slice(), short:pmGap.slice(), workload:pmRequired.slice(), reqHours:null });
 
   // --- phased costs ---
   const monthlyCostRole=id=>ASSUMPTIONS.monthlyCost(rById[id]);
@@ -767,16 +799,34 @@ function runEngine(cfg, demand, hr){
   const sumPhased=newHireCost.reduce((a,b)=>a+b,0);
   const sumCohort=cohorts.reduce((a,co)=> a+co.hires*monthlyCostRole(co.roleId)*(N-Math.max(0,co.costStartIdx)),0);
   const costOk=Math.abs(sumPhased-sumCohort)<1;
-  checks.push({pass:costOk,label:'Cost ↔ gap reconciliation',desc:'Phased new-hire cost (Σ months) equals Σ (hires × monthly cost × months from cost-start). Δ = '+money(Math.abs(sumPhased-sumCohort),cfg.global.currency)+'.'});
+  checks.push({pass:costOk,label:'Cost ↔ recruitment reconciliation',desc:'Phased new-hire cost (Σ months) equals Σ (hires × monthly cost × months from cost-start). Δ = '+money(Math.abs(sumPhased-sumCohort),cfg.global.currency)+'.'});
   const badGroups=groups.filter(g=>cfg.groups.indexOf(g)<0);
   const fillOk=unfillable.length===0 && badGroups.length===0;
   checks.push({pass:fillOk,label:'All demand routable',desc: unfillable.length? unfillable.length+' area-months have demand but no role to hire into.' : (badGroups.length? 'Services reference unknown group(s): '+badGroups.join(', ')+'.' : 'Every area with demand has a role that can be hired for it.')});
+  // contact model must account for the whole volume, through real roles — a mis-set share or a deleted
+  // role would otherwise silently shrink demand.
+  const anyContact = num(cm.callsPerOrder)>0 || num(cm.messagesPerOrder)>0;
+  const sharesOk = !anyContact || (Math.abs(callShareSum-100)<=0.5 && Math.abs(msgShareSum-100)<=0.5);
+  const handlersOk = badHandlers.length===0;
+  checks.push({pass:sharesOk&&handlersOk,label:'Contact volume fully assigned',
+    desc: !handlersOk? 'Handler(s) point at missing role(s): '+badHandlers.join(', ')+' — their volume is NOT modelled.'
+      : (!sharesOk? 'Shares must each total 100%: calls '+round2(callShareSum)+'%, messages '+round2(msgShareSum)+'%. The unassigned remainder is NOT modelled.'
+      : 'Call and message shares each total 100% and every handler maps to a real role.')});
+  // headline table ↔ recruitment plan: wherever the headline row shows a pre-hire shortfall and a hireable
+  // role exists, the recruitment plan must contain hires for that group by that month — and vice versa the
+  // Need line must never fall below the staff-FTE the allocation actually consumed.
+  let recOk=true;
+  resourceRows.forEach(r=>{ if(r.kind==='group'&&!r.noRole){ for(let m=0;m<N;m++){
+    if(r.short[m]>0 && r.hire[m]<=0) recOk=false;
+    if(r.need[m]+1e-6 < Math.min(r.have[m],r.workload[m])-1) recOk=false;
+  } } });
+  checks.push({pass:recOk,label:'Screen ↔ plan reconciliation',desc:'Wherever the headline table shows a shortfall, the recruitment plan contains hires for that group by that month.'});
 
   return { months, monthLabels:months.map(monthLabel), groups, roles:cfg.roles.slice(), rolesInGroup, hireRole, bkey,
     buckets, reqB, allocB, gapB, recAddB, reqGroupTot, gapGroupTot, resourceRows, svcCat,
     svcCalc, cohorts, unfillable, newHireCost, plannedCost, baselineCost, plannedStaff, currentStaff, allStaff, droppedHours,
     pm:{ role:pmRole, ratio:pmRatio, prescHeads, required:pmRequired, avail:pmAvail, rec:pmRec, gap:pmGap, cohorts:pmCohorts },
-    contact:{ callsPerOrder:num(cm.callsPerOrder), messagesPerOrder:num(cm.messagesPerOrder), wDays, totalOrders, totalCalls, totalMsgs, support },
+    contact:{ callsPerOrder:num(cm.callsPerOrder), messagesPerOrder:num(cm.messagesPerOrder), wDays, totalOrders, totalCalls, totalMsgs, hoursByGroup:contactHoursByGroup, contactSvc:CONTACT_SVC },
     checks, currency:cfg.global.currency, sumNewHireCost:sumPhased, monthlyCostRole };
 }
 
@@ -861,8 +911,8 @@ function renderCatList(){ $('#catlist').innerHTML=serviceCategories().map(c=>`<o
 function renderContactModel(){
   const cfg=STATE.config; const cm=cfg.contactModel||(cfg.contactModel={callsPerOrder:0,messagesPerOrder:0,workingDaysPerMonth:21,handlers:[]});
   $('#contactGlobals').innerHTML=`
-    <div class="field"><label>Working days / month</label><input id="cm_days" type="number" min="1" value="${esc(cm.workingDaysPerMonth)}"/></div>
-    <div class="field" style="justify-content:flex-end"><span class="hint" style="margin:0">Calls &amp; messages per order are set in <strong>Global</strong>.</span></div>`;
+    <div class="field"><label>Working days / month per person</label><input id="cm_days" type="number" min="1" value="${esc(cm.workingDaysPerMonth)}"/></div>
+    <div class="field" style="justify-content:flex-end"><span class="hint" style="margin:0">Days each person works (~21) — <strong>not</strong> days the desk is open; 7-day cover is a rota question. Calls &amp; messages per order are set in <strong>Global</strong>.</span></div>`;
   $('#cm_days').onchange=e=>{ cm.workingDaysPerMonth=Math.max(1,parseInt(e.target.value,10)||21); softRerun(); };
   // share totals
   const cSum=(cm.handlers||[]).reduce((a,h)=>a+num(h.callSharePct),0), mSum=(cm.handlers||[]).reduce((a,h)=>a+num(h.msgSharePct),0);
@@ -1016,6 +1066,17 @@ function renderMapping(){
   $('#mapWarn').classList.toggle('hidden',unmatched===0);
 }
 function ragH(gap,req){ if(gap<=1e-6) return 'rag-zero'; const r=req>0?gap/req:1; return r>0.15?'rag-red':'rag-amber'; }
+// pool hire cohorts to one row per role per useful-month (recruit/cost-start dates are role+month determined,
+// so they're identical within a pool); the covered areas are kept as a list. Used by the screen AND the xlsx.
+function poolCohorts(R){
+  const aggMap={}, aggOrder=[];
+  R.cohorts.forEach(co=>{ const key=co.roleId+'|'+co.usefulIdx;
+    if(!aggMap[key]){ aggMap[key]={group:co.group,roleId:co.roleId,usefulIdx:co.usefulIdx,costStartIdx:co.costStartIdx,recruitIdx:co.recruitIdx,hires:0,cost:0,cats:[]}; aggOrder.push(key); }
+    const a=aggMap[key]; a.hires+=co.hires; const monthsActive=R.months.length-Math.max(0,co.costStartIdx);
+    a.cost+=co.hires*R.monthlyCostRole(co.roleId)*monthsActive;
+    (co.cats||(co.category?[co.category]:[])).forEach(c=>{ if(a.cats.indexOf(c)<0) a.cats.push(c); }); });
+  return aggOrder.map(k=>aggMap[k]).sort((a,b)=> a.recruitIdx-b.recruitIdx || a.usefulIdx-b.usefulIdx || a.group.localeCompare(b.group));
+}
 function renderResults(){
   const body=$('#resultsBody');
   const haveTeam = STATE.hrMode==='people'? !!STATE.people : !!STATE.hr;
@@ -1027,10 +1088,10 @@ function renderResults(){
   const cur=R.currency, ML=R.monthLabels;
   let totalHires=0; R.cohorts.forEach(c=>totalHires+=c.hires);
   const RR=R.resourceRows||[];
-  // peak headcount shortfall across all resource types (month 0 = "now")
-  let peakShort=0, peakRow=null; RR.forEach(r=> r.gap.forEach(v=>{ if(v>peakShort){ peakShort=v; peakRow=r; } }));
+  // peak pre-hire shortfall across all resource types (month 0 = "now")
+  let peakShort=0, peakRow=null; RR.forEach(r=> r.short.forEach(v=>{ if(v>peakShort){ peakShort=v; peakRow=r; } }));
   const tiles=`<div class="tiles">
-    <div class="tile"><div class="l">Resource types</div><div class="v">${RR.length}</div><div class="s">clinicians, managers &amp; support · ${R.months.length} months</div></div>
+    <div class="tile"><div class="l">Resource types</div><div class="v">${RR.length}</div><div class="s">orders + contact in one pool · ${R.months.length} months</div></div>
     <div class="tile ${peakShort>0?'alert':'good'}"><div class="l">Peak shortfall</div><div class="v">${Math.round(peakShort)}</div><div class="s">${peakRow?esc(peakRow.label):'fully covered'}</div></div>
     <div class="tile ${totalHires>0?'alert':'good'}"><div class="l">Recommended hires</div><div class="v">${totalHires}</div><div class="s">${R.cohorts.length} cohort${R.cohorts.length===1?'':'s'}</div></div>
     <div class="tile"><div class="l">New-hire cost (horizon)</div><div class="v">${money(R.sumNewHireCost,cur)}</div><div class="s">phased from each hire month</div></div>
@@ -1039,15 +1100,21 @@ function renderResults(){
   // consolidated resource table: one row per resource TYPE, total headcount needed each month (no category split)
   let resRows='';
   RR.forEach(r=>{ const c=groupColor(r.group);
-    const cells=r.req.map((v,i)=>{ const gp=r.gap[i]; const av=r.avail[i];
-      const cls = gp>0.5? (gp>=Math.max(1,r.req[i]*0.15)?'rag-red':'rag-amber') : 'rag-zero';
-      return `<td class="cell-gap"><span class="rag ${cls}" title="need ${v} · have ${av.toFixed(1)} now/planned · short ${gp>0?gp:0}">${v}</span></td>`; }).join('');
+    let cells;
+    if(r.noRole){
+      cells=r.reqHours.map(h=>`<td class="cell-gap"><span class="rag rag-red" title="${Math.round(h)}h of demand · no role in this group to hire">${Math.round(h)}h</span></td>`).join('');
+    } else {
+      cells=r.need.map((v,i)=>{ const sh=r.short[i], hv=r.have[i], hi=r.hire[i];
+        const cls = sh>0.5? (sh>=Math.max(1,v*0.15)?'rag-red':'rag-amber') : 'rag-zero';
+        const tip = `workload ${r.workload[i].toFixed(1)} FTE · have ${hv.toFixed(1)} now/planned · hiring ${hi} · short before hires ${sh}`;
+        return `<td class="cell-gap"><span class="rag ${cls}" title="${tip}">${v}</span></td>`; }).join('');
+    }
     const showBold = r.label && r.label!==r.group;
     resRows+=`<tr><td class="rowaccent" style="border-left-color:${c.fg}"><span class="grp-pill" style="${grpStyle(r.group)}">${esc(r.group)}</span>${showBold?` <strong>${esc(r.label)}</strong>`:''}${r.sub?`<br><small class="mute">${esc(r.sub)}</small>`:''}</td>${cells}</tr>`;
   });
   const gapTbl=`<div class="section-title" style="margin-top:20px">Resource required — total headcount needed by month</div>
     <div class="tbl-wrap"><table class="dt"><thead><tr><th>Resource type</th>${mh}</tr></thead><tbody>${resRows}</tbody></table></div>
-    <p class="hint">One row per resource type; each cell is the <strong>total headcount needed</strong> that month. Clinicians come from order volume (required hours ÷ productive hours per FTE), <strong>People Managers</strong> scale with prescriber headcount, and <strong>patient-support</strong> roles come from call &amp; message volume. Cells turn <span class="rag rag-amber">amber</span>/<span class="rag rag-red">red</span> where current + planned staff fall short (hover for need / have / shortfall). Recruitment timing and cost are below.</p>`;
+    <p class="hint">One row per resource type; each cell is the <strong>total headcount needed</strong> that month — order work and call/message work draw on the <em>same</em> people, so nobody is counted twice. The number equals staff in use plus the hires in the recruitment plan below; new hires are <strong>generalists within their group</strong> (they can cover any of its areas), so the group's shortfalls are pooled and rounded up once. <strong>People Managers</strong> scale with prescriber headcount. Cells turn <span class="rag rag-amber">amber</span>/<span class="rag rag-red">red</span> where current + planned staff fall short before recommended hires (hover for workload / have / hiring / shortfall).</p>`;
   const pmTbl='';
   // Contact volume (calls + messages generated by orders) — the driver behind support headcount
   let contactTbl='';
@@ -1057,20 +1124,12 @@ function renderResults(){
       +`<tr><td class="mute" style="padding-left:18px">messages (${C.messagesPerOrder}/order)</td>`+C.totalMsgs.map(v=>`<td class="num mute">${Math.round(v).toLocaleString('en-GB')}</td>`).join('')+`</tr>`;
     contactTbl=`<div class="section-title" style="margin-top:20px">Patient contact volume — calls &amp; messages from orders</div>
       <div class="tbl-wrap"><table class="dt"><thead><tr><th>Volume</th>${mh}</tr></thead><tbody>${volRows}</tbody></table></div>
-      <p class="hint">Orders generate <strong>${C.callsPerOrder} calls</strong> and <strong>${C.messagesPerOrder} messages</strong> each (set in Config → Global). Support headcount above = (call-days + message-days) ÷ (working days × productivity); per-role throughput &amp; shares are in Config → Contact model.</p>`;
+      <p class="hint">Orders generate <strong>${C.callsPerOrder} calls</strong> and <strong>${C.messagesPerOrder} messages</strong> each (set in Config → Global). Each role's share of this volume is converted to <strong>hours</strong> (share ÷ throughput per day × hours per working day) and added to that role's group in the table above — so contact work and order work compete for the same people. Per-role throughput &amp; shares are in Config → Contact model.</p>`;
   }
   let recRows;
   if(!R.cohorts.length){ recRows=`<tr><td colspan="7" class="mute">No hires needed — existing + planned capacity covers demand across the horizon.</td></tr>`; }
   else{
-    // one row per resource type per month-required: aggregate cohorts by (group, role, useful month).
-    // recruit/cost-start/useful/lead are all determined by role + useful month, so they're identical within a group.
-    const aggMap={}, aggOrder=[];
-    R.cohorts.forEach(co=>{ const key=co.group+'|'+co.roleId+'|'+co.usefulIdx;
-      if(!aggMap[key]){ aggMap[key]={group:co.group,roleId:co.roleId,usefulIdx:co.usefulIdx,costStartIdx:co.costStartIdx,recruitIdx:co.recruitIdx,hires:0,cost:0,cats:[]}; aggOrder.push(key); }
-      const a=aggMap[key]; a.hires+=co.hires; const monthsActive=R.months.length-Math.max(0,co.costStartIdx);
-      a.cost+=co.hires*R.monthlyCostRole(co.roleId)*monthsActive;
-      if(co.category && a.cats.indexOf(co.category)<0) a.cats.push(co.category); });
-    const aggs=aggOrder.map(k=>aggMap[k]).sort((a,b)=> a.recruitIdx-b.recruitIdx || a.usefulIdx-b.usefulIdx || a.group.localeCompare(b.group));
+    const aggs=poolCohorts(R);
     recRows=aggs.map(a=>{ const r=R.roles.find(x=>x.id===a.roleId);
       const rl=a.recruitIdx<0?`ASAP · overdue ${-a.recruitIdx}mo`:ML[a.recruitIdx];
       const cs=a.costStartIdx<0?`now · overdue`:ML[a.costStartIdx];
@@ -1231,7 +1290,7 @@ function exportXlsx(){
   cfg.services.forEach(sv=>{ const row=[sv.name]; R.months.forEach(mk=> row.push(round2((RD[sv.name]&&RD[sv.name][mk])||0))); inp.push(row); });
   inp.push([]);
   if(STATE.hrMode==='people'){
-    inp.push(['People roster — '+cfg.clinicalCostCentre+' only (personal data)']);
+    inp.push(['People roster — '+cfg.clinicalCostCentre+(cfg.supportCostCentres?' + rule-matched staff from '+cfg.supportCostCentres:'')+' (personal data)']);
     inp.push(['Staff no','Name','Job Name','Mapped role','Group','Hrs/mo','Productivity %','Productive hrs/mo','Specialisms','Eligible services']);
     const pm=cfg.peopleMap||{};
     const hasv=v=> v!=null && String(v).trim()!=='';
@@ -1288,9 +1347,17 @@ function exportXlsx(){
   // Capacity & Gap
   const cap=[['CAPACITY & GAP']];
   // consolidated resource requirement (one row per resource type; total headcount needed, no category split)
-  cap.push([]); cap.push(['RESOURCE REQUIRED — total headcount needed by month (one row per resource type)']); cap.push(['Resource type','Basis','Metric'].concat(ML));
-  (R.resourceRows||[]).forEach(r=>{ cap.push([r.label,r.sub||'','Needed (headcount)'].concat(r.req.map(v=>Math.round(v)))); cap.push(['','','Have (existing+planned)'].concat(r.avail.map(round2))); cap.push(['','','Shortfall'].concat(r.gap.map(v=>Math.round(v)))); cap.push([]); });
-  cap.push([]); cap.push(['DETAIL — required vs staffed vs recommended vs gap (hours), by group × category by month']); cap.push(['Staffed = existing + planned staff ELIGIBLE for that category, allocated scarcest-area-first. Gap = Required − (Staffed + Recommended hires).']); cap.push(['Group','Category','Metric'].concat(ML));
+  cap.push([]); cap.push(['RESOURCE REQUIRED — total headcount needed by month (one row per resource type; order + contact work in ONE pool)']);
+  cap.push(['Need = staff-FTE in use + recommended hires useful by that month (reconciles with the Recruitment tab). Shortfall = pre-hire gap in heads.']);
+  cap.push(['Resource type','Basis','Metric'].concat(ML));
+  (R.resourceRows||[]).forEach(r=>{
+    if(r.noRole){ cap.push([r.label,'NO ROLE TO HIRE','Unmet demand (hours)'].concat(r.reqHours.map(v=>Math.round(v)))); cap.push([]); return; }
+    cap.push([r.label,r.sub||'','Need (headcount)'].concat(r.need.map(v=>Math.round(v))));
+    cap.push(['','','Workload (FTE)'].concat(r.workload.map(round2)));
+    cap.push(['','','Have (existing+planned FTE)'].concat(r.have.map(round2)));
+    cap.push(['','','Recommended hires (cumulative)'].concat(r.hire.map(v=>Math.round(v))));
+    cap.push(['','','Shortfall before hires'].concat(r.short.map(v=>Math.round(v)))); cap.push([]); });
+  cap.push([]); cap.push(['DETAIL — required vs staffed vs recommended vs gap (hours), by group × category by month']); cap.push(['Staffed = existing + planned staff ELIGIBLE for that category, allocated scarcest-area-first. Gap = Required − (Staffed + Recommended hires). "Patient contact" is the pooled call/message workload.']); cap.push(['Group','Category','Metric'].concat(ML));
   R.buckets.forEach(b=>{ const k=R.bkey(b.group,b.category); cap.push([b.group,b.category,'Required h'].concat(R.reqB[k].map(round2))); cap.push(['','','Staffed h (existing+planned, eligible)'].concat(R.allocB[k].map(round2))); cap.push(['','','Recommended hires h (cumulative)'].concat(R.recAddB[k].map(round2))); cap.push(['','','Gap h'].concat(R.gapB[k].map(round2))); cap.push([]); });
   if(R.pm && R.pm.role){ cap.push([]); cap.push(['People Managers — headcount at 1 : '+R.pm.ratio+' prescribers']); cap.push(['Metric'].concat(ML));
     cap.push(['Prescriber headcount'].concat(R.pm.prescHeads.map(v=>Math.round(v))));
@@ -1298,17 +1365,18 @@ function exportXlsx(){
     cap.push(['Available (existing+planned)'].concat(R.pm.avail));
     cap.push(['+ Recommended (cumulative)'].concat(R.pm.rec));
     cap.push(['Manager gap'].concat(R.pm.gap)); }
-  if(R.contact && R.contact.support && R.contact.support.length){ const C=R.contact; cap.push([]); cap.push(['Contact support — headcount from calls ('+C.callsPerOrder+'/order) + messages ('+C.messagesPerOrder+'/order)']); cap.push(['Metric'].concat(ML));
+  if(R.contact){ const C=R.contact; cap.push([]); cap.push(['Contact volume — calls ('+C.callsPerOrder+'/order) + messages ('+C.messagesPerOrder+'/order), converted to hours and pooled with order work']); cap.push(['Metric'].concat(ML));
     cap.push(['Total orders'].concat(C.totalOrders.map(Math.round)));
     cap.push(['Total calls'].concat(C.totalCalls.map(Math.round)));
     cap.push(['Total messages'].concat(C.totalMsgs.map(Math.round)));
-    C.support.forEach(s=>{ cap.push([s.name+' — required FTE'].concat(s.required.map(round2))); cap.push(['','available FTE'].concat(s.avail.map(round2))); cap.push(['','recommended FTE'].concat(s.rec.map(round2))); cap.push(['','gap FTE'].concat(s.gap.map(round2))); }); }
+    Object.keys(C.hoursByGroup||{}).forEach(g=> cap.push(['Contact hours → '+g+' group'].concat(C.hoursByGroup[g].map(round2)))); }
   add('Capacity & Gap',cap);
 
-  // Recruitment & Cost
-  const rec=[['RECRUITMENT & COST'],[],['Hire cohorts — recruit back-dated by hire+useful lead; cost from hire month, capacity from useful month. Each hire is dedicated to a group × category (specialism).'],
-    ['Role','Group','Category','Hires','Start recruiting','Cost starts (hire)','Useful from','Lead to hire (wks)','Lead to useful (wks)','Overdue?','Cost to horizon']];
-  R.cohorts.slice().sort((a,b)=>a.recruitIdx-b.recruitIdx).forEach(co=>{ const r=rById[co.roleId]; const monthsActive=R.months.length-Math.max(0,co.costStartIdx); rec.push([r.name,co.group,co.category,co.hires,co.recruitIdx<0?('ASAP (overdue '+(-co.recruitIdx)+'mo)'):ML[co.recruitIdx],co.costStartIdx<0?'now (overdue)':ML[co.costStartIdx],ML[co.usefulIdx],num(r.hireLeadWeeks),num(r.usefulLeadWeeks),co.recruitIdx<0?'YES':'no',Math.round(co.hires*R.monthlyCostRole(co.roleId)*monthsActive)]); });
+  // Recruitment & Cost — pooled to match the screen (one row per role per useful month), then per-area detail
+  const rec=[['RECRUITMENT & COST'],[],['Recruitment plan — pooled: one row per role per month needed (matches the on-screen plan). Recruit back-dated by hire+useful lead; cost from hire month, capacity from useful month.'],
+    ['Role','Group','Areas covered','Hires','Start recruiting','Cost starts (hire)','Useful from','Lead to hire (wks)','Lead to useful (wks)','Overdue?','Cost to horizon']];
+  poolCohorts(R).forEach(a=>{ const r=rById[a.roleId]; rec.push([r.name,a.group,a.cats.slice().sort().join(', '),a.hires,a.recruitIdx<0?('ASAP (overdue '+(-a.recruitIdx)+'mo)'):ML[a.recruitIdx],a.costStartIdx<0?'now (overdue)':ML[a.costStartIdx],ML[a.usefulIdx],num(r.hireLeadWeeks),num(r.usefulLeadWeeks),a.recruitIdx<0?'YES':'no',Math.round(a.cost)]); });
+  rec.push(['New hires are generalists within their group: each pooled row lists every area with a shortfall it was sized to cover.']);
   rec.push([]); rec.push(['Phased cost by month ('+cur+')']); rec.push(['Cost line'].concat(ML));
   rec.push(['New recommended hires'].concat(R.newHireCost.map(Math.round)));
   rec.push(['Already-planned hires'].concat(R.plannedCost.map(Math.round)));
@@ -1326,19 +1394,18 @@ function exportXlsx(){
 
   // Methodology
   const met=[['METHODOLOGY — plain-English explanation of every calculation'],[]];
-  [['1. Demand → hours','Each service is a list of tasks. For each task, month: hours = orders × incidence% × time-per-order ÷ 3600, attributed to the task\'s group. An order can span several tasks across different roles (e.g. async review + messaging; or sync prescreen + specialist consult + GP letter).'],
-   ['2. Groups','Tasks are performed by clinician groups (e.g. IP, GP, Nurse, Specialist, Admin). Incidence carries both order-routing (IP vs GP share) and funnels (only some orders reach a later step). A role belongs to a group; a group pools all its roles\' capacity.'],
-   ['3. Productive hours','Productivity % is the fraction of contracted hours that is productive/prescribing time: productive hours = contracted × productivity %. Set per role, or overridden per staff member.'],
-   ['3c. Productivity ramp','A new hire is 0% productive for the first 2 weeks, then ramps linearly to the role\'s full productivity by its lead-to-useful (in weeks). Averaged into each month. Cost is paid in full from the hire month regardless.'],
-   ['3d. People Manager','People Managers line-manage prescribers and do not take orders; the required number scales with prescriber headcount at an editable ratio (default 1 per 22 prescribers).'],
-   ['3b. Specialisms & allocation','Each clinician has a specialism set (categories, with per-service include/exclude; blank = all). Existing + planned staff are allocated to the demand they are ELIGIBLE for, scarcest area first and most-specialised staff first, so a gap in one area cannot be masked by spare capacity that is not qualified for it. Demand and gaps are compared per group × category.'],
-   ['4. Capacity','Each mapped staff member adds productive hours to their role\'s group. Already-planned hires count from their Ready month, so they are not re-recommended.'],
-   ['5. Gap','Gap = required − available, per group per month (hours).'],
-   ['6. Role overlap','A group\'s gap is filled by its cheapest-capable role (lowest cost per productive hour).'],
-   ['7. Lead times','To be useful in a given month, recruitment starts (lead-to-hire + lead-to-useful) earlier. Cost is booked from the hire month; capacity counts only from the useful month. Dates before the horizon start are flagged overdue.'],
-   ['8. Cost','Monthly cost = cost/hour × contracted hours. New-hire cost is phased from each hire month to the horizon end.'],
-   ['9. Scope','v1 workload model — no queueing/SLA, no attrition. Assumptions are isolated so both can be added later.'],
-   ['10. Self-check','Totals are re-derived and the cost tab is reconciled to the gap tab; PASS/FAIL is written above.']].forEach(r=>met.push(r));
+  [['1. Order demand → hours','Each service is a list of tasks that drive PRESCRIBER (order-handling) resource only. For each task, month: hours = orders × incidence% × time-per-order ÷ 3600, attributed to the task\'s group. An order can span several tasks across different groups (e.g. prescreen + specialist consult + GP letter). Incidence carries both order-routing (IP vs GP share) and funnels (only some orders reach a later step).'],
+   ['2. Contact demand → hours','Total orders generate calls and messages (calls/order and messages/order, set in Global; fractional values allowed). Each handling role takes a % share of calls and of messages at its own throughput (calls/day, messages/day). Its share is converted to HOURS — person-days needed × contracted hours per working day — and added to that role\'s group demand pool as a "Patient contact" area every group member is eligible for. Contact work and order work therefore compete for the SAME people; nobody is counted twice. Working days/month means days each person works (~21), not days the service is open — 7-day cover is a rota question.'],
+   ['3. Groups & capacity','A role belongs to a group; a group pools all its roles\' capacity. Each mapped staff member contributes productive hours = contracted hours × productivity % (role default, overridable per person).'],
+   ['3b. Specialisms & allocation','Each clinician has a specialism set (categories, with per-service include/exclude; blank = all). Staff are allocated to the demand they are ELIGIBLE for, scarcest area first and most-specialised staff first, so a gap in one area cannot be masked by spare capacity that is not qualified for it. The Patient contact area is open to everyone in the group. Internally demand and gaps are per group × category (see Detail); the headline table consolidates to one row per resource type.'],
+   ['3c. Productivity ramp','A new hire is 0% productive for the first 2 weeks, then ramps linearly to the role\'s full productivity by its lead-to-useful (in weeks). Averaged into each month. Cost is paid in full from the hire month regardless. A planned hire with an explicit Ready month counts 0 before it and full capacity from it.'],
+   ['3d. People Manager','People Managers line-manage prescribers and do not take orders; the required number scales with prescriber headcount (existing + planned + ALL recommended prescriber hires) at an editable ratio (default 1 per 22).'],
+   ['4. Headline "Need"','One row per resource type: Need = staff-FTE actually in use + recommended hires useful by that month, so it reconciles exactly with the Recruitment tab. Shortfall = pre-hire gap in heads.'],
+   ['5. Hiring & role overlap','New hires are GENERALISTS within their group — they can cover any of its areas — so the group\'s per-category shortfalls are summed and rounded up once (per-category rounding would over-hire when many small gaps each round up to a whole person). The areas each pooled hire covers are listed. The group\'s cheapest-capable role is hired (lowest cost per productive hour; config order breaks ties, so the preferred role listed first wins).'],
+   ['6. Lead times','To be useful in a given month, recruitment starts (lead-to-hire + lead-to-useful) earlier, both rounded UP to whole months. Cost is booked from the hire month; capacity counts only from the useful month. Dates before the horizon start are flagged overdue.'],
+   ['7. Cost','Monthly cost = cost/hour × contracted hours. New-hire cost is phased from each hire month to the horizon end.'],
+   ['8. Scope','v2 workload model — no queueing/SLA, no attrition. Assumptions are isolated so both can be added later.'],
+   ['9. Self-check','The workbook validates itself: demand identity, gap coverage, cost reconciliation, routability, contact volume fully assigned (shares sum to 100% and handlers map to real roles), and screen ↔ recruitment-plan consistency. PASS/FAIL is written on the Self-Check tab.']].forEach(r=>met.push(r));
   met.push([]); met.push(['Generated','start '+cfg.global.startMonth+' · '+R.months.length+' months · '+cur]);
   add('Methodology',met);
 
@@ -1354,7 +1421,23 @@ function importConfig(file){ const rd=new FileReader(); rd.onload=e=>{ try{ cons
       (cfg.roles||[]).forEach(r=>{ if(r.productivityPct==null && r.nonPrescribingPct!=null){ r.productivityPct=100-num(r.nonPrescribingPct); delete r.nonPrescribingPct; } });
       Object.keys(cfg.peopleMap||{}).forEach(k=>{ const m=cfg.peopleMap[k]; if(m&&m.productivityPct==null&&m.nonPrescPct!=null&&String(m.nonPrescPct).trim()!==''){ m.productivityPct=100-num(m.nonPrescPct); } if(m) delete m.nonPrescPct; });
       (cfg.roleAttrs||[]).forEach(a=>{ if(a.key==='nonPrescribingPct'){ a.key='productivityPct'; a.label='Productivity %'; } });
-      (cfg.services||[]).forEach(sv=>migrateService(sv,cfg.groups)); STATE.config=cfg; STATE.lastRun=null; if(STATE.hrMode==='people'){ applyPeopleRules(); rebuildHrFromPeople(); } renderAll(); alert('Config imported.'); }catch(err){ alert('That config file could not be read: '+err.message); } }; rd.readAsText(file); }
+      (cfg.services||[]).forEach(sv=>migrateService(sv,cfg.groups));
+      const migrated=[];
+      // services drive orders only now: legacy per-service Messaging tasks would double-count against the
+      // contact model, so strip them (their work is modelled from total orders instead)
+      let droppedMsg=0;
+      (cfg.services||[]).forEach(sv=>{ const before=(sv.tasks||[]).length; sv.tasks=(sv.tasks||[]).filter(t=>!/messag/i.test(String(t.name||''))); droppedMsg+=before-sv.tasks.length; });
+      if(droppedMsg) migrated.push('removed '+droppedMsg+' legacy Messaging task(s) — calls & messages are now modelled from total orders via the contact model');
+      // make sure the Patient Support mapping rule (job code FCL) exists in older rule sets
+      const hasFcl=(cfg.jobRules||[]).some(ru=>(ru.jobCodes||[]).some(j=>String(j).trim().toLowerCase()==='fcl'));
+      if(!hasFcl && (cfg.roles||[]).some(r=>r.id==='patient_support')){
+        const gpIdx=cfg.jobRules.findIndex(ru=>ru.role==='gp');
+        const rule={label:'Patient Support', role:'patient_support', staffNumbers:[], jobCodes:['FCL'], location:''};
+        if(gpIdx>=0) cfg.jobRules.splice(gpIdx,0,rule); else cfg.jobRules.push(rule);
+        migrated.push('added the Patient Support mapping rule (job code FCL)');
+      }
+      STATE.config=cfg; STATE.lastRun=null; if(STATE.hrMode==='people'){ applyPeopleRules(); rebuildHrFromPeople(); } renderAll();
+      alert('Config imported.'+(migrated.length?'\n\nMigrated to the current model:\n• '+migrated.join('\n• '):'')); }catch(err){ alert('That config file could not be read: '+err.message); } }; rd.readAsText(file); }
 
 /* =========================================================================
    WIRING
