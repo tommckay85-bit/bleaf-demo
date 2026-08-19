@@ -408,11 +408,13 @@ function defaultConfig(){
     peopleManager: { roleId:'pm_role', ratio:22, prescriberRoles:['ip','gp','mh_nurse'] },
     // Contact model: orders generate calls + messages, handled by support roles (throughput per day).
     contactModel: {
-      callsPerOrder: 0.25, messagesPerOrder: 1.5, workingDaysPerMonth: 21,
+      callsPerOrder: 0.25, messagesPerOrder: 1.5, workingDaysPerMonth: 30,
       handlers: [
-        { roleId:'patient_support', callsPerDay:40, messagesPerDay:90, callSharePct:60, msgSharePct:70 },
-        { roleId:'tech',            callsPerDay:35, messagesPerDay:75, callSharePct:20, msgSharePct:20 },
-        { roleId:'nurse',           callsPerDay:30, messagesPerDay:60, callSharePct:20, msgSharePct:10 }
+        { roleId:'patient_support', callsPerDay:40, messagesPerDay:90, callSharePct:100, msgSharePct:35 },
+        { roleId:'tech',            callsPerDay:35, messagesPerDay:75, callSharePct:0,   msgSharePct:18 },
+        { roleId:'nurse',           callsPerDay:30, messagesPerDay:60, callSharePct:0,   msgSharePct:10 },
+        { roleId:'ip',              callsPerDay:40, messagesPerDay:80, callSharePct:0,   msgSharePct:35 },
+        { roleId:'gp',              callsPerDay:40, messagesPerDay:80, callSharePct:0,   msgSharePct:2  }
       ]
     }
   };
