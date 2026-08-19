@@ -260,7 +260,7 @@ footer.appfoot{border-top:1px solid var(--line);background:#fff;padding:26px 0;m
         <div class="inline-fields" id="contactGlobals"></div>
         <div class="tbl-wrap" style="margin-top:12px"><table class="dt" id="tblContact"></table></div>
         <div class="card-actions" style="margin-top:10px"><button class="btn btn-ghost btn-xs" id="btnAddContactRole">+ Add support role</button></div>
-        <p class="hint">Total orders × calls/order &amp; messages/order = contact volume. Each support role takes a % share of calls and of messages, handles that many per day, and delivers its productivity %. Required FTE = (call-days + message-days) ÷ (working days × productivity).</p>
+        <p class="hint">Total orders × calls/order &amp; messages/order = contact volume. Each handling role takes a % share of calls and of messages at its <strong>minutes per contact</strong>; hours = volume × share × minutes ÷ 60, pooled with that role's group demand. FTE = hours ÷ (contracted hours × productivity %) — the same arithmetic as everything else.</p>
       </div>
     </div>
   </section>
@@ -422,17 +422,19 @@ function defaultConfig(){
     ],
     // People Manager: headcount scales with number of prescribers (editable ratio).
     peopleManager: { roleId:'pm_role', ratio:22, prescriberRoles:['ip','gp','mh_nurse'] },
-    // Contact model: orders generate calls + messages, handled by support roles (throughput per day).
-    // workingDaysPerMonth = days each PERSON works per month (~21), NOT days the desk is open.
-    // 7-day/365 cover is a rota question; monthly volume already includes weekend contacts.
+    // Contact model: orders generate calls + messages, handled at minutes-per-contact by handler roles.
+    // Contact model in pure time — no "working days" middleman. Each handler's share of the call/message
+    // volume × minutes per contact = hours, pooled with order work; FTE falls out of contracted hours ×
+    // productivity like everything else. (Minutes below are the exact equivalents of the previous
+    // per-day throughputs, so results carry over.)
     contactModel: {
-      callsPerOrder: 0.25, messagesPerOrder: 1.5, workingDaysPerMonth: 21,
+      callsPerOrder: 0.25, messagesPerOrder: 1.5,
       handlers: [
-        { roleId:'patient_support', callsPerDay:40, messagesPerDay:90, callSharePct:100, msgSharePct:35 },
-        { roleId:'tech',            callsPerDay:35, messagesPerDay:75, callSharePct:0,   msgSharePct:18 },
-        { roleId:'nurse',           callsPerDay:30, messagesPerDay:60, callSharePct:0,   msgSharePct:10 },
-        { roleId:'ip',              callsPerDay:40, messagesPerDay:80, callSharePct:0,   msgSharePct:35 },
-        { roleId:'gp',              callsPerDay:40, messagesPerDay:80, callSharePct:0,   msgSharePct:2  }
+        { roleId:'patient_support', callMinutes:10.9, messageMinutes:4.8, callSharePct:100, msgSharePct:35 },
+        { roleId:'tech',            callMinutes:12.4, messageMinutes:5.8, callSharePct:0,   msgSharePct:18 },
+        { roleId:'nurse',           callMinutes:14.5, messageMinutes:7.2, callSharePct:0,   msgSharePct:10 },
+        { roleId:'ip',              callMinutes:10.9, messageMinutes:5.4, callSharePct:0,   msgSharePct:35 },
+        { roleId:'gp',              callMinutes:10.9, messageMinutes:5.4, callSharePct:0,   msgSharePct:2  }
       ]
     }
   };
@@ -617,13 +619,12 @@ function runEngine(cfg, demand, hr){
 
   // --- contact demand: orders → calls + messages → HOURS, pooled with order work ---
   // Contact work competes for the same people as order work (one person's time is spent once).
-  // Per handler: person-days = calls×share/callsPerDay + msgs×share/msgsPerDay; converted to hours at the
-  // handling role's contracted hours per working day. Fed into the group's demand pool as a pseudo-service
-  // that every group member is eligible for (contact work is not specialism-restricted).
-  const cm = cfg.contactModel || {callsPerOrder:0,messagesPerOrder:0,workingDaysPerMonth:21,handlers:[]};
+  // Pure time, same as service tasks: hours = volume × share × minutes-per-contact ÷ 60. No "working
+  // days" middleman — FTE falls out of contracted hours × productivity like everything else. Fed into the
+  // group's demand pool as a pseudo-service every group member is eligible for (not specialism-restricted).
+  const cm = cfg.contactModel || {callsPerOrder:0,messagesPerOrder:0,handlers:[]};
   const CONTACT_SVC='Patient contact (calls & messages)', CONTACT_CAT='Patient contact';
   svcCat[CONTACT_SVC]=CONTACT_CAT;
-  const wDays = Math.max(1, num(cm.workingDaysPerMonth)||21);
   const totalOrders = months.map(mk=> cfg.services.reduce((a,sv)=> a + ((demand[sv.name]&&demand[sv.name][mk])||0), 0));
   const totalCalls = totalOrders.map(o=> o*num(cm.callsPerOrder));
   const totalMsgs  = totalOrders.map(o=> o*num(cm.messagesPerOrder));
@@ -634,11 +635,9 @@ function runEngine(cfg, demand, hr){
     if(!role){ badHandlers.push(String(h.roleId||'(blank)')); return; }
     callShareSum+=num(h.callSharePct); msgShareSum+=num(h.msgSharePct);
     const g=role.group; if(reqGroup[g]==null) return;
-    const cpd=Math.max(1e-6,num(h.callsPerDay)), mpd=Math.max(1e-6,num(h.messagesPerDay));
     const cs=pct(h.callSharePct), ms=pct(h.msgSharePct);
-    const hoursPerDay=(num(role.contractedHours)||DEFAULT_PERSON_HOURS)/wDays;
     for(let m=0;m<N;m++){
-      const hrs=((totalCalls[m]*cs)/cpd + (totalMsgs[m]*ms)/mpd)*hoursPerDay;
+      const hrs=(totalCalls[m]*cs*num(h.callMinutes) + totalMsgs[m]*ms*num(h.messageMinutes))/60;
       if(hrs<=1e-9 && m>0) continue;
       reqGroup[g][m]+=hrs; const bag=reqSG[g]; (bag[CONTACT_SVC]=bag[CONTACT_SVC]||new Array(N).fill(0))[m]+=hrs;
       (contactHoursByGroup[g]=contactHoursByGroup[g]||new Array(N).fill(0))[m]+=hrs;
@@ -826,7 +825,7 @@ function runEngine(cfg, demand, hr){
     buckets, reqB, allocB, gapB, recAddB, reqGroupTot, gapGroupTot, resourceRows, svcCat,
     svcCalc, cohorts, unfillable, newHireCost, plannedCost, baselineCost, plannedStaff, currentStaff, allStaff, droppedHours,
     pm:{ role:pmRole, ratio:pmRatio, prescHeads, required:pmRequired, avail:pmAvail, rec:pmRec, gap:pmGap, cohorts:pmCohorts },
-    contact:{ callsPerOrder:num(cm.callsPerOrder), messagesPerOrder:num(cm.messagesPerOrder), wDays, totalOrders, totalCalls, totalMsgs, hoursByGroup:contactHoursByGroup, contactSvc:CONTACT_SVC },
+    contact:{ callsPerOrder:num(cm.callsPerOrder), messagesPerOrder:num(cm.messagesPerOrder), totalOrders, totalCalls, totalMsgs, hoursByGroup:contactHoursByGroup, contactSvc:CONTACT_SVC },
     checks, currency:cfg.global.currency, sumNewHireCost:sumPhased, monthlyCostRole };
 }
 
@@ -864,7 +863,7 @@ function renderSteps(){
 function renderGlobal(){
   const g=STATE.config.global;
   const pmr=(STATE.config.peopleManager&&STATE.config.peopleManager.ratio)||22;
-  const cm=STATE.config.contactModel||(STATE.config.contactModel={callsPerOrder:0,messagesPerOrder:0,workingDaysPerMonth:21,handlers:[]});
+  const cm=STATE.config.contactModel||(STATE.config.contactModel={callsPerOrder:0,messagesPerOrder:0,handlers:[]});
   $('#globalFields').innerHTML=`
     <div class="field"><label>Currency</label><input id="g_currency" value="${esc(g.currency)}"/></div>
     <div class="field"><label>Forecast horizon (months)</label><input id="g_horizon" type="number" min="1" max="60" value="${esc(g.horizonMonths)}"/></div>
@@ -909,24 +908,22 @@ function renderRoles(){
 }
 function renderCatList(){ $('#catlist').innerHTML=serviceCategories().map(c=>`<option value="${esc(c)}">`).join(''); }
 function renderContactModel(){
-  const cfg=STATE.config; const cm=cfg.contactModel||(cfg.contactModel={callsPerOrder:0,messagesPerOrder:0,workingDaysPerMonth:21,handlers:[]});
+  const cfg=STATE.config; const cm=cfg.contactModel||(cfg.contactModel={callsPerOrder:0,messagesPerOrder:0,handlers:[]});
   $('#contactGlobals').innerHTML=`
-    <div class="field"><label>Working days / month per person</label><input id="cm_days" type="number" min="1" value="${esc(cm.workingDaysPerMonth)}"/></div>
-    <div class="field" style="justify-content:flex-end"><span class="hint" style="margin:0">Days each person works (~21) — <strong>not</strong> days the desk is open; 7-day cover is a rota question. Calls &amp; messages per order are set in <strong>Global</strong>.</span></div>`;
-  $('#cm_days').onchange=e=>{ cm.workingDaysPerMonth=Math.max(1,parseInt(e.target.value,10)||21); softRerun(); };
+    <div class="field" style="grid-column:1/-1"><span class="hint" style="margin:0">Pure time, like service tasks: hours = volume × share × <strong>minutes per contact</strong> ÷ 60 — no working-days assumption. Minutes are full-focus handle time; holiday, sickness and other non-productive time live in each role's <strong>Productivity %</strong> only, so nothing is counted twice. Calls &amp; messages per order are set in <strong>Global</strong>.</span></div>`;
   // share totals
   const cSum=(cm.handlers||[]).reduce((a,h)=>a+num(h.callSharePct),0), mSum=(cm.handlers||[]).reduce((a,h)=>a+num(h.msgSharePct),0);
   const roleOpts=sel=>cfg.roles.map(r=>`<option value="${esc(r.id)}" ${sel===r.id?'selected':''}>${esc(r.name)}</option>`).join('');
   let body=(cm.handlers||[]).map((h,i)=>{ const c=groupColor('Support');
     return `<tr><td class="rowaccent" style="border-left-color:${c.fg}"><select data-ci="${i}" data-ck="roleId" style="min-width:150px">${roleOpts(h.roleId)}</select></td>
-      <td><input class="w-sm" value="${esc(h.callsPerDay)}" data-ci="${i}" data-ck="callsPerDay"/></td>
-      <td><input class="w-sm" value="${esc(h.messagesPerDay)}" data-ci="${i}" data-ck="messagesPerDay"/></td>
+      <td><input class="w-sm" value="${esc(h.callMinutes)}" data-ci="${i}" data-ck="callMinutes"/></td>
+      <td><input class="w-sm" value="${esc(h.messageMinutes)}" data-ci="${i}" data-ck="messageMinutes"/></td>
       <td><input class="w-sm" value="${esc(h.callSharePct)}" data-ci="${i}" data-ck="callSharePct"/></td>
       <td><input class="w-sm" value="${esc(h.msgSharePct)}" data-ci="${i}" data-ck="msgSharePct"/></td>
       <td><button class="cellbtn" data-delc="${i}">×</button></td></tr>`; }).join('');
   const warn=(v)=> Math.abs(v-100)>0.5? `style="color:var(--rag-amber);font-weight:700"`:'';
   body+=`<tr><td class="mute">Share total</td><td></td><td></td><td class="num" ${warn(cSum)}>${round2(cSum)}%</td><td class="num" ${warn(mSum)}>${round2(mSum)}%</td><td></td></tr>`;
-  $('#tblContact').innerHTML='<thead><tr><th>Support role</th><th class="num">Calls/day</th><th class="num">Msgs/day</th><th class="num">Call share %</th><th class="num">Msg share %</th><th></th></tr></thead><tbody>'+body+'</tbody>';
+  $('#tblContact').innerHTML='<thead><tr><th>Handling role</th><th class="num">Min / call</th><th class="num">Min / message</th><th class="num">Call share %</th><th class="num">Msg share %</th><th></th></tr></thead><tbody>'+body+'</tbody>';
   $('#tblContact').querySelectorAll('[data-ck]').forEach(inp=> inp.onchange=e=>{ const i=+e.target.dataset.ci,k=e.target.dataset.ck; cm.handlers[i][k]= k==='roleId'? e.target.value : num(e.target.value); renderContactModel(); softRerun(); });
   $('#tblContact').querySelectorAll('[data-delc]').forEach(b=> b.onclick=e=>{ cm.handlers.splice(+e.target.dataset.delc,1); renderContactModel(); softRerun(); });
 }
@@ -1124,7 +1121,7 @@ function renderResults(){
       +`<tr><td class="mute" style="padding-left:18px">messages (${C.messagesPerOrder}/order)</td>`+C.totalMsgs.map(v=>`<td class="num mute">${Math.round(v).toLocaleString('en-GB')}</td>`).join('')+`</tr>`;
     contactTbl=`<div class="section-title" style="margin-top:20px">Patient contact volume — calls &amp; messages from orders</div>
       <div class="tbl-wrap"><table class="dt"><thead><tr><th>Volume</th>${mh}</tr></thead><tbody>${volRows}</tbody></table></div>
-      <p class="hint">Orders generate <strong>${C.callsPerOrder} calls</strong> and <strong>${C.messagesPerOrder} messages</strong> each (set in Config → Global). Each role's share of this volume is converted to <strong>hours</strong> (share ÷ throughput per day × hours per working day) and added to that role's group in the table above — so contact work and order work compete for the same people. Per-role throughput &amp; shares are in Config → Contact model.</p>`;
+      <p class="hint">Orders generate <strong>${C.callsPerOrder} calls</strong> and <strong>${C.messagesPerOrder} messages</strong> each (set in Config → Global). Each role's share of this volume × its minutes per contact = <strong>hours</strong>, added to that role's group in the table above — so contact work and order work compete for the same people. Per-role minutes &amp; shares are in Config → Contact model.</p>`;
   }
   let recRows;
   if(!R.cohorts.length){ recRows=`<tr><td colspan="7" class="mute">No hires needed — existing + planned capacity covers demand across the horizon.</td></tr>`; }
@@ -1318,6 +1315,9 @@ function exportXlsx(){
   con.push(['Groups',cfg.groups.join(', ')]); con.push([]);
   con.push(['Roles']); con.push(['Role','Group','Cost/hour','Productivity %','Contracted hrs/mo','Lead to hire (wks)','Lead to useful (wks)','Productive hrs/FTE','Monthly cost']);
   cfg.roles.forEach(r=> con.push([r.name,r.group,num(r.costPerHour),num(r.productivityPct),num(r.contractedHours),num(r.hireLeadWeeks),num(r.usefulLeadWeeks),round2(ASSUMPTIONS.productiveHoursPerFTE(r)),round2(ASSUMPTIONS.monthlyCost(r))]));
+  con.push([]); con.push(['Contact model — calls/order '+num((cfg.contactModel||{}).callsPerOrder)+', messages/order '+num((cfg.contactModel||{}).messagesPerOrder)]);
+  con.push(['Handling role','Min / call','Min / message','Call share %','Msg share %']);
+  ((cfg.contactModel||{}).handlers||[]).forEach(h=>{ const hr=rById[h.roleId]; con.push([hr?hr.name:h.roleId,num(h.callMinutes),num(h.messageMinutes),num(h.callSharePct),num(h.msgSharePct)]); });
   con.push([]); con.push(['Services (task breakdown)']); con.push(['Service','Category','Clinician type','Task','Group','Time (s)','Incidence %','Eff. min/order']);
   cfg.services.forEach(sv=> (sv.tasks||[]).forEach(t=> con.push([sv.name,sv.category,sv.clinicianType||'',t.name,t.group,num(t.timeSec),num(t.incidencePct),round2((num(t.incidencePct)/100)*(num(t.timeSec)/60))])));
   add('Config',con);
@@ -1395,7 +1395,7 @@ function exportXlsx(){
   // Methodology
   const met=[['METHODOLOGY — plain-English explanation of every calculation'],[]];
   [['1. Order demand → hours','Each service is a list of tasks that drive PRESCRIBER (order-handling) resource only. For each task, month: hours = orders × incidence% × time-per-order ÷ 3600, attributed to the task\'s group. An order can span several tasks across different groups (e.g. prescreen + specialist consult + GP letter). Incidence carries both order-routing (IP vs GP share) and funnels (only some orders reach a later step).'],
-   ['2. Contact demand → hours','Total orders generate calls and messages (calls/order and messages/order, set in Global; fractional values allowed). Each handling role takes a % share of calls and of messages at its own throughput (calls/day, messages/day). Its share is converted to HOURS — person-days needed × contracted hours per working day — and added to that role\'s group demand pool as a "Patient contact" area every group member is eligible for. Contact work and order work therefore compete for the SAME people; nobody is counted twice. Working days/month means days each person works (~21), not days the service is open — 7-day cover is a rota question.'],
+   ['2. Contact demand → hours','Total orders generate calls and messages (calls/order and messages/order, set in Global; fractional values allowed). Each handling role takes a % share of calls and of messages at its MINUTES PER CONTACT — full-focus handle time, exactly like a service task\'s time-per-order. Hours = volume × share × minutes ÷ 60, added to that role\'s group demand pool as a "Patient contact" area every group member is eligible for. Contact work and order work therefore compete for the SAME people; nobody is counted twice. There is no working-days assumption anywhere: FTE = hours ÷ (contracted hours × productivity %), and holiday/sickness/non-productive time live in productivity % only.'],
    ['3. Groups & capacity','A role belongs to a group; a group pools all its roles\' capacity. Each mapped staff member contributes productive hours = contracted hours × productivity % (role default, overridable per person).'],
    ['3b. Specialisms & allocation','Each clinician has a specialism set (categories, with per-service include/exclude; blank = all). Staff are allocated to the demand they are ELIGIBLE for, scarcest area first and most-specialised staff first, so a gap in one area cannot be masked by spare capacity that is not qualified for it. The Patient contact area is open to everyone in the group. Internally demand and gaps are per group × category (see Detail); the headline table consolidates to one row per resource type.'],
    ['3c. Productivity ramp','A new hire is 0% productive for the first 2 weeks, then ramps linearly to the role\'s full productivity by its lead-to-useful (in weeks). Averaged into each month. Cost is paid in full from the hire month regardless. A planned hire with an explicit Ready month counts 0 before it and full capacity from it.'],
@@ -1428,6 +1428,18 @@ function importConfig(file){ const rd=new FileReader(); rd.onload=e=>{ try{ cons
       let droppedMsg=0;
       (cfg.services||[]).forEach(sv=>{ const before=(sv.tasks||[]).length; sv.tasks=(sv.tasks||[]).filter(t=>!/messag/i.test(String(t.name||''))); droppedMsg+=before-sv.tasks.length; });
       if(droppedMsg) migrated.push('removed '+droppedMsg+' legacy Messaging task(s) — calls & messages are now modelled from total orders via the contact model');
+      // contact model: convert legacy per-day throughputs to minutes per contact (exact equivalents at the
+      // config's stored working-days value, so imported numbers don't shift)
+      const cmOld=cfg.contactModel||{}; const wdOld=Math.max(1,num(cmOld.workingDaysPerMonth)||21);
+      let convertedH=0;
+      (cmOld.handlers||[]).forEach(h=>{
+        if(h.callMinutes==null && h.callsPerDay!=null){ const role=(cfg.roles||[]).find(r=>r.id===h.roleId);
+          const hpd=(role? num(role.contractedHours):152)/wdOld || 7.24;
+          h.callMinutes=Math.round(hpd/Math.max(1e-6,num(h.callsPerDay))*600)/10;
+          h.messageMinutes=Math.round(hpd/Math.max(1e-6,num(h.messagesPerDay))*600)/10;
+          delete h.callsPerDay; delete h.messagesPerDay; convertedH++; } });
+      if(cmOld.workingDaysPerMonth!=null){ delete cmOld.workingDaysPerMonth; }
+      if(convertedH) migrated.push('converted '+convertedH+' contact handler(s) from per-day throughput to minutes per contact (working-days assumption removed; equivalents computed at your stored value)');
       // make sure the Patient Support mapping rule (job code FCL) exists in older rule sets
       const hasFcl=(cfg.jobRules||[]).some(ru=>(ru.jobCodes||[]).some(j=>String(j).trim().toLowerCase()==='fcl'));
       if(!hasFcl && (cfg.roles||[]).some(r=>r.id==='patient_support')){
@@ -1461,7 +1473,7 @@ function wire(){
   $('#btnAddRoleAttr').onclick=()=>{ const k=prompt('New role attribute key:'); if(!k) return; const label=prompt('Column label:',k)||k; STATE.config.roleAttrs.push({key:k,label:label,type:'text'}); renderRoles(); };
   $('#btnAddService').onclick=()=>{ STATE.config.services.push({id:uid('svc'),name:'New service',category:'',clinicianType:'',tasks:[{name:'Review',group:STATE.config.groups[0]||'',timeSec:120,incidencePct:100}]}); SVC_FILTER=''; $('#svcFilter').value=''; renderServices(); softRerun(); };
   $('#svcFilter').oninput=e=>{ SVC_FILTER=e.target.value||''; renderServices(); };
-  $('#btnAddContactRole').onclick=()=>{ const cm=STATE.config.contactModel=STATE.config.contactModel||{callsPerOrder:0,messagesPerOrder:0,workingDaysPerMonth:21,handlers:[]}; cm.handlers.push({roleId:(STATE.config.roles[0]||{}).id,callsPerDay:40,messagesPerDay:80,callSharePct:0,msgSharePct:0}); renderContactModel(); softRerun(); };
+  $('#btnAddContactRole').onclick=()=>{ const cm=STATE.config.contactModel=STATE.config.contactModel||{callsPerOrder:0,messagesPerOrder:0,handlers:[]}; cm.handlers.push({roleId:(STATE.config.roles[0]||{}).id,callMinutes:10,messageMinutes:5,callSharePct:0,msgSharePct:0}); renderContactModel(); softRerun(); };
   $('#peopleFilter').oninput=e=>{ PEOPLE_FILTER=e.target.value||''; renderPeopleMap(); };
   $('#btnAddJobRule').onclick=()=>{ (STATE.config.jobRules=STATE.config.jobRules||[]).push({label:'New rule',staffNumbers:[],jobCodes:[],location:'',role:'__ignore__'}); renderPeopleMap(); };
   $('#btnApplyRules').onclick=()=>{ reapplyRules(); renderPeopleMap(); softRerun(); updateExportGate(); };
