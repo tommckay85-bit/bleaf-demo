@@ -30,19 +30,20 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 
 /* ---------- top bar ---------- */
 .topbar{background:linear-gradient(135deg,#101722 0%,#16202e 55%,#1c3a5e 100%);border-bottom:3px solid var(--gold);padding:16px 18px;display:flex;flex-direction:column;align-items:center;position:relative}
-.brandrow{display:flex;align-items:center;justify-content:center;gap:16px}
-.brandrow .logo-slot svg{width:64px;height:64px;display:block}
-.topbar h1{font-size:42px;font-weight:700;letter-spacing:.08em;line-height:1;text-align:center}
+.brandrow{display:flex;flex-direction:column;align-items:center;gap:7px}
+.brandrow .logo-slot svg{width:54px;height:54px;display:block}
+.topbar h1{font-size:38px;font-weight:700;letter-spacing:.1em;line-height:1;text-align:center}
 .topbar h1 small{display:block;font-family:"Inter";font-size:11px;font-weight:600;letter-spacing:.22em;color:var(--gold);text-transform:uppercase;margin-top:5px}
 .userbox{position:absolute;right:16px;top:16px;display:flex;align-items:center;gap:10px}
 .whoami{text-align:right;font-size:13px;color:var(--ink-dim)}
 .whoami b{color:var(--ink);display:block;font-size:14px}
 @media(max-width:760px){
-  .userbox{position:static;margin-top:10px;justify-content:center}
+  .userbox{position:static;margin-top:8px;justify-content:center}
   .whoami{text-align:center}
-  .brandrow .logo-slot svg{width:48px;height:48px}
-  .topbar h1{font-size:30px}
-  .topbar h1 small{font-size:9px;letter-spacing:.16em}
+  .brandrow{gap:5px}
+  .brandrow .logo-slot svg{width:42px;height:42px}
+  .topbar h1{font-size:27px}
+  .topbar h1 small{font-size:9px;letter-spacing:.16em;margin-top:3px}
 }
 .btn{border:1px solid var(--line);background:var(--panel2);color:var(--ink);padding:8px 14px;border-radius:7px;font-weight:600;font-size:13px}
 .btn:hover{border-color:var(--steel)}
