@@ -6,8 +6,10 @@ league with your mates. No app to install — it runs in the browser from GitHub
 ## What it does
 
 - **Weekly predictions** — every player predicts the score of each Premier League fixture
-  in the gameweek. Picks lock automatically at each match's kickoff, and other people's
-  picks stay hidden until then.
+  in the gameweek. The whole gameweek locks at the kickoff of its first match: no late
+  entries and no edits after that (miss the deadline and you score 0 that week). Before
+  the deadline everyone can see *who* has predicted, but not the scores; all picks are
+  revealed once the first match kicks off.
 - **Scoring** — correct result = **6 pts**, exact scoreline = **10 pts** (both configurable
   in the Admin tab; changes never affect weeks already finalised).
 - **Automatic fixtures & results** — a GitHub Action pulls fixtures and full-time scores
@@ -152,10 +154,11 @@ always beats the feed, and you can finalise a week even with a game outstanding 
 - Player **names** are visible to anyone who has the page URL (they're needed for the
   login list). Predictions, tables and codes need a valid login. Don't post the URL
   publicly and it's a non-issue for a friends league.
-- Kickoff lock is enforced in the app (the page disables and ignores late edits). A
-  determined cheat with dev-tools knowledge could try a late write; the winner's picks are
-  visible to everyone after kickoff, so late changes are easy to spot. For a mates'
-  league this is plenty; true server-side lock enforcement would need a paid backend.
+- The deadline lock (first kickoff of the gameweek) is enforced in the app (the page
+  disables and ignores late edits). A determined cheat with dev-tools knowledge could try
+  a late write; everyone's picks are visible from the deadline, so late changes are easy
+  to spot. For a mates' league this is plenty; true server-side lock enforcement would
+  need a paid backend.
 - The FPL feed marks scores final within a couple of hours of the final whistle. The
   "sample fixtures" banner disappears once the workflow has run for real.
 - Firebase free tier limits (50k reads/20k writes a day) are far beyond what 15 players

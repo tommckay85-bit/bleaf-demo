@@ -394,7 +394,16 @@ function currentGw(){
 }
 function teamName(id){ return FEED?.teams?.[id]?.name || ("Team "+id); }
 function teamShort(id){ return FEED?.teams?.[id]?.short || ("T"+id); }
-function kickedOff(f){ return f.kickoff && new Date(f.kickoff) <= new Date(); }
+// The whole gameweek locks at the kickoff of its FIRST match: no new
+// predictions and no edits after that, and only then are picks revealed.
+function gwDeadline(gw){
+  const ks = gwFixtures(gw).map(f=>f.kickoff).filter(Boolean).sort();
+  return ks.length ? new Date(ks[0]) : null;
+}
+function gwLocked(gw){
+  const d = gwDeadline(gw);
+  return d ? new Date() >= d : false;
+}
 function fixtureResult(gw, f){
   const ov = GAMEWEEKS["gw"+gw]?.overrides?.[f.id];
   if (ov && ov.h !== null && ov.h !== undefined) return { h:+ov.h, a:+ov.a, override:true };
@@ -508,42 +517,69 @@ function renderPredict(){
   const gw = viewGw, fx = gwFixtures(gw);
   const mine = (PREDS[gw]||{})[MYPID]?.picks || {};
   const out = isOut(gw, MYPID);
+  const locked = gwLocked(gw), deadline = gwDeadline(gw);
+  const myCount = Object.keys(mine).length;
   let html = gwNavHtml("view", gw);
   if (out) html += `<div class="banner warn">You're marked <b>out</b> for this gameweek (not in the pot), so your predictions won't count. Speak to the admin if that's wrong.</div>`;
+  else if (locked && !myCount) html += `<div class="banner err">🔒 The deadline has passed and you didn't get your predictions in — you've missed out this week.</div>`;
+  else if (locked) html += `<div class="banner info">🔒 Predictions are locked — the first match has kicked off. Everyone's picks are now visible on the This Week tab.</div>`;
+  else if (deadline) html += `<div class="banner ok">⏱ Deadline: <b>${fmtKo(deadline.toISOString())}</b> (first kickoff of the gameweek). All predictions lock then — no late entries, no edits.</div>`;
   html += `<div class="panel"><h2>Your predictions <span class="tag">${CONFIG.result} pts result · ${CONFIG.exact} pts exact score</span></h2>`;
   if (!fx.length) html += `<p class="muted">No fixtures in this gameweek.</p>`;
   for (const f of fx){
-    const locked = kickedOff(f) || out;
     const pk = mine[f.id] || {};
     const res = fixtureResult(gw, f);
     html += `<div class="fixture">
       <div class="team home"><span>${esc(teamName(f.h))}</span><span class="badge">${esc(teamShort(f.h))}</span></div>
       <div class="mid">
         <div class="scorebox">
-          <input type="number" min="0" max="15" id="pk-${f.id}-h" value="${pk.h ?? ""}" ${locked?"disabled":""}>
+          <input type="number" min="0" max="15" id="pk-${f.id}-h" value="${pk.h ?? ""}" ${locked||out?"disabled":""}>
           <span class="dash">–</span>
-          <input type="number" min="0" max="15" id="pk-${f.id}-a" value="${pk.a ?? ""}" ${locked?"disabled":""}>
+          <input type="number" min="0" max="15" id="pk-${f.id}-a" value="${pk.a ?? ""}" ${locked||out?"disabled":""}>
         </div>
-        <span class="ko">${fmtKo(f.kickoff)}${res?` · FT ${res.h}–${res.a}`:""}${locked&&!out?' · <span class="lock">🔒 locked</span>':""}</span>
+        <span class="ko">${fmtKo(f.kickoff)}${res?` · FT ${res.h}–${res.a}`:""}</span>
       </div>
       <div class="team"><span class="badge">${esc(teamShort(f.a))}</span><span>${esc(teamName(f.a))}</span></div>
     </div>`;
   }
-  if (fx.length && !out){
+  if (fx.length && !out && !locked){
     html += `<div class="savebar"><span id="save-msg" class="faint"></span><button class="btn btn-gold" onclick="savePicks(${gw})">Save predictions</button></div>`;
   }
   html += `</div>`;
+  html += whoPredictedHtml(gw);
   el.innerHTML = html;
 }
 
+// Names-only status board: shows WHO has predicted (and how many games),
+// never the scores themselves — those stay hidden until the deadline.
+function whoPredictedHtml(gw){
+  const fx = gwFixtures(gw), preds = PREDS[gw] || {};
+  if (!fx.length) return "";
+  const chips = Object.entries(PLAYERS)
+    .filter(([pid,p]) => p.active !== false && !isOut(gw, pid))
+    .sort((a,b)=>a[1].name.localeCompare(b[1].name))
+    .map(([pid,p]) => {
+      const n = Object.keys(preds[pid]?.picks || {}).length;
+      const cls = n >= fx.length ? "pts-result" : n > 0 ? "pts-exact" : "pts-none";
+      const label = n >= fx.length ? "✓ in" : n > 0 ? `${n}/${fx.length}` : "—";
+      return `<span class="ptsbadge ${cls}">${esc(p.name.split(" ")[0])} ${label}</span>`;
+    });
+  return `<div class="panel"><h2>Who's predicted so far</h2>
+    <div style="display:flex;flex-wrap:wrap;gap:6px">${chips.join("")}</div>
+    <p class="faint" style="margin-top:8px">Green = all games in, gold = partly done, grey = nothing yet. Actual scores stay hidden until the first match kicks off.</p></div>`;
+}
+
 async function savePicks(gw){
+  if (gwLocked(gw)){
+    const m = $("save-msg"); if (m){ m.textContent = "Deadline passed — predictions are locked."; m.style.color = "var(--red)"; }
+    renderAll();
+    return;
+  }
   const fx = gwFixtures(gw);
-  const existing = (PREDS[gw]||{})[MYPID]?.picks || {};
-  const picks = { ...existing };
+  const picks = {};
   for (const f of fx){
-    if (kickedOff(f)) continue; // never change a locked pick
     const h = $("pk-"+f.id+"-h").value, a = $("pk-"+f.id+"-a").value;
-    if (h === "" || a === ""){ delete picks[f.id]; continue; }
+    if (h === "" || a === "") continue;
     picks[f.id] = { h: Math.max(0,Math.min(15,+h)), a: Math.max(0,Math.min(15,+a)) };
   }
   try {
@@ -587,16 +623,17 @@ function renderWeek(){
   if (!table.length) html += `<tr><td colspan="6" class="muted">No players in this week.</td></tr>`;
   html += `</table></div></div>`;
 
-  html += `<div class="panel"><h2>Fixtures &amp; picks</h2><p class="faint" style="margin-bottom:8px">Other players' predictions are revealed once a match kicks off.</p>`;
+  html += `<div class="panel"><h2>Fixtures &amp; picks</h2><p class="faint" style="margin-bottom:8px">Everyone's predictions are revealed once the first match of the gameweek kicks off.</p>`;
   const preds = PREDS[gw] || {};
+  const revealed = gwLocked(gw);
   for (const f of fx){
-    const res = fixtureResult(gw, f), ko = kickedOff(f);
+    const res = fixtureResult(gw, f);
     html += `<div class="fixture">
       <div class="team home"><span>${esc(teamName(f.h))}</span><span class="badge">${esc(teamShort(f.h))}</span></div>
       <div class="mid">${res?`<span class="final">${res.h}–${res.a}</span>${res.override?'<span class="faint">admin entry</span>':""}`:`<span class="ko">${fmtKo(f.kickoff)}</span>`}</div>
       <div class="team"><span class="badge">${esc(teamShort(f.a))}</span><span>${esc(teamName(f.a))}</span></div>
     </div>`;
-    if (ko){
+    if (revealed){
       html += `<div style="padding:0 8px 12px;display:flex;flex-wrap:wrap;gap:6px;border-bottom:1px solid var(--line)">`;
       for (const [pid,p] of Object.entries(PLAYERS)){
         if (p.active === false || isOut(gw,pid)) continue;
