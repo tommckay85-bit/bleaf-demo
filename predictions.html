@@ -29,13 +29,21 @@ input[type=number]{width:58px;text-align:center;font-weight:700;font-size:17px;-
 input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none}
 
 /* ---------- top bar ---------- */
-.topbar{background:linear-gradient(135deg,#101722 0%,#16202e 55%,#1c3a5e 100%);border-bottom:3px solid var(--gold);padding:14px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-.topbar .crest{width:40px;height:40px;border-radius:8px;background:var(--navy);display:flex;align-items:center;justify-content:center;font-size:22px;border:1px solid var(--steel-dim)}
-.topbar h1{font-size:22px;font-weight:700}
-.topbar h1 small{display:block;font-family:"Inter";font-size:11px;font-weight:500;letter-spacing:.14em;color:var(--gold);text-transform:uppercase}
-.topbar .spacer{flex:1}
+.topbar{background:linear-gradient(135deg,#101722 0%,#16202e 55%,#1c3a5e 100%);border-bottom:3px solid var(--gold);padding:16px 18px;display:flex;flex-direction:column;align-items:center;position:relative}
+.brandrow{display:flex;align-items:center;justify-content:center;gap:16px}
+.brandrow .logo-slot svg{width:64px;height:64px;display:block}
+.topbar h1{font-size:42px;font-weight:700;letter-spacing:.08em;line-height:1;text-align:center}
+.topbar h1 small{display:block;font-family:"Inter";font-size:11px;font-weight:600;letter-spacing:.22em;color:var(--gold);text-transform:uppercase;margin-top:5px}
+.userbox{position:absolute;right:16px;top:16px;display:flex;align-items:center;gap:10px}
 .whoami{text-align:right;font-size:13px;color:var(--ink-dim)}
 .whoami b{color:var(--ink);display:block;font-size:14px}
+@media(max-width:760px){
+  .userbox{position:static;margin-top:10px;justify-content:center}
+  .whoami{text-align:center}
+  .brandrow .logo-slot svg{width:48px;height:48px}
+  .topbar h1{font-size:30px}
+  .topbar h1 small{font-size:9px;letter-spacing:.16em}
+}
 .btn{border:1px solid var(--line);background:var(--panel2);color:var(--ink);padding:8px 14px;border-radius:7px;font-weight:600;font-size:13px}
 .btn:hover{border-color:var(--steel)}
 .btn-primary{background:var(--steel);border-color:var(--steel);color:#0b1016}
@@ -175,10 +183,7 @@ tr.pos2 td{background:linear-gradient(90deg,rgba(154,167,181,.10),transparent 70
   .wrap{padding:14px 10px 50px}
   .panel{padding:14px 12px}
   .panel h2{font-size:15px}
-  .topbar{padding:10px 12px;gap:10px}
-  .topbar .crest{width:34px;height:34px;font-size:18px}
-  .topbar h1{font-size:18px}
-  .topbar h1 small{font-size:9.5px}
+  .topbar{padding:12px 10px}
   .whoami{font-size:11.5px}
   .tabs{padding:0 6px}
   .tabs button{padding:11px 11px;font-size:12.5px}
@@ -204,8 +209,10 @@ tr.pos2 td{background:linear-gradient(90deg,rgba(154,167,181,.10),transparent 70
 /* ---------- auth screens ---------- */
 .authwrap{max-width:460px;margin:7vh auto;padding:0 16px}
 .authcard{background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--gold);border-radius:var(--radius);padding:28px}
-.authcard h1{font-size:26px;margin-bottom:2px}
-.authcard .sub{color:var(--gold);font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;margin-bottom:20px}
+.authcard h1{font-size:36px;margin-bottom:2px;text-align:center;letter-spacing:.08em}
+.authcard .sub{color:var(--gold);font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-weight:600;margin-bottom:20px;text-align:center}
+.authlogo{display:flex;justify-content:center;margin-bottom:10px}
+.authlogo svg{width:84px;height:84px}
 .field{margin-bottom:14px}
 .field label{display:block;font-size:12px;font-weight:600;color:var(--ink-dim);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em}
 .field input,.field select{width:100%}
@@ -232,6 +239,7 @@ code{background:var(--bg2);border:1px solid var(--line);border-radius:4px;paddin
 <!-- ======================= SETUP (no firebase config) ======================= -->
 <div id="view-setup" class="authwrap hidden">
   <div class="authcard">
+    <div class="logo-slot authlogo"></div>
     <h1>LEFUCK</h1>
     <div class="sub">Setup required</div>
     <p class="muted" style="margin-bottom:12px">This app needs a (free) Firebase project to store predictions. Open <code>predictions.html</code>, find the <code>FIREBASE_CONFIG</code> block near the top of the script, and paste in your project's config. Full step-by-step instructions are in <code>predictions-README.md</code> in this repository.</p>
@@ -262,6 +270,7 @@ code{background:var(--bg2);border:1px solid var(--line);border-radius:4px;paddin
 <!-- ======================= LOGIN ======================= -->
 <div id="view-auth" class="authwrap hidden">
   <div class="authcard">
+    <div class="logo-slot authlogo"></div>
     <h1>LEFUCK</h1>
     <div class="sub">Premier League · predict &amp; win</div>
     <div id="auth-err" class="banner err hidden"></div>
@@ -275,11 +284,11 @@ code{background:var(--bg2);border:1px solid var(--line);border-radius:4px;paddin
 <!-- ======================= MAIN APP ======================= -->
 <div id="view-app" class="hidden">
   <div class="topbar">
-    <div class="crest">⚽</div>
-    <h1>LEFUCK<small>Premier League · Weekly scores</small></h1>
-    <div class="spacer"></div>
-    <div class="whoami"><b id="who-name"></b><span id="who-role"></span></div>
-    <button class="btn btn-sm" onclick="AUTH.signOut()">Sign out</button>
+    <div class="brandrow"><span class="logo-slot"></span><h1>LEFUCK<small>Premier League · Weekly scores</small></h1></div>
+    <div class="userbox">
+      <div class="whoami"><b id="who-name"></b><span id="who-role"></span></div>
+      <button class="btn btn-sm" onclick="AUTH.signOut()">Sign out</button>
+    </div>
   </div>
   <div class="tabs" id="tabs">
     <button data-tab="predict" class="on" onclick="setTab('predict')">Predictions</button>
@@ -340,6 +349,36 @@ const DEFAULT_STAKE = 5; // £ per player per week
    Resetting a code simply issues a fresh hidden account.
    ========================================================================== */
 const LOGIN_DOMAIN = "predleague.app";
+
+/* LEFUCK badge: poker chip (the betting) + football + three mates on top */
+const LOGO_SVG = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LEFUCK logo">
+  <circle cx="50" cy="52" r="46" fill="#152a45" stroke="#e8a33d" stroke-width="4"/>
+  <circle cx="50" cy="52" r="40" fill="none" stroke="#e8a33d" stroke-width="5"
+          stroke-dasharray="7.9 23.5" stroke-dashoffset="4" opacity=".9"/>
+  <text x="13" y="60" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#e8a33d">£</text>
+  <text x="79" y="60" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#e8a33d">£</text>
+  <g>
+    <circle cx="31" cy="30" r="6.5" fill="#4b8fd4"/><path d="M21 47 a10 8 0 0 1 20 0 z" fill="#4b8fd4"/>
+    <circle cx="50" cy="24" r="7" fill="#e8a33d"/><path d="M39 42 a11 9 0 0 1 22 0 z" fill="#e8a33d"/>
+    <circle cx="69" cy="30" r="6.5" fill="#3fae6a"/><path d="M59 47 a10 8 0 0 1 20 0 z" fill="#3fae6a"/>
+  </g>
+  <circle cx="50" cy="63" r="23" fill="#edf1f5" stroke="#0d1218" stroke-width="2.5"/>
+  <polygon points="50,53 59,59.5 55.5,70.5 44.5,70.5 41,59.5" fill="#0d1218"/>
+  <g stroke="#0d1218" stroke-width="2.5" stroke-linecap="round">
+    <line x1="50" y1="53" x2="50" y2="42"/>
+    <line x1="59" y1="59.5" x2="69.5" y2="54.5"/>
+    <line x1="55.5" y1="70.5" x2="61" y2="80.5"/>
+    <line x1="44.5" y1="70.5" x2="39" y2="80.5"/>
+    <line x1="41" y1="59.5" x2="30.5" y2="54.5"/>
+  </g>
+</svg>`;
+document.querySelectorAll(".logo-slot").forEach(el => el.innerHTML = LOGO_SVG);
+(() => {
+  const link = document.createElement("link");
+  link.rel = "icon"; link.type = "image/svg+xml";
+  link.href = "data:image/svg+xml," + encodeURIComponent(LOGO_SVG);
+  document.head.appendChild(link);
+})();
 
 let AUTH, DB, MYPID = null, ME = null;
 let CONFIG = { ...DEFAULT_POINTS, stake: DEFAULT_STAKE }; // {result, exact, stake}
