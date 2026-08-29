@@ -4,7 +4,7 @@
 <meta charset="utf-8"/>
 <meta name="robots" content="noindex, nofollow"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>The Prediction League</title>
+<title>LEFUCK</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -227,7 +227,7 @@ code{background:var(--bg2);border:1px solid var(--line);border-radius:4px;paddin
 <!-- ======================= SETUP (no firebase config) ======================= -->
 <div id="view-setup" class="authwrap hidden">
   <div class="authcard">
-    <h1>Prediction League</h1>
+    <h1>LEFUCK</h1>
     <div class="sub">Setup required</div>
     <p class="muted" style="margin-bottom:12px">This app needs a (free) Firebase project to store predictions. Open <code>predictions.html</code>, find the <code>FIREBASE_CONFIG</code> block near the top of the script, and paste in your project's config. Full step-by-step instructions are in <code>predictions-README.md</code> in this repository.</p>
     <p class="faint">Once the config is in place this screen disappears and the login page takes over.</p>
@@ -257,7 +257,7 @@ code{background:var(--bg2);border:1px solid var(--line);border-radius:4px;paddin
 <!-- ======================= LOGIN ======================= -->
 <div id="view-auth" class="authwrap hidden">
   <div class="authcard">
-    <h1>Prediction League</h1>
+    <h1>LEFUCK</h1>
     <div class="sub">Premier League · predict &amp; win</div>
     <div id="auth-err" class="banner err hidden"></div>
     <div class="field"><label>Who are you?</label><select id="li-player"><option value="">Loading players…</option></select></div>
@@ -271,7 +271,7 @@ code{background:var(--bg2);border:1px solid var(--line);border-radius:4px;paddin
 <div id="view-app" class="hidden">
   <div class="topbar">
     <div class="crest">⚽</div>
-    <h1>Prediction League<small>Premier League · Weekly scores</small></h1>
+    <h1>LEFUCK<small>Premier League · Weekly scores</small></h1>
     <div class="spacer"></div>
     <div class="whoami"><b id="who-name"></b><span id="who-role"></span></div>
     <button class="btn btn-sm" onclick="AUTH.signOut()">Sign out</button>
@@ -1169,7 +1169,7 @@ async function resetCode(pid){
 }
 function copyCode(pid, name){
   const code = CODES[pid]; if (!code) return;
-  const msg = `⚽ Prediction League — you're in, ${name}!\n${location.origin}${location.pathname}\nPick your name and enter your code: ${fmtCode(code)}`;
+  const msg = `⚽ LEFUCK — you're in, ${name}!\n${location.origin}${location.pathname}\nPick your name and enter your code: ${fmtCode(code)}`;
   navigator.clipboard.writeText(msg).then(()=>adminMsg(`Invite message for <b>${esc(name)}</b> copied — paste it into WhatsApp.`));
 }
 async function saveGwStake(gw){
