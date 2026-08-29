@@ -85,7 +85,7 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 .fixture .final{font-family:"Oswald";font-size:20px;font-weight:700;letter-spacing:.1em;background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:2px 14px}
 .fixture .ptsbadge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px}
 .ptsbadge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px}
-.pts-exact{background:var(--gold);color:#161006}
+.pts-exact{background:linear-gradient(160deg,#ffe589 0%,#ffd24a 45%,#e8a825 100%);color:#241703;font-weight:800;box-shadow:0 0 9px rgba(255,213,74,.45);border:1px solid #ffe589}
 .pts-result{background:var(--green);color:#07130c}
 .pts-none{background:var(--panel2);color:var(--ink-faint)}
 .lock{font-size:11px;color:var(--ink-faint)}
@@ -150,12 +150,17 @@ tr.pos2 td{background:linear-gradient(90deg,rgba(154,167,181,.10),transparent 70
 
 /* team names: full on desktop, short code on mobile */
 .tn-s{display:none}
-.res-exact{color:var(--gold);font-weight:700}
+.res-exact{color:#ffd75e;font-weight:800;text-shadow:0 0 6px rgba(255,215,94,.5)}
 .res-ok{color:var(--green);font-weight:700}
 .res-bad{color:var(--red);font-weight:700}
 .pts-wrong{background:var(--red);color:#1d0805}
 .totrow td{border-top:2px solid var(--line);font-weight:700}
 .predgrid .totrow td{border-bottom:none}
+/* finished games are shaded darker than games still to play */
+.predgrid tr.done td{background:var(--bg)}
+.predgrid tr.done td.colme{background:var(--bg);border-right-color:var(--gold-dim)}
+.predgrid tr.done .tcode{color:var(--steel-dim)}
+.fixture.done{background:var(--bg);border-radius:8px}
 
 /* ---------- roast modal ---------- */
 .roast-overlay{position:fixed;inset:0;background:rgba(6,9,13,.82);backdrop-filter:blur(3px);z-index:50;display:flex;align-items:center;justify-content:center;padding:20px}
@@ -755,7 +760,7 @@ function renderPredict(){
         else if (Math.sign(pk.h - pk.a) === Math.sign(res.h - res.a)) marker = ` · <span class="res-ok">✓ +${ptsCfg.result}</span>`;
         else marker = ` · <span class="res-bad">✗ +0</span>`;
       }
-      html += `<tr>
+      html += `<tr class="${res?"done":""}">
         <td class="colme" title="${esc(teamName(f.h))} v ${esc(teamName(f.a))}">
           <div class="myrow">
             <span class="tcode">${esc(teamShort(f.h))}</span>
@@ -771,7 +776,7 @@ function renderPredict(){
         if (revealed){
           let cls = "pts-none", txt = opk ? `${opk.h}–${opk.a}` : "—";
           if (opk && res){
-            if (+opk.h===res.h && +opk.a===res.a) cls = "pts-exact";
+            if (+opk.h===res.h && +opk.a===res.a){ cls = "pts-exact"; txt = "★ " + txt; }
             else if (Math.sign(opk.h-opk.a)===Math.sign(res.h-res.a)) cls = "pts-result";
             else cls = "pts-wrong";
           }
@@ -887,7 +892,7 @@ function renderWeek(){
   const revealed = gwLocked(gw);
   for (const f of fx){
     const res = fixtureResult(gw, f);
-    html += `<div class="fixture">
+    html += `<div class="fixture ${res?"done":""}">
       <div class="team home"><span><span class="tn-l">${esc(teamName(f.h))}</span><span class="tn-s">${esc(teamShort(f.h))}</span></span><span class="badge">${esc(teamShort(f.h))}</span></div>
       <div class="mid">${res?`<span class="final">${res.h}–${res.a}</span>${res.override?'<span class="faint">admin entry</span>':""}`:`<span class="ko">${fmtKo(f.kickoff)}</span>`}</div>
       <div class="team"><span class="badge">${esc(teamShort(f.a))}</span><span><span class="tn-l">${esc(teamName(f.a))}</span><span class="tn-s">${esc(teamShort(f.a))}</span></span></div>
@@ -899,7 +904,7 @@ function renderWeek(){
         const pk = preds[pid]?.picks?.[f.id];
         let cls = "pts-none", txt = pk ? `${pk.h}–${pk.a}` : "—";
         if (pk && res){
-          if (+pk.h===res.h && +pk.a===res.a) cls = "pts-exact";
+          if (+pk.h===res.h && +pk.a===res.a){ cls = "pts-exact"; txt = "★ " + txt; }
           else if (Math.sign(pk.h-pk.a)===Math.sign(res.h-res.a)) cls = "pts-result";
           else cls = "pts-wrong";
         }
