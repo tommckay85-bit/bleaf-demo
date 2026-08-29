@@ -148,6 +148,54 @@ tr.pos2 td{background:linear-gradient(90deg,rgba(154,167,181,.10),transparent 70
 .podium .pts{font-size:13px;color:var(--ink-dim)}
 @media(max-width:640px){.podium{grid-template-columns:1fr}.fixture .mid{min-width:110px}}
 
+/* team names: full on desktop, short code on mobile */
+.tn-s{display:none}
+.res-exact{color:var(--gold);font-weight:700}
+.res-ok{color:var(--green);font-weight:700}
+.res-bad{color:var(--red);font-weight:700}
+.pts-wrong{background:var(--red);color:#1d0805}
+.totrow td{border-top:2px solid var(--line);font-weight:700}
+.predgrid .totrow td{border-bottom:none}
+
+/* ---------- roast modal ---------- */
+.roast-overlay{position:fixed;inset:0;background:rgba(6,9,13,.82);backdrop-filter:blur(3px);z-index:50;display:flex;align-items:center;justify-content:center;padding:20px}
+.roast-card{background:var(--panel);border:2px solid var(--gold);border-radius:14px;padding:28px 24px;max-width:420px;text-align:center;box-shadow:0 18px 60px rgba(0,0,0,.6)}
+.roast-card .roast-spoon{font-size:52px;margin-bottom:6px}
+.roast-card .lbl{font-family:"Oswald";font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+.roast-card .name{font-family:"Oswald";font-size:32px;font-weight:700;margin:6px 0 10px}
+.roast-card p{color:var(--ink-dim);font-size:15px;margin-bottom:18px}
+
+/* ---------- global mobile pass ---------- */
+@media(max-width:640px){
+  .wrap{padding:14px 10px 50px}
+  .panel{padding:14px 12px}
+  .panel h2{font-size:15px}
+  .topbar{padding:10px 12px;gap:10px}
+  .topbar .crest{width:34px;height:34px;font-size:18px}
+  .topbar h1{font-size:18px}
+  .topbar h1 small{font-size:9.5px}
+  .whoami{font-size:11.5px}
+  .tabs{padding:0 6px}
+  .tabs button{padding:11px 11px;font-size:12.5px}
+  .banner{padding:9px 11px;font-size:12.5px}
+  th,td{padding:7px 6px;font-size:12.5px}
+  .gwnav .gwlabel{font-size:16px;min-width:140px}
+  .gwnav button{width:34px;height:34px}
+  .fixture{gap:6px;padding:10px 2px}
+  .fixture .team{font-size:12.5px;gap:5px}
+  .fixture .badge{width:26px;height:26px;font-size:9.5px}
+  .fixture .final{font-size:17px;padding:2px 10px}
+  .fixture .mid{min-width:88px}
+  .tn-l{display:none}
+  .tn-s{display:inline}
+  .podium .name{font-size:20px}
+  .statgrid{gap:7px}
+  .stat{padding:9px}
+  .stat .v{font-size:19px}
+  .savebar{padding:10px;margin:0 -12px -14px}
+  .btn{padding:7px 11px;font-size:12.5px}
+}
+
 /* ---------- auth screens ---------- */
 .authwrap{max-width:460px;margin:7vh auto;padding:0 16px}
 .authcard{background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--gold);border-radius:var(--radius);padding:28px}
@@ -240,6 +288,17 @@ code{background:var(--bg2);border:1px solid var(--line);border-radius:4px;paddin
     <div id="tab-week" class="hidden"></div>
     <div id="tab-board" class="hidden"></div>
     <div id="tab-admin" class="hidden"></div>
+  </div>
+</div>
+
+<!-- loser-of-the-week roast -->
+<div id="roast-overlay" class="roast-overlay hidden" onclick="this.classList.add('hidden')">
+  <div class="roast-card" onclick="event.stopPropagation()">
+    <div class="roast-spoon">🥄</div>
+    <div id="roast-title" class="lbl">Loser of the week</div>
+    <div id="roast-name" class="name"></div>
+    <p id="roast-msg"></p>
+    <button class="btn btn-gold" onclick="document.getElementById('roast-overlay').classList.add('hidden')">😂 Seen</button>
   </div>
 </div>
 
@@ -560,6 +619,48 @@ function moneyAgg(){
   return rows;
 }
 
+/* ---------- loser roast ---------- */
+// Requested by the league: foul-mouthed banter for last place. All in good fun.
+const ROASTS = [
+  "{name} — {pts} points. My nan predicts better and she's been dead since 2019. Sort your shit out.",
+  "Dead last: {name}. An absolute masterclass in getting everything wrong. Take a bow, you muppet.",
+  "{name} propping up the table with {pts} points. Piss-poor. Genuinely embarrassing.",
+  "Oi {name} — a coin toss would've beaten you this week. A COIN. You donkey.",
+  "{name} finished bottom. The lads thank you for the donation, you beautiful idiot.",
+  "Wooden spoon for {name}: {pts} points of pure, uncut garbage.",
+  "Someone check on {name} — {pts} points. Were you watching the games with your eyes shut, mate?",
+  "{name}, that was shite. Historically shite. Frame it and hang it in the downstairs bog.",
+  "Bad news {name}: you're this week's loser. Worse news: everyone's already screenshotted it.",
+  "{name} — bottom of the pile. Have you ever actually SEEN a football match?",
+  "A lifetime of watching footy and {name} still serves up {pts} points. Fucking hell.",
+  "{name} takes the L this week. Cheers for the cash, you glorious clown.",
+  "Breaking: local idiot {name} discovers new ways to lose money. {pts} points. Superb stuff.",
+  "{name}, {pts} points?! My dog walked across the keyboard and outscored you.",
+];
+let roastChecked = false;
+function maybeShowRoast(){
+  if (roastChecked || !ME) return;
+  const done = Object.entries(GAMEWEEKS)
+    .filter(([,g]) => g.finalized && g.table && g.table.length > 1)
+    .map(([id,g]) => ({ gw: +id.replace("gw",""), ...g }))
+    .sort((a,b)=>b.gw-a.gw);
+  if (!done.length) return;
+  roastChecked = true;
+  const g = done[0];
+  const maxRank = Math.max(...g.table.map(r=>r.rank||1));
+  if (maxRank <= 1) return; // everyone tied — nobody to roast
+  const losers = g.table.filter(r=>r.rank===maxRank);
+  const key = "roast_seen_gw" + g.gw;
+  try { if (sessionStorage.getItem(key)) return; sessionStorage.setItem(key, "1"); } catch(e){}
+  const names = losers.map(l=>l.name).join(" & ");
+  const isMe = losers.some(l=>l.pid===MYPID);
+  const msg = ROASTS[g.gw % ROASTS.length].replaceAll("{name}", names).replaceAll("{pts}", String(losers[0].pts));
+  $("roast-title").textContent = isMe ? `GW ${g.gw}: it's you. It's actually you.` : `GW ${g.gw} loser of the week`;
+  $("roast-name").textContent = names;
+  $("roast-msg").textContent = msg;
+  $("roast-overlay").classList.remove("hidden");
+}
+
 /* ---------- chrome / tabs ---------- */
 function renderChrome(){
   $("who-name").textContent = ME.name;
@@ -571,6 +672,7 @@ function renderChrome(){
   if (viewGw === null) viewGw = currentGw();
   if (adminGw === null) adminGw = viewGw;
   if (viewGw !== null && !PREDS[viewGw]) watchPreds(viewGw);
+  maybeShowRoast();
 }
 function setTab(t){
   curTab = t;
@@ -642,9 +744,17 @@ function renderPredict(){
     const revealed = gwLocked(gw); // admin unlock also re-hides picks
     html += `<div class="predgrid-wrap"><table class="predgrid">
       <tr><th class="colme">You</th>${others.map(([,p])=>`<th>${esc(p.name.split(" ")[0])}</th>`).join("")}</tr>`;
+    const ptsCfg = GAMEWEEKS["gw"+gw]?.finalized ? (GAMEWEEKS["gw"+gw].pointsUsed || CONFIG) : CONFIG;
     for (const f of fx){
       const pk = mine[f.id] || {};
       const res = fixtureResult(gw, f);
+      let marker = "";
+      if (res){
+        if (pk.h === undefined || pk.h === null) marker = ` · <span class="res-bad">✗ no pick</span>`;
+        else if (+pk.h === res.h && +pk.a === res.a) marker = ` · <span class="res-exact">★ +${ptsCfg.exact}</span>`;
+        else if (Math.sign(pk.h - pk.a) === Math.sign(res.h - res.a)) marker = ` · <span class="res-ok">✓ +${ptsCfg.result}</span>`;
+        else marker = ` · <span class="res-bad">✗ +0</span>`;
+      }
       html += `<tr>
         <td class="colme" title="${esc(teamName(f.h))} v ${esc(teamName(f.a))}">
           <div class="myrow">
@@ -654,7 +764,7 @@ function renderPredict(){
             <input type="number" min="0" max="15" id="pk-${f.id}-a" value="${pk.a ?? ""}" ${locked||out?"disabled":""}>
             <span class="tcode ta">${esc(teamShort(f.a))}</span>
           </div>
-          <span class="ko">${fmtKo(f.kickoff)}${res?` · FT ${res.h}–${res.a}`:""}</span>
+          <span class="ko">${res?`FT ${res.h}–${res.a}`:fmtKo(f.kickoff)}${marker}</span>
         </td>`;
       for (const [pid] of others){
         const opk = preds[pid]?.picks?.[f.id];
@@ -663,11 +773,22 @@ function renderPredict(){
           if (opk && res){
             if (+opk.h===res.h && +opk.a===res.a) cls = "pts-exact";
             else if (Math.sign(opk.h-opk.a)===Math.sign(res.h-res.a)) cls = "pts-result";
+            else cls = "pts-wrong";
           }
           html += `<td><span class="ptsbadge ${cls}">${txt}</span></td>`;
         } else {
           html += `<td>${opk ? '<span class="tick-ok">✓</span>' : '<span class="tick-no">—</span>'}</td>`;
         }
+      }
+      html += `</tr>`;
+    }
+    if (fx.some(f => fixtureResult(gw, f))){
+      const wk = scoreWeek(gw);
+      const meRow = wk.find(r=>r.pid===MYPID);
+      html += `<tr class="totrow"><td class="colme">Points so far${meRow?`: <b style="color:var(--gold)">${meRow.pts}</b>`:""}</td>`;
+      for (const [pid] of others){
+        const r = wk.find(x=>x.pid===pid);
+        html += `<td>${r && revealed ? `<b>${r.pts}</b>` : "—"}</td>`;
       }
       html += `</tr>`;
     }
@@ -742,6 +863,9 @@ function renderWeek(){
       <div class="card run"><div class="lbl">🥈 Runner-up${r.length>1?"s (tied)":""}</div><div class="name">${esc(r.map(x=>x.name).join(" & ")) || "—"}</div><div class="pts">${r[0]?r[0].pts+" pts":""}${runAmt!=null?` · stake back (${fmtMoney(runAmt)})`:""}</div></div>
     </div>
     ${gwDoc.pot!==undefined?`<div class="banner info">💰 Pot: <b>${fmtMoney(gwDoc.pot)}</b> (${(gwDoc.table||[]).length} players × ${fmtMoney(gwDoc.stakeUsed||0)})</div>`:""}`;
+    const maxRank = Math.max(...(gwDoc.table||[]).map(x=>x.rank||1));
+    const spoons = (gwDoc.table||[]).filter(x=>x.rank===maxRank && maxRank>1);
+    if (spoons.length) html += `<div class="banner err">🥄 Wooden spoon: <b>${esc(spoons.map(s=>s.name).join(" & "))}</b> — ${spoons[0].pts} pts. Shameful scenes.</div>`;
   } else {
     const anyResult = fx.some(f => fixtureResult(gw,f));
     html += `<div class="banner info">${anyResult ? "Live standings — the week hasn't been finalised by the admin yet." : "No results in yet. Standings will appear as matches finish."}</div>`;
@@ -764,9 +888,9 @@ function renderWeek(){
   for (const f of fx){
     const res = fixtureResult(gw, f);
     html += `<div class="fixture">
-      <div class="team home"><span>${esc(teamName(f.h))}</span><span class="badge">${esc(teamShort(f.h))}</span></div>
+      <div class="team home"><span><span class="tn-l">${esc(teamName(f.h))}</span><span class="tn-s">${esc(teamShort(f.h))}</span></span><span class="badge">${esc(teamShort(f.h))}</span></div>
       <div class="mid">${res?`<span class="final">${res.h}–${res.a}</span>${res.override?'<span class="faint">admin entry</span>':""}`:`<span class="ko">${fmtKo(f.kickoff)}</span>`}</div>
-      <div class="team"><span class="badge">${esc(teamShort(f.a))}</span><span>${esc(teamName(f.a))}</span></div>
+      <div class="team"><span class="badge">${esc(teamShort(f.a))}</span><span><span class="tn-l">${esc(teamName(f.a))}</span><span class="tn-s">${esc(teamShort(f.a))}</span></span></div>
     </div>`;
     if (revealed){
       html += `<div style="padding:0 8px 12px;display:flex;flex-wrap:wrap;gap:6px;border-bottom:1px solid var(--line)">`;
@@ -777,6 +901,7 @@ function renderWeek(){
         if (pk && res){
           if (+pk.h===res.h && +pk.a===res.a) cls = "pts-exact";
           else if (Math.sign(pk.h-pk.a)===Math.sign(res.h-res.a)) cls = "pts-result";
+          else cls = "pts-wrong";
         }
         html += `<span class="ptsbadge ${cls}" title="${esc(p.name)}">${esc(p.name.split(" ")[0])} ${txt}</span>`;
       }
@@ -977,13 +1102,13 @@ function renderAdmin(){
     const ov = gwDoc?.overrides?.[f.id];
     const feedRes = (f.finished && f.hs!==null && f.hs!==undefined) ? `feed: ${f.hs}–${f.as}` : "no feed result";
     html += `<div class="fixture">
-      <div class="team home"><span>${esc(teamName(f.h))}</span><span class="badge">${esc(teamShort(f.h))}</span></div>
+      <div class="team home"><span><span class="tn-l">${esc(teamName(f.h))}</span><span class="tn-s">${esc(teamShort(f.h))}</span></span><span class="badge">${esc(teamShort(f.h))}</span></div>
       <div class="mid"><div class="scorebox">
         <input type="number" min="0" max="15" id="ov-${f.id}-h" value="${ov?.h ?? ""}">
         <span class="dash">–</span>
         <input type="number" min="0" max="15" id="ov-${f.id}-a" value="${ov?.a ?? ""}">
       </div><span class="ko">${feedRes}${ov?' · <b style="color:var(--gold)">override set</b>':""}</span></div>
-      <div class="team"><span class="badge">${esc(teamShort(f.a))}</span><span>${esc(teamName(f.a))}</span></div>
+      <div class="team"><span class="badge">${esc(teamShort(f.a))}</span><span><span class="tn-l">${esc(teamName(f.a))}</span><span class="tn-s">${esc(teamShort(f.a))}</span></span></div>
     </div>`;
   }
   html += `<div class="savebar"><span id="ov-msg" class="faint"></span><button class="btn btn-primary" onclick="saveOverrides(${gw})">Save manual results</button></div></div>`;
