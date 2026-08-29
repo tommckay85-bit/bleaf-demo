@@ -401,8 +401,13 @@ function gwDeadline(gw){
   return ks.length ? new Date(ks[0]) : null;
 }
 function gwLocked(gw){
+  if (GAMEWEEKS["gw"+gw]?.unlocked) return false; // admin override (testing)
   const d = gwDeadline(gw);
   return d ? new Date() >= d : false;
+}
+function gwUnlockedByAdmin(gw){
+  const d = gwDeadline(gw);
+  return !!GAMEWEEKS["gw"+gw]?.unlocked && !!d && new Date() >= d;
 }
 function fixtureResult(gw, f){
   const ov = GAMEWEEKS["gw"+gw]?.overrides?.[f.id];
@@ -521,6 +526,7 @@ function renderPredict(){
   const myCount = Object.keys(mine).length;
   let html = gwNavHtml("view", gw);
   if (out) html += `<div class="banner warn">You're marked <b>out</b> for this gameweek (not in the pot), so your predictions won't count. Speak to the admin if that's wrong.</div>`;
+  else if (gwUnlockedByAdmin(gw)) html += `<div class="banner warn">🔓 The admin has <b>unlocked</b> this gameweek — predictions are editable even though the deadline has passed.</div>`;
   else if (locked && !myCount) html += `<div class="banner err">🔒 The deadline has passed and you didn't get your predictions in — you've missed out this week.</div>`;
   else if (locked) html += `<div class="banner info">🔒 Predictions are locked — the first match has kicked off. Everyone's picks are now visible on the This Week tab.</div>`;
   else if (deadline) html += `<div class="banner ok">⏱ Deadline: <b>${fmtKo(deadline.toISOString())}</b> (first kickoff of the gameweek). All predictions lock then — no late entries, no edits.</div>`;
@@ -782,6 +788,12 @@ function renderAdmin(){
   } else {
     html += `<button class="btn btn-danger" onclick="unfinalizeGw(${gw})">Un-finalise (re-open this week)</button>`;
   }
+  html += `<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">
+    <button class="btn ${gwDoc?.unlocked?"btn-danger":""}" onclick="toggleUnlock(${gw})">${gwDoc?.unlocked?"🔒 Re-lock GW "+gw+" (back to normal)":"🔓 Unlock GW "+gw+" predictions"}</button>
+    <span class="faint" style="margin-left:10px">${gwDoc?.unlocked
+      ? "Unlocked — the deadline is ignored and everyone can edit predictions. Picks are hidden again while unlocked."
+      : "Testing tool: lets everyone edit predictions even after the deadline. Re-lock before the games count!"}</span>
+  </div>`;
 
   /* manual results */
   html += `<h2 style="margin-top:22px">Results — manual entry / override</h2>
@@ -859,6 +871,11 @@ function copyCode(pid, name){
   const msg = `⚽ Prediction League — you're in, ${name}!\n${location.origin}${location.pathname}\nPick your name and enter your code: ${fmtCode(code)}`;
   navigator.clipboard.writeText(msg).then(()=>adminMsg(`Invite message for <b>${esc(name)}</b> copied — paste it into WhatsApp.`));
 }
+async function toggleUnlock(gw){
+  const cur = !!GAMEWEEKS["gw"+gw]?.unlocked;
+  await DB.collection("gameweeks").doc("gw"+gw).set({ unlocked: !cur }, { merge:true });
+  adminMsg(cur ? `GW ${gw} re-locked — normal deadline rules apply.` : `GW ${gw} <b>unlocked</b> for testing — remember to re-lock it.`);
+}
 async function toggleOut(gw, pid){
   const ref = DB.collection("gameweeks").doc("gw"+gw);
   const cur = GAMEWEEKS["gw"+gw]?.out || [];
@@ -885,6 +902,7 @@ async function finalizeGw(gw){
   if (!confirm(msg)) return;
   await DB.collection("gameweeks").doc("gw"+gw).set({
     finalized: true,
+    unlocked: false,
     finalizedAt: firebase.firestore.FieldValue.serverTimestamp(),
     monthKey: monthKeyOf(gw),
     pointsUsed: { ...CONFIG },
