@@ -90,6 +90,26 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 .pts-none{background:var(--panel2);color:var(--ink-faint)}
 .lock{font-size:11px;color:var(--ink-faint)}
 
+/* ---------- predictions grid (sticky own column) ---------- */
+.predgrid-wrap{overflow-x:auto;position:relative}
+.predgrid{border-collapse:separate;border-spacing:0;min-width:100%;width:auto}
+.predgrid th,.predgrid td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
+.predgrid th{font-family:"Oswald";font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-dim);border-bottom:2px solid var(--line)}
+.predgrid tr:last-child td{border-bottom:none}
+.predgrid .colfix{position:sticky;left:0;z-index:2;background:var(--panel);text-align:left;width:148px;min-width:148px;max-width:148px;overflow:hidden;text-overflow:ellipsis}
+.predgrid .colme{position:sticky;left:148px;z-index:2;background:var(--panel);border-right:2px solid var(--gold)}
+.predgrid .colme .scorebox{justify-content:center}
+.predgrid input[type=number]{width:46px;font-size:15px;padding:6px 4px}
+.predgrid .vsep{color:var(--ink-faint);font-weight:400;font-size:12px}
+.tick-ok{color:var(--green);font-weight:700;font-size:15px}
+.tick-no{color:var(--ink-faint)}
+@media(max-width:640px){
+  .predgrid th,.predgrid td{padding:8px 6px}
+  .predgrid .colfix{width:112px;min-width:112px;max-width:112px}
+  .predgrid .colme{left:112px}
+  .predgrid input[type=number]{width:40px;font-size:14px}
+}
+
 /* ---------- tables ---------- */
 table{width:100%;border-collapse:collapse;font-size:13.5px}
 th{font-family:"Oswald";font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-dim);text-align:left;padding:8px 10px;border-bottom:2px solid var(--line)}
@@ -237,8 +257,9 @@ const FIREBASE_CONFIG = {
 // Where the fixtures feed lives (written automatically by the GitHub Action).
 const FIXTURES_URL = "data/fixtures.json";
 
-// Fallback points if the admin hasn't saved settings yet.
+// Fallbacks if the admin hasn't saved settings yet.
 const DEFAULT_POINTS = { result: 6, exact: 10 };
+const DEFAULT_STAKE = 5; // £ per player per week
 
 /* ==========================================================================
    How login works (for the curious): every player gets a random login code.
@@ -250,7 +271,8 @@ const DEFAULT_POINTS = { result: 6, exact: 10 };
 const LOGIN_DOMAIN = "predleague.app";
 
 let AUTH, DB, MYPID = null, ME = null;
-let CONFIG = { ...DEFAULT_POINTS };          // {result, exact}
+let CONFIG = { ...DEFAULT_POINTS, stake: DEFAULT_STAKE }; // {result, exact, stake}
+let SETTLEMENTS = [];                         // past pay-outs (money resets)
 let PLAYERS = {};                             // pid -> player doc
 let CODES = {};                               // pid -> code (admins only)
 let GAMEWEEKS = {};                           // "gw5" -> gameweek doc
@@ -348,13 +370,18 @@ function startSubscriptions(){
   }, err => { console.error(err); AUTH.signOut(); });
   DB.collection("config").doc("settings").onSnapshot(d => {
     const c = d.exists ? d.data() : {};
-    CONFIG = { result: c.result ?? DEFAULT_POINTS.result, exact: c.exact ?? DEFAULT_POINTS.exact };
+    CONFIG = { result: c.result ?? DEFAULT_POINTS.result, exact: c.exact ?? DEFAULT_POINTS.exact,
+               stake: c.stake ?? DEFAULT_STAKE };
     if (ME) renderAll();
   });
   DB.collection("gameweeks").onSnapshot(snap => {
     GAMEWEEKS = {}; snap.forEach(d => GAMEWEEKS[d.id] = d.data());
     if (ME) renderAll();
   });
+  DB.collection("settlements").onSnapshot(snap => {
+    SETTLEMENTS = []; snap.forEach(d => SETTLEMENTS.push({ id: d.id, ...d.data() }));
+    if (ME) renderAll();
+  }, err => console.warn("settlements not readable (add the settlements rules block)", err));
 }
 function watchCodes(){
   if (!ME?.admin || codesUnsub) return;
@@ -471,6 +498,61 @@ function scoreWeek(gw){
   return rows;
 }
 
+/* ---------- money ---------- */
+const round2 = n => Math.round(n * 100) / 100;
+function fmtMoney(n){
+  const v = round2(n);
+  return "£" + (Number.isInteger(v) ? v : v.toFixed(2));
+}
+// Stake per player for a gameweek: the value it was finalised with, else the
+// per-week override, else the league default.
+function gwStake(gw){
+  const g = GAMEWEEKS["gw"+gw];
+  if (g?.finalized && g.stakeUsed !== undefined && g.stakeUsed !== null) return g.stakeUsed;
+  return g?.stake ?? CONFIG.stake;
+}
+// Payout split: every runner-up gets their stake back; winners split the rest.
+function gwMoney(gw, rows){
+  const stake = gwStake(gw);
+  const winners = rows.filter(r=>r.rank===1);
+  const second = rows.find(r=>r.rank>1)?.rank;
+  const runnersUp = second ? rows.filter(r=>r.rank===second) : [];
+  const pot = round2(rows.length * stake);
+  const refund = round2(runnersUp.length * stake);
+  const winShare = winners.length ? round2((pot - refund) / winners.length) : 0;
+  const payouts = {};
+  winners.forEach(w => payouts[w.pid] = winShare);
+  runnersUp.forEach(r => payouts[r.pid] = stake);
+  return { stake, pot, winShare, payouts };
+}
+function settledGwSet(){
+  const s = new Set();
+  for (const st of SETTLEMENTS) (st.gws || []).forEach(g => s.add(g));
+  return s;
+}
+// Finalised weeks with money attached that haven't been paid out yet.
+function unsettledMoneyGws(){
+  const done = settledGwSet();
+  return Object.entries(GAMEWEEKS)
+    .filter(([id,g]) => g.finalized && g.payouts && !done.has(+id.replace("gw","")))
+    .map(([id,g]) => ({ gw: +id.replace("gw",""), ...g }))
+    .sort((a,b)=>a.gw-b.gw);
+}
+function moneyAgg(){
+  const agg = {};
+  for (const g of unsettledMoneyGws()){
+    for (const r of (g.table || [])){
+      const a = agg[r.pid] || (agg[r.pid] = { pid:r.pid, name:PLAYERS[r.pid]?.name || r.name, weeks:0, staked:0, won:0 });
+      a.name = PLAYERS[r.pid]?.name || r.name;
+      a.weeks++; a.staked = round2(a.staked + (g.stakeUsed || 0)); a.won = round2(a.won + (g.payouts?.[r.pid] || 0));
+    }
+  }
+  const rows = Object.values(agg);
+  rows.forEach(r => r.net = round2(r.won - r.staked));
+  rows.sort((a,b)=> b.net - a.net || a.name.localeCompare(b.name));
+  return rows;
+}
+
 /* ---------- chrome / tabs ---------- */
 function renderChrome(){
   $("who-name").textContent = ME.name;
@@ -530,23 +612,56 @@ function renderPredict(){
   else if (locked && !myCount) html += `<div class="banner err">🔒 The deadline has passed and you didn't get your predictions in — you've missed out this week.</div>`;
   else if (locked) html += `<div class="banner info">🔒 Predictions are locked — the first match has kicked off. Everyone's picks are now visible on the This Week tab.</div>`;
   else if (deadline) html += `<div class="banner ok">⏱ Deadline: <b>${fmtKo(deadline.toISOString())}</b> (first kickoff of the gameweek). All predictions lock then — no late entries, no edits.</div>`;
+  if (fx.length){
+    const gwDoc = GAMEWEEKS["gw"+gw];
+    if (gwDoc?.finalized && gwDoc.pot !== undefined){
+      html += `<div class="banner info">💰 This week's pot was <b>${fmtMoney(gwDoc.pot)}</b> — see This Week for the payout.</div>`;
+    } else {
+      const inRows = scoreWeek(gw), stake = gwStake(gw);
+      const m = gwMoney(gw, inRows);
+      html += `<div class="banner info">💰 This week's pot: <b>${fmtMoney(m.pot)}</b> (${inRows.length} players × ${fmtMoney(stake)}) — winner takes <b>${fmtMoney(m.pot - stake)}</b>, runner-up gets their ${fmtMoney(stake)} back.</div>`;
+    }
+  }
   html += `<div class="panel"><h2>Your predictions <span class="tag">${CONFIG.result} pts result · ${CONFIG.exact} pts exact score</span></h2>`;
   if (!fx.length) html += `<p class="muted">No fixtures in this gameweek.</p>`;
-  for (const f of fx){
-    const pk = mine[f.id] || {};
-    const res = fixtureResult(gw, f);
-    html += `<div class="fixture">
-      <div class="team home"><span>${esc(teamName(f.h))}</span><span class="badge">${esc(teamShort(f.h))}</span></div>
-      <div class="mid">
-        <div class="scorebox">
+  else {
+    // Grid: fixture + your picks pinned on the left, one column per other
+    // player to the right (horizontal scroll). Before the deadline their
+    // cells only show ✓/— (predicted or not); scores appear at the deadline.
+    const others = Object.entries(PLAYERS)
+      .filter(([pid,p]) => pid !== MYPID && p.active !== false && !isOut(gw, pid))
+      .sort((a,b)=>a[1].name.localeCompare(b[1].name));
+    const preds = PREDS[gw] || {};
+    const revealed = gwLocked(gw); // admin unlock also re-hides picks
+    html += `<div class="predgrid-wrap"><table class="predgrid">
+      <tr><th class="colfix">Fixture</th><th class="colme">You</th>${others.map(([,p])=>`<th>${esc(p.name.split(" ")[0])}</th>`).join("")}</tr>`;
+    for (const f of fx){
+      const pk = mine[f.id] || {};
+      const res = fixtureResult(gw, f);
+      html += `<tr>
+        <td class="colfix" title="${esc(teamName(f.h))} v ${esc(teamName(f.a))}"><b>${esc(teamShort(f.h))}</b> <span class="vsep">v</span> <b>${esc(teamShort(f.a))}</b><br><span class="ko">${fmtKo(f.kickoff)}${res?` · FT ${res.h}–${res.a}`:""}</span></td>
+        <td class="colme"><div class="scorebox">
           <input type="number" min="0" max="15" id="pk-${f.id}-h" value="${pk.h ?? ""}" ${locked||out?"disabled":""}>
           <span class="dash">–</span>
           <input type="number" min="0" max="15" id="pk-${f.id}-a" value="${pk.a ?? ""}" ${locked||out?"disabled":""}>
-        </div>
-        <span class="ko">${fmtKo(f.kickoff)}${res?` · FT ${res.h}–${res.a}`:""}</span>
-      </div>
-      <div class="team"><span class="badge">${esc(teamShort(f.a))}</span><span>${esc(teamName(f.a))}</span></div>
-    </div>`;
+        </div></td>`;
+      for (const [pid] of others){
+        const opk = preds[pid]?.picks?.[f.id];
+        if (revealed){
+          let cls = "pts-none", txt = opk ? `${opk.h}–${opk.a}` : "—";
+          if (opk && res){
+            if (+opk.h===res.h && +opk.a===res.a) cls = "pts-exact";
+            else if (Math.sign(opk.h-opk.a)===Math.sign(res.h-res.a)) cls = "pts-result";
+          }
+          html += `<td><span class="ptsbadge ${cls}">${txt}</span></td>`;
+        } else {
+          html += `<td>${opk ? '<span class="tick-ok">✓</span>' : '<span class="tick-no">—</span>'}</td>`;
+        }
+      }
+      html += `</tr>`;
+    }
+    html += `</table></div>`;
+    if (!revealed && others.length) html += `<p class="faint" style="margin-top:8px">✓ = they've predicted that game (scores hidden until the deadline). Scroll sideways to see everyone — your picks stay put.</p>`;
   }
   if (fx.length && !out && !locked){
     html += `<div class="savebar"><span id="save-msg" class="faint"></span><button class="btn btn-gold" onclick="savePicks(${gw})">Save predictions</button></div>`;
@@ -609,10 +724,13 @@ function renderWeek(){
 
   if (gwDoc?.finalized){
     const w = gwDoc.winners || [], r = gwDoc.runnersUp || [];
+    const winAmt = w[0] && gwDoc.payouts ? gwDoc.payouts[w[0].pid] : null;
+    const runAmt = r[0] && gwDoc.payouts ? gwDoc.payouts[r[0].pid] : null;
     html += `<div class="podium">
-      <div class="card win"><div class="lbl">🏆 Winner${w.length>1?"s (tied)":""}</div><div class="name">${esc(w.map(x=>x.name).join(" & ")) || "—"}</div><div class="pts">${w[0]?w[0].pts+" pts":""}</div></div>
-      <div class="card run"><div class="lbl">🥈 Runner-up${r.length>1?"s (tied)":""}</div><div class="name">${esc(r.map(x=>x.name).join(" & ")) || "—"}</div><div class="pts">${r[0]?r[0].pts+" pts":""}</div></div>
-    </div>`;
+      <div class="card win"><div class="lbl">🏆 Winner${w.length>1?"s (tied)":""}</div><div class="name">${esc(w.map(x=>x.name).join(" & ")) || "—"}</div><div class="pts">${w[0]?w[0].pts+" pts":""}${winAmt!=null?` · wins <b style="color:var(--gold)">${fmtMoney(winAmt)}</b>${w.length>1?" each":""}`:""}</div></div>
+      <div class="card run"><div class="lbl">🥈 Runner-up${r.length>1?"s (tied)":""}</div><div class="name">${esc(r.map(x=>x.name).join(" & ")) || "—"}</div><div class="pts">${r[0]?r[0].pts+" pts":""}${runAmt!=null?` · stake back (${fmtMoney(runAmt)})`:""}</div></div>
+    </div>
+    ${gwDoc.pot!==undefined?`<div class="banner info">💰 Pot: <b>${fmtMoney(gwDoc.pot)}</b> (${(gwDoc.table||[]).length} players × ${fmtMoney(gwDoc.stakeUsed||0)})</div>`:""}`;
   } else {
     const anyResult = fx.some(f => fixtureResult(gw,f));
     html += `<div class="banner info">${anyResult ? "Live standings — the week hasn't been finalised by the admin yet." : "No results in yet. Standings will appear as matches finish."}</div>`;
@@ -699,6 +817,43 @@ function renderBoard(){
   if (!rows.length) html += `<tr><td colspan="8" class="muted">Nothing here yet — the table fills up once the admin finalises a gameweek.</td></tr>`;
   html += `</table></div></div>`;
 
+  // money: running balances since the last settle-up
+  const mrows = moneyAgg();
+  const mgws = unsettledMoneyGws();
+  const lastSettle = SETTLEMENTS.map(s=>s.settledAt).filter(Boolean).sort((a,b)=>(b.seconds||0)-(a.seconds||0))[0];
+  html += `<div class="panel"><h2>💰 The pot — current period</h2>
+    <p class="faint" style="margin-bottom:10px">${mgws.length
+      ? `Covers ${mgws.length} finalised week${mgws.length>1?"s":""} (GW ${mgws.map(g=>g.gw).join(", ")})${lastSettle?.toDate ? " since the pay-out on " + lastSettle.toDate().toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : ""}. Positive = takes money out at the next pay-out; negative = pays in.`
+      : "No money on the board yet — balances appear when a gameweek is finalised."}</p>`;
+  if (mrows.length){
+    html += `<div class="tbl-scroll"><table>
+      <tr><th>Player</th><th class="num">Weeks</th><th class="num">Staked</th><th class="num">Won</th><th class="num">Net</th></tr>`;
+    for (const r of mrows){
+      html += `<tr class="${r.pid===MYPID?"me":""}"><td>${esc(r.name)}</td><td class="num">${r.weeks}</td>
+        <td class="num">${fmtMoney(r.staked)}</td><td class="num">${fmtMoney(r.won)}</td>
+        <td class="num"><b style="color:${r.net>0?"var(--green)":r.net<0?"var(--red)":"var(--ink-dim)"}">${r.net>0?"+":""}${fmtMoney(r.net)}</b></td></tr>`;
+    }
+    html += `</table></div>`;
+  }
+  if (ME.admin && mgws.length){
+    html += `<div style="margin-top:12px"><button class="btn btn-gold" onclick="settleUp()">💸 Settle up &amp; reset (record pay-out)</button>
+      <span class="faint" style="margin-left:10px">Snapshots the balances above as paid, then the running totals start again from zero.</span></div>`;
+  }
+  html += `</div>`;
+
+  // past pay-outs
+  if (SETTLEMENTS.length){
+    const hist = [...SETTLEMENTS].sort((a,b)=>(b.settledAt?.seconds||0)-(a.settledAt?.seconds||0));
+    html += `<div class="panel"><h2>Past pay-outs</h2>`;
+    for (const s of hist){
+      const when = s.settledAt?.toDate ? s.settledAt.toDate().toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) : "—";
+      html += `<p class="muted" style="margin:10px 0 6px"><b style="color:var(--ink)">${when}</b> · GW ${(s.gws||[]).join(", ")} · total staked ${fmtMoney(s.totalStaked||0)}</p>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">${(s.rows||[]).map(r=>
+          `<span class="ptsbadge ${r.net>0?"pts-result":r.net<0?"pts-none":"pts-exact"}">${esc(r.name.split(" ")[0])} ${r.net>0?"+":""}${fmtMoney(r.net)}</span>`).join("")}</div>`;
+    }
+    html += `</div>`;
+  }
+
   const done = Object.entries(GAMEWEEKS).filter(([,g])=>g.finalized).map(([id,g])=>({gw:+id.replace("gw",""),...g})).sort((a,b)=>b.gw-a.gw);
   if (done.length){
     html += `<div class="panel"><h2>Roll of honour</h2><div class="tbl-scroll"><table>
@@ -731,13 +886,14 @@ function renderAdmin(){
   <div id="admin-msg"></div>`;
 
   /* scoring settings */
-  html += `<div class="panel"><h2>Scoring settings</h2>
+  html += `<div class="panel"><h2>League settings</h2>
     <div class="cfgrow">
-      <div class="field"><label>Correct result</label><input type="number" id="cfg-result" value="${CONFIG.result}" min="0"></div>
-      <div class="field"><label>Exact score</label><input type="number" id="cfg-exact" value="${CONFIG.exact}" min="0"></div>
+      <div class="field"><label>Correct result (pts)</label><input type="number" id="cfg-result" value="${CONFIG.result}" min="0"></div>
+      <div class="field"><label>Exact score (pts)</label><input type="number" id="cfg-exact" value="${CONFIG.exact}" min="0"></div>
+      <div class="field"><label>Stake per player (£)</label><input type="number" id="cfg-stake" value="${CONFIG.stake}" min="0" step="0.5"></div>
       <button class="btn btn-primary" onclick="saveConfig()">Save</button>
     </div>
-    <p class="faint">Changes apply to any week not yet finalised. Finalised weeks keep the points they were scored with.</p></div>`;
+    <p class="faint">Changes apply to any week not yet finalised. Finalised weeks keep the points and stake they were scored with. The stake can also be overridden for a single week in Gameweek control.</p></div>`;
 
   /* add player */
   html += `<div class="panel"><h2>Add a player</h2>
@@ -779,9 +935,17 @@ function renderAdmin(){
   /* gameweek management */
   const fx = gwFixtures(gw);
   const resultsIn = fx.filter(f=>fixtureResult(gw,f)).length;
+  const liveRows = scoreWeek(gw);
   html += `<div class="panel"><h2>Gameweek control</h2>${gwNavHtml("admin", gw)}
     <p class="muted" style="margin-bottom:10px">Results in for <b>${resultsIn}/${fx.length}</b> fixtures.
-    ${gwDoc?.finalized ? `This week is <b style="color:var(--gold)">finalised</b> (scored at ${gwDoc.pointsUsed?.result}/${gwDoc.pointsUsed?.exact} pts).` : "Not yet finalised."}</p>`;
+    ${gwDoc?.finalized ? `This week is <b style="color:var(--gold)">finalised</b> (scored at ${gwDoc.pointsUsed?.result}/${gwDoc.pointsUsed?.exact} pts${gwDoc.pot!==undefined?`, ${fmtMoney(gwDoc.stakeUsed||0)} stake, pot ${fmtMoney(gwDoc.pot)}`:""}).` : "Not yet finalised."}</p>`;
+  if (!gwDoc?.finalized){
+    html += `<div class="cfgrow" style="margin-bottom:12px">
+      <div class="field"><label>Stake this week (£)</label><input type="number" id="gw-stake" value="${gwStake(gw)}" min="0" step="0.5"></div>
+      <button class="btn" onclick="saveGwStake(${gw})">Save stake</button>
+      <span class="muted">Pot: <b>${fmtMoney(liveRows.length * gwStake(gw))}</b> (${liveRows.length} in × ${fmtMoney(gwStake(gw))}) — winner ${fmtMoney(liveRows.length * gwStake(gw) - gwStake(gw))}, runner-up stake back</span>
+    </div>`;
+  }
   if (!gwDoc?.finalized){
     html += `<button class="btn btn-gold" onclick="finalizeGw(${gw})">Finalise GW ${gw} — declare winner &amp; runner-up</button>
       ${resultsIn<fx.length?'<span class="faint" style="margin-left:10px">⚠ not all results are in</span>':""}`;
@@ -823,8 +987,9 @@ function adminMsg(text, cls="ok"){
 /* ---------- admin actions ---------- */
 async function saveConfig(){
   const result = Math.max(0,+$("cfg-result").value||0), exact = Math.max(0,+$("cfg-exact").value||0);
-  await DB.collection("config").doc("settings").set({ result, exact }, { merge:true });
-  adminMsg("Scoring saved — correct result " + result + " pts, exact score " + exact + " pts.");
+  const stake = Math.max(0, round2(+$("cfg-stake").value||0));
+  await DB.collection("config").doc("settings").set({ result, exact, stake }, { merge:true });
+  adminMsg(`Settings saved — result ${result} pts, exact ${exact} pts, stake ${fmtMoney(stake)} per player.`);
 }
 async function setPlayer(pid, patch){
   await DB.collection("players").doc(pid).set(patch, { merge:true });
@@ -871,6 +1036,24 @@ function copyCode(pid, name){
   const msg = `⚽ Prediction League — you're in, ${name}!\n${location.origin}${location.pathname}\nPick your name and enter your code: ${fmtCode(code)}`;
   navigator.clipboard.writeText(msg).then(()=>adminMsg(`Invite message for <b>${esc(name)}</b> copied — paste it into WhatsApp.`));
 }
+async function saveGwStake(gw){
+  const stake = Math.max(0, round2(+$("gw-stake").value||0));
+  await DB.collection("gameweeks").doc("gw"+gw).set({ stake }, { merge:true });
+  adminMsg(`GW ${gw} stake set to ${fmtMoney(stake)} per player.`);
+}
+async function settleUp(){
+  const gws = unsettledMoneyGws(), rows = moneyAgg();
+  if (!gws.length){ alert("Nothing to settle — no finalised weeks with money since the last pay-out."); return; }
+  const lines = rows.map(r => `${r.name}: ${r.net>0?"+":""}${fmtMoney(r.net)}`).join("\n");
+  if (!confirm(`Settle up now?\n\nCovers GW ${gws.map(g=>g.gw).join(", ")}.\nNet position per player:\n\n${lines}\n\nPay the positives, collect the negatives. Balances then reset to zero.`)) return;
+  await DB.collection("settlements").add({
+    settledAt: firebase.firestore.FieldValue.serverTimestamp(),
+    gws: gws.map(g=>g.gw),
+    totalStaked: round2(gws.reduce((s,g)=>s + (g.pot||0), 0)),
+    rows: rows.map(r => ({ pid:r.pid, name:r.name, weeks:r.weeks, staked:r.staked, won:r.won, net:r.net })),
+  });
+  adminMsg("Pay-out recorded — balances reset. It's in Past pay-outs on the Leaderboard tab.");
+}
 async function toggleUnlock(gw){
   const cur = !!GAMEWEEKS["gw"+gw]?.unlocked;
   await DB.collection("gameweeks").doc("gw"+gw).set({ unlocked: !cur }, { merge:true });
@@ -898,22 +1081,25 @@ async function finalizeGw(gw){
   const winners = rows.filter(r=>r.rank===1).map(r=>({pid:r.pid,name:r.name,pts:r.pts}));
   const second = rows.find(r=>r.rank>1)?.rank;
   const runnersUp = second ? rows.filter(r=>r.rank===second).map(r=>({pid:r.pid,name:r.name,pts:r.pts})) : [];
-  const msg = `Finalise Gameweek ${gw}?\n\n🏆 Winner: ${winners.map(w=>w.name).join(" & ")} (${winners[0].pts} pts)\n🥈 Runner-up: ${runnersUp.map(r=>r.name).join(" & ") || "—"}`;
+  const money = gwMoney(gw, rows);
+  const msg = `Finalise Gameweek ${gw}?\n\n💰 Pot: ${fmtMoney(money.pot)} (${rows.length} × ${fmtMoney(money.stake)})\n🏆 Winner: ${winners.map(w=>w.name).join(" & ")} (${winners[0].pts} pts) — wins ${fmtMoney(money.winShare)}${winners.length>1?" each":""}\n🥈 Runner-up: ${runnersUp.map(r=>r.name).join(" & ") || "—"}${runnersUp.length?` — stake back (${fmtMoney(money.stake)})`:""}`;
   if (!confirm(msg)) return;
   await DB.collection("gameweeks").doc("gw"+gw).set({
     finalized: true,
     unlocked: false,
     finalizedAt: firebase.firestore.FieldValue.serverTimestamp(),
     monthKey: monthKeyOf(gw),
-    pointsUsed: { ...CONFIG },
+    pointsUsed: { result: CONFIG.result, exact: CONFIG.exact },
+    stakeUsed: money.stake, pot: money.pot, payouts: money.payouts,
     table: rows, winners, runnersUp
   }, { merge:true });
 }
 async function unfinalizeGw(gw){
   if (!confirm(`Re-open Gameweek ${gw}? It will drop out of the leaderboard until finalised again.`)) return;
+  const del = firebase.firestore.FieldValue.delete();
   await DB.collection("gameweeks").doc("gw"+gw).set({
-    finalized:false, table: firebase.firestore.FieldValue.delete(),
-    winners: firebase.firestore.FieldValue.delete(), runnersUp: firebase.firestore.FieldValue.delete()
+    finalized:false, table: del, winners: del, runnersUp: del,
+    pot: del, stakeUsed: del, payouts: del
   }, { merge:true });
 }
 
@@ -947,7 +1133,7 @@ async function doFound(){
     });
     await DB.collection("uids").doc(uid).set({ pid });
     await DB.collection("codes").doc(pid).set({ code });
-    await DB.collection("config").doc("settings").set(DEFAULT_POINTS);
+    await DB.collection("config").doc("settings").set({ ...DEFAULT_POINTS, stake: DEFAULT_STAKE });
     $("fd-code").textContent = fmtCode(code);
     $("founder-form").classList.add("hidden");
     $("founder-done").classList.remove("hidden");
