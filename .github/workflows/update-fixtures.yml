@@ -1,0 +1,71 @@
+name: Update fixtures
+
+# Pulls Premier League fixtures & results from the free Fantasy Premier League
+# API (no key needed) and commits them to data/fixtures.json on gh-pages,
+# where predictions.html reads them.
+#
+# Runs four times a day; you can also run it on demand from the Actions tab
+# ("Run workflow"). Scheduled runs only fire once this file is on the
+# repository's default branch (gh-pages).
+
+on:
+  schedule:
+    - cron: '15 6,12,17,22 * * *'   # 4x daily UTC — morning, lunch, teatime, late
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-fixtures
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+
+      - name: Fetch FPL data
+        run: |
+          curl -fsS --retry 3 --retry-delay 5 \
+            -H "User-Agent: prediction-league-fixture-bot" \
+            https://fantasy.premierleague.com/api/bootstrap-static/ -o /tmp/bootstrap.json
+          curl -fsS --retry 3 --retry-delay 5 \
+            -H "User-Agent: prediction-league-fixture-bot" \
+            https://fantasy.premierleague.com/api/fixtures/ -o /tmp/fixtures.json
+
+      - name: Build data/fixtures.json
+        run: |
+          mkdir -p data
+          jq -n --slurpfile b /tmp/bootstrap.json --slurpfile f /tmp/fixtures.json '{
+            updated: (now | todate),
+            source: "fantasy.premierleague.com",
+            teams: ($b[0].teams | map({ key: (.id|tostring),
+                                        value: { name: .name, short: .short_name } }) | from_entries),
+            fixtures: ($f[0] | map({
+              id: .id,
+              gw: .event,
+              kickoff: .kickoff_time,
+              h: .team_h,
+              a: .team_a,
+              hs: .team_h_score,
+              as: .team_a_score,
+              finished: (.finished or .finished_provisional)
+            }))
+          }' > data/fixtures.json
+          jq -e '.fixtures | length > 0' data/fixtures.json > /dev/null
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "fixtures-bot"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/fixtures.json
+          if git diff --cached --quiet; then
+            echo "No changes."
+          else
+            git commit -m "Update fixtures data"
+            git push
+          fi

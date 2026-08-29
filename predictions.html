@@ -1,0 +1,909 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="robots" content="noindex, nofollow"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>The Prediction League</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1318; --bg2:#151b23; --panel:#1a222c; --panel2:#202a36; --line:#2b3644;
+  --ink:#e8edf2; --ink-dim:#9aa7b5; --ink-faint:#66737f;
+  --steel:#4b8fd4; --steel-dim:#2f5f92; --navy:#1c3a5e;
+  --gold:#e8a33d; --gold-dim:#8a6120;
+  --green:#3fae6a; --red:#d4574b;
+  --radius:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 "Inter",system-ui,sans-serif;min-height:100vh}
+h1,h2,h3,h4,.hd{font-family:"Oswald","Inter",sans-serif;letter-spacing:.02em;text-transform:uppercase}
+a{color:var(--steel)}
+button{font:inherit;cursor:pointer}
+input,select{font:inherit;background:var(--bg2);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:8px 10px}
+input:focus,select:focus{outline:2px solid var(--steel-dim);border-color:var(--steel)}
+input[type=number]{width:58px;text-align:center;font-weight:700;font-size:17px;-moz-appearance:textfield}
+input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none}
+
+/* ---------- top bar ---------- */
+.topbar{background:linear-gradient(135deg,#101722 0%,#16202e 55%,#1c3a5e 100%);border-bottom:3px solid var(--gold);padding:14px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.topbar .crest{width:40px;height:40px;border-radius:8px;background:var(--navy);display:flex;align-items:center;justify-content:center;font-size:22px;border:1px solid var(--steel-dim)}
+.topbar h1{font-size:22px;font-weight:700}
+.topbar h1 small{display:block;font-family:"Inter";font-size:11px;font-weight:500;letter-spacing:.14em;color:var(--gold);text-transform:uppercase}
+.topbar .spacer{flex:1}
+.whoami{text-align:right;font-size:13px;color:var(--ink-dim)}
+.whoami b{color:var(--ink);display:block;font-size:14px}
+.btn{border:1px solid var(--line);background:var(--panel2);color:var(--ink);padding:8px 14px;border-radius:7px;font-weight:600;font-size:13px}
+.btn:hover{border-color:var(--steel)}
+.btn-primary{background:var(--steel);border-color:var(--steel);color:#0b1016}
+.btn-primary:hover{background:#5f9edd}
+.btn-gold{background:var(--gold);border-color:var(--gold);color:#161006}
+.btn-gold:hover{background:#f2b355}
+.btn-danger{background:transparent;border-color:var(--red);color:var(--red)}
+.btn-sm{padding:4px 10px;font-size:12px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+/* ---------- tabs ---------- */
+.tabs{display:flex;gap:2px;padding:0 18px;background:var(--bg2);border-bottom:1px solid var(--line);overflow-x:auto}
+.tabs button{background:none;border:none;color:var(--ink-dim);padding:13px 16px;font-family:"Oswald";font-size:14px;letter-spacing:.06em;text-transform:uppercase;border-bottom:3px solid transparent;white-space:nowrap}
+.tabs button.on{color:var(--gold);border-bottom-color:var(--gold)}
+.tabs button:hover{color:var(--ink)}
+
+.wrap{max-width:1060px;margin:0 auto;padding:20px 16px 60px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:18px}
+.panel h2{font-size:17px;color:var(--ink);margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.panel h2 .tag{font-family:"Inter";font-size:11px;font-weight:600;letter-spacing:.08em;background:var(--navy);color:var(--steel);padding:3px 8px;border-radius:4px;text-transform:uppercase}
+.muted{color:var(--ink-dim);font-size:13px}
+.faint{color:var(--ink-faint);font-size:12px}
+
+.banner{border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px;font-weight:500;border:1px solid}
+.banner.warn{background:#2b2110;border-color:var(--gold-dim);color:var(--gold)}
+.banner.info{background:#14243a;border-color:var(--steel-dim);color:#9cc4e8}
+.banner.err{background:#331a17;border-color:var(--red);color:#eba49c}
+.banner.ok{background:#12291c;border-color:var(--green);color:#8fd8ac}
+
+/* ---------- gameweek nav ---------- */
+.gwnav{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.gwnav .gwlabel{font-family:"Oswald";font-size:19px;letter-spacing:.05em;text-transform:uppercase;min-width:170px;text-align:center}
+.gwnav .gwlabel small{display:block;font-family:"Inter";font-size:11px;letter-spacing:.04em;color:var(--ink-dim);text-transform:none;font-weight:400}
+.gwnav button{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-size:16px}
+.gwnav button:hover{border-color:var(--steel)}
+
+/* ---------- fixtures ---------- */
+.fixture{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;padding:12px 8px;border-bottom:1px solid var(--line)}
+.fixture:last-child{border-bottom:none}
+.fixture .team{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px}
+.fixture .team.home{justify-content:flex-end;text-align:right}
+.fixture .badge{width:30px;height:30px;border-radius:50%;background:var(--navy);border:1px solid var(--steel-dim);display:inline-flex;align-items:center;justify-content:center;font-family:"Oswald";font-size:11px;color:var(--steel);flex-shrink:0}
+.fixture .mid{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:150px}
+.fixture .scorebox{display:flex;align-items:center;gap:6px}
+.fixture .scorebox .dash{color:var(--ink-faint);font-weight:700}
+.fixture .ko{font-size:11px;color:var(--ink-faint)}
+.fixture .final{font-family:"Oswald";font-size:20px;font-weight:700;letter-spacing:.1em;background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:2px 14px}
+.fixture .ptsbadge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px}
+.ptsbadge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px}
+.pts-exact{background:var(--gold);color:#161006}
+.pts-result{background:var(--green);color:#07130c}
+.pts-none{background:var(--panel2);color:var(--ink-faint)}
+.lock{font-size:11px;color:var(--ink-faint)}
+
+/* ---------- tables ---------- */
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{font-family:"Oswald";font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-dim);text-align:left;padding:8px 10px;border-bottom:2px solid var(--line)}
+td{padding:9px 10px;border-bottom:1px solid var(--line)}
+tr:last-child td{border-bottom:none}
+td.num,th.num{text-align:center}
+tr.me td{background:rgba(75,143,212,.08)}
+.rank{font-family:"Oswald";font-weight:700;color:var(--ink-dim);width:34px}
+.medal{font-size:16px}
+tr.pos1 td{background:linear-gradient(90deg,rgba(232,163,61,.14),transparent 70%)}
+tr.pos1 .rank{color:var(--gold)}
+tr.pos2 td{background:linear-gradient(90deg,rgba(154,167,181,.10),transparent 70%)}
+.tbl-scroll{overflow-x:auto}
+
+.pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:10px;letter-spacing:.04em}
+.pill.in{background:#12291c;color:var(--green);border:1px solid var(--green)}
+.pill.out{background:#331a17;color:var(--red);border:1px solid var(--red)}
+.pill.adm{background:#2b2110;color:var(--gold);border:1px solid var(--gold-dim)}
+.pill.pend{background:var(--panel2);color:var(--ink-dim);border:1px solid var(--line)}
+
+/* ---------- winner cards ---------- */
+.podium{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+.podium .card{border-radius:var(--radius);padding:16px;border:1px solid var(--line);background:var(--panel)}
+.podium .card.win{border-color:var(--gold);background:linear-gradient(160deg,#241c0d,#1a222c 70%)}
+.podium .card.run{border-color:var(--ink-faint);background:linear-gradient(160deg,#1e2229,#1a222c 70%)}
+.podium .lbl{font-family:"Oswald";font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-dim)}
+.podium .card.win .lbl{color:var(--gold)}
+.podium .name{font-family:"Oswald";font-size:24px;font-weight:700;margin:4px 0 2px}
+.podium .pts{font-size:13px;color:var(--ink-dim)}
+@media(max-width:640px){.podium{grid-template-columns:1fr}.fixture .mid{min-width:110px}}
+
+/* ---------- auth screens ---------- */
+.authwrap{max-width:460px;margin:7vh auto;padding:0 16px}
+.authcard{background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--gold);border-radius:var(--radius);padding:28px}
+.authcard h1{font-size:26px;margin-bottom:2px}
+.authcard .sub{color:var(--gold);font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;margin-bottom:20px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--ink-dim);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em}
+.field input,.field select{width:100%}
+.authcard .btn{width:100%;padding:11px;margin-top:6px;font-size:14px}
+.authswitch{text-align:center;margin-top:16px;font-size:13px;color:var(--ink-dim)}
+.codeinput{text-align:center;font-family:"Oswald";font-size:22px!important;letter-spacing:.2em;text-transform:uppercase}
+.codeshow{font-family:"Oswald";font-size:26px;letter-spacing:.18em;background:var(--bg2);border:1px dashed var(--gold);border-radius:8px;padding:12px;text-align:center;color:var(--gold);margin:10px 0;user-select:all}
+
+/* ---------- admin ---------- */
+.cfgrow{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px}
+.cfgrow .field{margin-bottom:0}
+.statgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px}
+.stat{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px;text-align:center}
+.stat .v{font-family:"Oswald";font-size:24px;font-weight:700;color:var(--gold)}
+.stat .k{font-size:11px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.06em}
+.hidden{display:none!important}
+.savebar{position:sticky;bottom:0;background:var(--bg2);border-top:1px solid var(--line);padding:12px;margin:0 -18px -18px;border-radius:0 0 var(--radius) var(--radius);display:flex;gap:10px;align-items:center;justify-content:flex-end}
+code{background:var(--bg2);border:1px solid var(--line);border-radius:4px;padding:1px 6px;font-size:12.5px}
+.codecell{font-family:"Oswald";letter-spacing:.1em;color:var(--gold)}
+</style>
+</head>
+<body>
+
+<!-- ======================= SETUP (no firebase config) ======================= -->
+<div id="view-setup" class="authwrap hidden">
+  <div class="authcard">
+    <h1>Prediction League</h1>
+    <div class="sub">Setup required</div>
+    <p class="muted" style="margin-bottom:12px">This app needs a (free) Firebase project to store predictions. Open <code>predictions.html</code>, find the <code>FIREBASE_CONFIG</code> block near the top of the script, and paste in your project's config. Full step-by-step instructions are in <code>predictions-README.md</code> in this repository.</p>
+    <p class="faint">Once the config is in place this screen disappears and the login page takes over.</p>
+  </div>
+</div>
+
+<!-- ======================= FOUNDER (first run, no players yet) ======================= -->
+<div id="view-founder" class="authwrap hidden">
+  <div class="authcard">
+    <h1>Found the league</h1>
+    <div class="sub">First-time setup · you become admin</div>
+    <div id="founder-err" class="banner err hidden"></div>
+    <div id="founder-form">
+      <p class="muted" style="margin-bottom:14px">No players exist yet. Create the league admin account (you). A login code will be generated for you — save it somewhere safe.</p>
+      <div class="field"><label>Your name</label><input id="fd-name" maxlength="24" placeholder="e.g. Tom"></div>
+      <button class="btn btn-gold" onclick="doFound()">Create admin &amp; generate my code</button>
+    </div>
+    <div id="founder-done" class="hidden">
+      <p class="muted">You're in. This is your login code — <b>save it now</b>, it's how you sign in:</p>
+      <div class="codeshow" id="fd-code"></div>
+      <p class="faint" style="margin-bottom:14px">You can view or reset it later in the Admin tab. Now lock down your database: paste the security rules from <code>predictions-README.md</code> into Firebase Console → Firestore → Rules.</p>
+      <button class="btn btn-primary" onclick="location.reload()">Go to the league</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======================= LOGIN ======================= -->
+<div id="view-auth" class="authwrap hidden">
+  <div class="authcard">
+    <h1>Prediction League</h1>
+    <div class="sub">Premier League · predict &amp; win</div>
+    <div id="auth-err" class="banner err hidden"></div>
+    <div class="field"><label>Who are you?</label><select id="li-player"><option value="">Loading players…</option></select></div>
+    <div class="field"><label>Your login code</label><input id="li-code" class="codeinput" maxlength="12" placeholder="XXXX-XXXX" autocomplete="off"></div>
+    <button class="btn btn-primary" onclick="doLogin()">Sign in</button>
+    <p class="faint" style="margin-top:16px;text-align:center">No code, or lost it? Ask the league admin — they can send or reset it.</p>
+  </div>
+</div>
+
+<!-- ======================= MAIN APP ======================= -->
+<div id="view-app" class="hidden">
+  <div class="topbar">
+    <div class="crest">⚽</div>
+    <h1>Prediction League<small>Premier League · Weekly scores</small></h1>
+    <div class="spacer"></div>
+    <div class="whoami"><b id="who-name"></b><span id="who-role"></span></div>
+    <button class="btn btn-sm" onclick="AUTH.signOut()">Sign out</button>
+  </div>
+  <div class="tabs" id="tabs">
+    <button data-tab="predict" class="on" onclick="setTab('predict')">Predictions</button>
+    <button data-tab="week" onclick="setTab('week')">This Week</button>
+    <button data-tab="board" onclick="setTab('board')">Leaderboard</button>
+    <button data-tab="admin" class="hidden" onclick="setTab('admin')">Admin</button>
+  </div>
+  <div class="wrap">
+    <div id="feed-banner"></div>
+    <div id="tab-predict"></div>
+    <div id="tab-week" class="hidden"></div>
+    <div id="tab-board" class="hidden"></div>
+    <div id="tab-admin" class="hidden"></div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+/* ==========================================================================
+   CONFIGURATION — the only bit you need to edit.
+   Create a free Firebase project (see predictions-README.md) and paste the
+   web-app config object it gives you over the placeholder below.
+   ========================================================================== */
+const FIREBASE_CONFIG = {
+  apiKey: "PASTE_YOUR_FIREBASE_CONFIG_HERE",
+  authDomain: "your-project.firebaseapp.com",
+  projectId: "your-project",
+  storageBucket: "your-project.appspot.com",
+  messagingSenderId: "0",
+  appId: "0"
+};
+
+// Where the fixtures feed lives (written automatically by the GitHub Action).
+const FIXTURES_URL = "data/fixtures.json";
+
+// Fallback points if the admin hasn't saved settings yet.
+const DEFAULT_POINTS = { result: 6, exact: 10 };
+
+/* ==========================================================================
+   How login works (for the curious): every player gets a random login code.
+   Behind the scenes each code is the password of a hidden Firebase account
+   ("<playerId>.v<n>@predleague.app" — never emailed, just an ID), so the
+   database genuinely enforces that you can only save your own predictions.
+   Resetting a code simply issues a fresh hidden account.
+   ========================================================================== */
+const LOGIN_DOMAIN = "predleague.app";
+
+let AUTH, DB, MYPID = null, ME = null;
+let CONFIG = { ...DEFAULT_POINTS };          // {result, exact}
+let PLAYERS = {};                             // pid -> player doc
+let CODES = {};                               // pid -> code (admins only)
+let GAMEWEEKS = {};                           // "gw5" -> gameweek doc
+let FEED = null;                              // fixtures.json content
+let PREDS = {};                               // cache: gw -> {pid: picks doc}
+let predUnsub = null, codesUnsub = null, curTab = "predict", viewGw = null, adminGw = null;
+let subsStarted = false, founding = false;
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function show(view){
+  for (const v of ["setup","founder","auth","pending","app"]){
+    const el = $("view-"+v); if (el) el.classList.toggle("hidden", v!==view);
+  }
+}
+
+/* ---------- codes & ids ---------- */
+const CODE_ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ"; // no 0/O/1/I/L
+function randomCode(len=8){
+  const buf = new Uint32Array(len); crypto.getRandomValues(buf);
+  let s = ""; for (let i=0;i<len;i++) s += CODE_ALPHABET[buf[i] % CODE_ALPHABET.length];
+  return s;
+}
+function fmtCode(c){ return c.slice(0,4) + "-" + c.slice(4); }
+function normCode(c){ return String(c||"").toUpperCase().replace(/[^0-9A-Z]/g,""); }
+function randomPid(){
+  const buf = new Uint32Array(8); crypto.getRandomValues(buf);
+  let s = ""; for (let i=0;i<8;i++) s += "abcdefghjkmnpqrstuvwxyz23456789"[buf[i] % 31];
+  return s;
+}
+function loginEmail(pid, version){ return `${pid}.v${version}@${LOGIN_DOMAIN}`; }
+
+function secondaryAuth(){
+  const app = firebase.apps.find(a=>a.name==="secondary") || firebase.initializeApp(FIREBASE_CONFIG, "secondary");
+  return app.auth();
+}
+// Creates the hidden Firebase account behind a login code without touching the
+// admin's own session. Returns the new account's uid.
+async function createHiddenUser(email, code){
+  const sec = secondaryAuth();
+  const cred = await sec.createUserWithEmailAndPassword(email, code);
+  const uid = cred.user.uid;
+  await sec.signOut();
+  return uid;
+}
+
+/* ---------- boot ---------- */
+async function boot(){
+  if (!FIREBASE_CONFIG.apiKey || FIREBASE_CONFIG.apiKey.startsWith("PASTE")) { show("setup"); return; }
+  firebase.initializeApp(FIREBASE_CONFIG);
+  AUTH = firebase.auth(); DB = firebase.firestore();
+  await loadFeed();
+  AUTH.onAuthStateChanged(async user => {
+    if (founding) return; // doFound() drives the UI while the founder docs are being written
+    if (!user){ MYPID = ME = null; subsStarted = false; await showLogin(); return; }
+    try {
+      let map = await DB.collection("uids").doc(user.uid).get();
+      if (!map.exists){ // just-created account: give the mapping write a moment
+        await new Promise(r=>setTimeout(r,1500));
+        map = await DB.collection("uids").doc(user.uid).get();
+      }
+      if (!map.exists) throw new Error("no-mapping");
+      MYPID = map.data().pid;
+    } catch(e){
+      await AUTH.signOut();
+      return;
+    }
+    startSubscriptions();
+  });
+}
+
+async function showLogin(){
+  show("auth");
+  try {
+    const snap = await DB.collection("players").get();
+    if (snap.empty){ show("founder"); return; }
+    const list = [];
+    snap.forEach(d => { const p = d.data(); if (p.active !== false) list.push({ pid:d.id, name:p.name }); });
+    list.sort((a,b)=>a.name.localeCompare(b.name));
+    $("li-player").innerHTML = `<option value="">— select your name —</option>` +
+      list.map(p=>`<option value="${p.pid}">${esc(p.name)}</option>`).join("");
+  } catch(e){
+    authErr("Couldn't load the player list: " + e.message);
+  }
+}
+
+function startSubscriptions(){
+  if (subsStarted) return; subsStarted = true;
+  DB.collection("players").onSnapshot(snap => {
+    PLAYERS = {}; snap.forEach(d => PLAYERS[d.id] = d.data());
+    ME = PLAYERS[MYPID] || null;
+    if (!ME || ME.active === false){ AUTH.signOut(); return; }
+    show("app"); renderChrome(); renderAll();
+    watchCodes();
+  }, err => { console.error(err); AUTH.signOut(); });
+  DB.collection("config").doc("settings").onSnapshot(d => {
+    const c = d.exists ? d.data() : {};
+    CONFIG = { result: c.result ?? DEFAULT_POINTS.result, exact: c.exact ?? DEFAULT_POINTS.exact };
+    if (ME) renderAll();
+  });
+  DB.collection("gameweeks").onSnapshot(snap => {
+    GAMEWEEKS = {}; snap.forEach(d => GAMEWEEKS[d.id] = d.data());
+    if (ME) renderAll();
+  });
+}
+function watchCodes(){
+  if (!ME?.admin || codesUnsub) return;
+  codesUnsub = DB.collection("codes").onSnapshot(snap => {
+    CODES = {}; snap.forEach(d => CODES[d.id] = d.data().code);
+    if (curTab === "admin") renderAll();
+  }, err => console.warn("codes not readable", err));
+}
+
+async function loadFeed(){
+  try {
+    const r = await fetch(FIXTURES_URL + "?t=" + Date.now());
+    if (!r.ok) throw new Error(r.status);
+    FEED = await r.json();
+  } catch(e){ FEED = null; }
+}
+
+/* ---------- fixtures helpers ---------- */
+function allGws(){
+  if (!FEED) return [];
+  return [...new Set(FEED.fixtures.filter(f => f.gw).map(f => f.gw))].sort((a,b)=>a-b);
+}
+function gwFixtures(gw){
+  return (FEED?.fixtures || []).filter(f => f.gw === gw)
+    .sort((a,b) => (a.kickoff||"").localeCompare(b.kickoff||""));
+}
+function currentGw(){
+  const gws = allGws(); if (!gws.length) return null;
+  const now = new Date();
+  for (const gw of gws){
+    const fx = gwFixtures(gw);
+    const allDone = fx.every(f => fixtureResult(gw, f) !== null);
+    const lastKo = fx.reduce((m,f)=> f.kickoff && f.kickoff>m ? f.kickoff : m, "");
+    if (!allDone || (lastKo && (now - new Date(lastKo)) < 3*864e5)) return gw; // stay on a GW until 3 days after it finishes
+  }
+  return gws[gws.length-1];
+}
+function teamName(id){ return FEED?.teams?.[id]?.name || ("Team "+id); }
+function teamShort(id){ return FEED?.teams?.[id]?.short || ("T"+id); }
+function kickedOff(f){ return f.kickoff && new Date(f.kickoff) <= new Date(); }
+function fixtureResult(gw, f){
+  const ov = GAMEWEEKS["gw"+gw]?.overrides?.[f.id];
+  if (ov && ov.h !== null && ov.h !== undefined) return { h:+ov.h, a:+ov.a, override:true };
+  if (f.finished && f.hs !== null && f.hs !== undefined) return { h:f.hs, a:f.as };
+  return null;
+}
+function fmtKo(iso){
+  if (!iso) return "TBC";
+  const d = new Date(iso);
+  return d.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"}) + " " +
+         d.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
+}
+function monthKeyOf(gw){
+  const fx = gwFixtures(gw);
+  const first = fx.find(f => f.kickoff);
+  const d = first ? new Date(first.kickoff) : new Date();
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0");
+}
+function monthLabel(key){
+  const [y,m] = key.split("-");
+  return new Date(+y, +m-1, 1).toLocaleDateString("en-GB",{month:"long",year:"numeric"});
+}
+
+/* ---------- predictions data ---------- */
+function watchPreds(gw){
+  if (predUnsub) predUnsub();
+  predUnsub = DB.collection("predictions").where("gw","==",gw).onSnapshot(snap => {
+    const m = {}; snap.forEach(d => { const x = d.data(); m[x.pid] = x; });
+    PREDS[gw] = m;
+    renderAll();
+  });
+}
+
+/* ---------- scoring ---------- */
+function isOut(gw, pid){ return (GAMEWEEKS["gw"+gw]?.out || []).includes(pid); }
+function scoreWeek(gw){
+  const fx = gwFixtures(gw), preds = PREDS[gw] || {};
+  const pts = GAMEWEEKS["gw"+gw]?.finalized ? (GAMEWEEKS["gw"+gw].pointsUsed || CONFIG) : CONFIG;
+  const rows = [];
+  for (const [pid,p] of Object.entries(PLAYERS)){
+    if (p.active === false || isOut(gw, pid)) continue;
+    const picks = preds[pid]?.picks || {};
+    let total=0, exact=0, correct=0, predicted=0;
+    for (const f of fx){
+      const res = fixtureResult(gw, f), pk = picks[f.id];
+      if (pk && pk.h !== null && pk.h !== undefined) predicted++;
+      if (!res || !pk || pk.h === null || pk.h === undefined) continue;
+      if (+pk.h === res.h && +pk.a === res.a){ total += pts.exact; exact++; correct++; }
+      else if (Math.sign(pk.h - pk.a) === Math.sign(res.h - res.a)){ total += pts.result; correct++; }
+    }
+    rows.push({ pid, name: p.name, pts: total, exact, correct, predicted });
+  }
+  rows.sort((a,b)=> b.pts-a.pts || b.exact-a.exact || b.correct-a.correct || a.name.localeCompare(b.name));
+  let rank=0, prev=null;
+  rows.forEach((r,i)=>{
+    const key = r.pts+"|"+r.exact+"|"+r.correct;
+    if (key !== prev){ rank = i+1; prev = key; }
+    r.rank = rank;
+  });
+  return rows;
+}
+
+/* ---------- chrome / tabs ---------- */
+function renderChrome(){
+  $("who-name").textContent = ME.name;
+  $("who-role").textContent = ME.admin ? "League admin" : "Player";
+  document.querySelector('[data-tab=admin]').classList.toggle("hidden", !ME.admin);
+  $("feed-banner").innerHTML = !FEED
+    ? `<div class="banner err">Fixture feed not found (<code>${esc(FIXTURES_URL)}</code>). Run the "Update fixtures" GitHub Action, or an admin can add results manually.</div>`
+    : (FEED.sample ? `<div class="banner warn">Showing <b>sample fixtures</b> — run the "Update fixtures" GitHub Action to pull real Premier League fixtures automatically.</div>` : "");
+  if (viewGw === null) viewGw = currentGw();
+  if (adminGw === null) adminGw = viewGw;
+  if (viewGw !== null && !PREDS[viewGw]) watchPreds(viewGw);
+}
+function setTab(t){
+  curTab = t;
+  document.querySelectorAll("#tabs button").forEach(b => b.classList.toggle("on", b.dataset.tab===t));
+  for (const x of ["predict","week","board","admin"]) $("tab-"+x).classList.toggle("hidden", x!==t);
+  renderAll();
+}
+function stepGw(el, delta){
+  const gws = allGws(); if (!gws.length) return;
+  const i = Math.max(0, Math.min(gws.length-1, gws.indexOf(el==="admin"?adminGw:viewGw) + delta));
+  if (el==="admin") adminGw = gws[i]; else viewGw = gws[i];
+  const gw = el==="admin" ? adminGw : viewGw;
+  if (!PREDS[gw]) watchPreds(gw); else renderAll();
+}
+function gwNavHtml(which, gw){
+  const fx = gwFixtures(gw);
+  const first = fx.find(f=>f.kickoff);
+  const fin = GAMEWEEKS["gw"+gw]?.finalized;
+  return `<div class="gwnav">
+    <button onclick="stepGw('${which}',-1)">‹</button>
+    <div class="gwlabel">Gameweek ${gw} ${fin?'✓':''}<small>${first?fmtKo(first.kickoff).split(" ").slice(0,3).join(" "):""} · ${monthLabel(monthKeyOf(gw))}</small></div>
+    <button onclick="stepGw('${which}',1)">›</button>
+  </div>`;
+}
+
+function renderAll(){
+  if (!ME) return;
+  if (curTab==="predict") renderPredict();
+  if (curTab==="week") renderWeek();
+  if (curTab==="board") renderBoard();
+  if (curTab==="admin" && ME.admin) renderAdmin();
+}
+
+/* ---------- TAB: predictions ---------- */
+function renderPredict(){
+  const el = $("tab-predict");
+  if (viewGw === null){ el.innerHTML = `<div class="panel"><p class="muted">No fixtures loaded yet.</p></div>`; return; }
+  const gw = viewGw, fx = gwFixtures(gw);
+  const mine = (PREDS[gw]||{})[MYPID]?.picks || {};
+  const out = isOut(gw, MYPID);
+  let html = gwNavHtml("view", gw);
+  if (out) html += `<div class="banner warn">You're marked <b>out</b> for this gameweek (not in the pot), so your predictions won't count. Speak to the admin if that's wrong.</div>`;
+  html += `<div class="panel"><h2>Your predictions <span class="tag">${CONFIG.result} pts result · ${CONFIG.exact} pts exact score</span></h2>`;
+  if (!fx.length) html += `<p class="muted">No fixtures in this gameweek.</p>`;
+  for (const f of fx){
+    const locked = kickedOff(f) || out;
+    const pk = mine[f.id] || {};
+    const res = fixtureResult(gw, f);
+    html += `<div class="fixture">
+      <div class="team home"><span>${esc(teamName(f.h))}</span><span class="badge">${esc(teamShort(f.h))}</span></div>
+      <div class="mid">
+        <div class="scorebox">
+          <input type="number" min="0" max="15" id="pk-${f.id}-h" value="${pk.h ?? ""}" ${locked?"disabled":""}>
+          <span class="dash">–</span>
+          <input type="number" min="0" max="15" id="pk-${f.id}-a" value="${pk.a ?? ""}" ${locked?"disabled":""}>
+        </div>
+        <span class="ko">${fmtKo(f.kickoff)}${res?` · FT ${res.h}–${res.a}`:""}${locked&&!out?' · <span class="lock">🔒 locked</span>':""}</span>
+      </div>
+      <div class="team"><span class="badge">${esc(teamShort(f.a))}</span><span>${esc(teamName(f.a))}</span></div>
+    </div>`;
+  }
+  if (fx.length && !out){
+    html += `<div class="savebar"><span id="save-msg" class="faint"></span><button class="btn btn-gold" onclick="savePicks(${gw})">Save predictions</button></div>`;
+  }
+  html += `</div>`;
+  el.innerHTML = html;
+}
+
+async function savePicks(gw){
+  const fx = gwFixtures(gw);
+  const existing = (PREDS[gw]||{})[MYPID]?.picks || {};
+  const picks = { ...existing };
+  for (const f of fx){
+    if (kickedOff(f)) continue; // never change a locked pick
+    const h = $("pk-"+f.id+"-h").value, a = $("pk-"+f.id+"-a").value;
+    if (h === "" || a === ""){ delete picks[f.id]; continue; }
+    picks[f.id] = { h: Math.max(0,Math.min(15,+h)), a: Math.max(0,Math.min(15,+a)) };
+  }
+  try {
+    await DB.collection("predictions").doc("gw"+gw+"_"+MYPID).set({
+      gw, pid: MYPID, name: ME.name, picks,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    const m = $("save-msg"); if (m){ m.textContent = "Saved ✓ (" + new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}) + ")"; m.style.color = "var(--green)"; }
+  } catch(e){
+    const m = $("save-msg"); if (m){ m.textContent = "Save failed: " + e.message; m.style.color = "var(--red)"; }
+  }
+}
+
+/* ---------- TAB: this week ---------- */
+function renderWeek(){
+  const el = $("tab-week");
+  if (viewGw === null){ el.innerHTML = `<div class="panel"><p class="muted">No fixtures loaded yet.</p></div>`; return; }
+  const gw = viewGw, fx = gwFixtures(gw), gwDoc = GAMEWEEKS["gw"+gw];
+  const rows = scoreWeek(gw);
+  let html = gwNavHtml("view", gw);
+
+  if (gwDoc?.finalized){
+    const w = gwDoc.winners || [], r = gwDoc.runnersUp || [];
+    html += `<div class="podium">
+      <div class="card win"><div class="lbl">🏆 Winner${w.length>1?"s (tied)":""}</div><div class="name">${esc(w.map(x=>x.name).join(" & ")) || "—"}</div><div class="pts">${w[0]?w[0].pts+" pts":""}</div></div>
+      <div class="card run"><div class="lbl">🥈 Runner-up${r.length>1?"s (tied)":""}</div><div class="name">${esc(r.map(x=>x.name).join(" & ")) || "—"}</div><div class="pts">${r[0]?r[0].pts+" pts":""}</div></div>
+    </div>`;
+  } else {
+    const anyResult = fx.some(f => fixtureResult(gw,f));
+    html += `<div class="banner info">${anyResult ? "Live standings — the week hasn't been finalised by the admin yet." : "No results in yet. Standings will appear as matches finish."}</div>`;
+  }
+
+  html += `<div class="panel"><h2>Gameweek ${gw} table</h2><div class="tbl-scroll"><table>
+    <tr><th class="rank">#</th><th>Player</th><th class="num">Pts</th><th class="num">Exact</th><th class="num">Results</th><th class="num">Predicted</th></tr>`;
+  const table = gwDoc?.finalized ? gwDoc.table : rows;
+  for (const r of table){
+    html += `<tr class="${r.pid===MYPID?"me":""} ${r.rank===1?"pos1":r.rank===2?"pos2":""}">
+      <td class="rank">${r.rank===1?'<span class="medal">🥇</span>':r.rank===2?'<span class="medal">🥈</span>':r.rank}</td>
+      <td>${esc(r.name)}</td><td class="num"><b>${r.pts}</b></td><td class="num">${r.exact}</td><td class="num">${r.correct}</td><td class="num">${r.predicted}/${fx.length}</td></tr>`;
+  }
+  if (!table.length) html += `<tr><td colspan="6" class="muted">No players in this week.</td></tr>`;
+  html += `</table></div></div>`;
+
+  html += `<div class="panel"><h2>Fixtures &amp; picks</h2><p class="faint" style="margin-bottom:8px">Other players' predictions are revealed once a match kicks off.</p>`;
+  const preds = PREDS[gw] || {};
+  for (const f of fx){
+    const res = fixtureResult(gw, f), ko = kickedOff(f);
+    html += `<div class="fixture">
+      <div class="team home"><span>${esc(teamName(f.h))}</span><span class="badge">${esc(teamShort(f.h))}</span></div>
+      <div class="mid">${res?`<span class="final">${res.h}–${res.a}</span>${res.override?'<span class="faint">admin entry</span>':""}`:`<span class="ko">${fmtKo(f.kickoff)}</span>`}</div>
+      <div class="team"><span class="badge">${esc(teamShort(f.a))}</span><span>${esc(teamName(f.a))}</span></div>
+    </div>`;
+    if (ko){
+      html += `<div style="padding:0 8px 12px;display:flex;flex-wrap:wrap;gap:6px;border-bottom:1px solid var(--line)">`;
+      for (const [pid,p] of Object.entries(PLAYERS)){
+        if (p.active === false || isOut(gw,pid)) continue;
+        const pk = preds[pid]?.picks?.[f.id];
+        let cls = "pts-none", txt = pk ? `${pk.h}–${pk.a}` : "—";
+        if (pk && res){
+          if (+pk.h===res.h && +pk.a===res.a) cls = "pts-exact";
+          else if (Math.sign(pk.h-pk.a)===Math.sign(res.h-res.a)) cls = "pts-result";
+        }
+        html += `<span class="ptsbadge ${cls}" title="${esc(p.name)}">${esc(p.name.split(" ")[0])} ${txt}</span>`;
+      }
+      html += `</div>`;
+    }
+  }
+  html += `</div>`;
+  el.innerHTML = html;
+}
+
+/* ---------- TAB: leaderboard ---------- */
+function seasonAgg(monthKey){
+  const agg = {};
+  for (const g of Object.values(GAMEWEEKS)){
+    if (!g.finalized || !g.table) continue;
+    if (monthKey && g.monthKey !== monthKey) continue;
+    const winPids = new Set((g.winners||[]).map(x=>x.pid));
+    const runPids = new Set((g.runnersUp||[]).map(x=>x.pid));
+    for (const r of g.table){
+      const a = agg[r.pid] || (agg[r.pid] = { pid:r.pid, name:r.name, wins:0, runs:0, pts:0, exact:0, correct:0, weeks:0 });
+      a.name = PLAYERS[r.pid]?.name || r.name;
+      a.pts += r.pts; a.exact += r.exact; a.correct += r.correct; a.weeks++;
+      if (winPids.has(r.pid)) a.wins++;
+      if (runPids.has(r.pid)) a.runs++;
+    }
+  }
+  const rows = Object.values(agg);
+  rows.sort((a,b)=> b.wins-a.wins || b.pts-a.pts || b.exact-a.exact || b.correct-a.correct || a.name.localeCompare(b.name));
+  return rows;
+}
+function renderBoard(){
+  const el = $("tab-board");
+  const months = [...new Set(Object.values(GAMEWEEKS).filter(g=>g.finalized&&g.monthKey).map(g=>g.monthKey))].sort();
+  const sel = el.dataset.month || "";
+  const rows = seasonAgg(sel || null);
+  let html = `<div class="panel"><h2>Leaderboard
+      <select onchange="$('tab-board').dataset.month=this.value;renderBoard()" style="margin-left:auto">
+        <option value="">Whole season</option>
+        ${months.map(m=>`<option value="${m}" ${m===sel?"selected":""}>${monthLabel(m)}</option>`).join("")}
+      </select></h2>
+    <p class="faint" style="margin-bottom:10px">Ranked by weekly wins, then total points. Only finalised gameweeks count.</p>
+    <div class="tbl-scroll"><table>
+    <tr><th class="rank">#</th><th>Player</th><th class="num">🏆 Wins</th><th class="num">🥈 Runner-up</th><th class="num">Total pts</th><th class="num">Exact scores</th><th class="num">Correct results</th><th class="num">Weeks</th></tr>`;
+  rows.forEach((r,i)=>{
+    html += `<tr class="${r.pid===MYPID?"me":""} ${i===0?"pos1":i===1?"pos2":""}">
+      <td class="rank">${i+1}</td><td>${esc(r.name)}</td><td class="num"><b>${r.wins}</b></td><td class="num">${r.runs}</td>
+      <td class="num"><b>${r.pts}</b></td><td class="num">${r.exact}</td><td class="num">${r.correct}</td><td class="num">${r.weeks}</td></tr>`;
+  });
+  if (!rows.length) html += `<tr><td colspan="8" class="muted">Nothing here yet — the table fills up once the admin finalises a gameweek.</td></tr>`;
+  html += `</table></div></div>`;
+
+  const done = Object.entries(GAMEWEEKS).filter(([,g])=>g.finalized).map(([id,g])=>({gw:+id.replace("gw",""),...g})).sort((a,b)=>b.gw-a.gw);
+  if (done.length){
+    html += `<div class="panel"><h2>Roll of honour</h2><div class="tbl-scroll"><table>
+      <tr><th>Gameweek</th><th>Month</th><th>🏆 Winner</th><th>🥈 Runner-up</th><th class="num">Winning pts</th></tr>`;
+    for (const g of done){
+      html += `<tr><td>GW ${g.gw}</td><td>${g.monthKey?monthLabel(g.monthKey):""}</td>
+        <td>${esc((g.winners||[]).map(x=>x.name).join(" & "))}</td>
+        <td>${esc((g.runnersUp||[]).map(x=>x.name).join(" & "))}</td>
+        <td class="num">${g.winners?.[0]?.pts ?? ""}</td></tr>`;
+    }
+    html += `</table></div></div>`;
+  }
+  el.innerHTML = html;
+}
+
+/* ---------- TAB: admin ---------- */
+function renderAdmin(){
+  const el = $("tab-admin");
+  const gw = adminGw ?? viewGw;
+  const gwDoc = gw!==null ? GAMEWEEKS["gw"+gw] : null;
+  const roster = Object.entries(PLAYERS).filter(([,p])=>p.active!==false).sort((a,b)=>a[1].name.localeCompare(b[1].name));
+  const retired = Object.entries(PLAYERS).filter(([,p])=>p.active===false).sort((a,b)=>a[1].name.localeCompare(b[1].name));
+
+  let html = `<div class="statgrid">
+    <div class="stat"><div class="v">${roster.length}</div><div class="k">Players</div></div>
+    <div class="stat"><div class="v">${roster.filter(([,p])=>p.admin).length}</div><div class="k">Admins</div></div>
+    <div class="stat"><div class="v">${CONFIG.result}/${CONFIG.exact}</div><div class="k">Result / exact pts</div></div>
+    <div class="stat"><div class="v">${Object.values(GAMEWEEKS).filter(g=>g.finalized).length}</div><div class="k">Weeks finalised</div></div>
+  </div>
+  <div id="admin-msg"></div>`;
+
+  /* scoring settings */
+  html += `<div class="panel"><h2>Scoring settings</h2>
+    <div class="cfgrow">
+      <div class="field"><label>Correct result</label><input type="number" id="cfg-result" value="${CONFIG.result}" min="0"></div>
+      <div class="field"><label>Exact score</label><input type="number" id="cfg-exact" value="${CONFIG.exact}" min="0"></div>
+      <button class="btn btn-primary" onclick="saveConfig()">Save</button>
+    </div>
+    <p class="faint">Changes apply to any week not yet finalised. Finalised weeks keep the points they were scored with.</p></div>`;
+
+  /* add player */
+  html += `<div class="panel"><h2>Add a player</h2>
+    <div class="cfgrow">
+      <div class="field"><label>Name</label><input id="np-name" maxlength="24" placeholder="e.g. Dave"></div>
+      <button class="btn btn-gold" onclick="addPlayer()">Add &amp; generate code</button>
+    </div>
+    <p class="faint">A unique login code is generated for each player — copy it from the table below and send it to them on WhatsApp. They sign in by picking their name and entering the code.</p></div>`;
+
+  /* players & weekly in/out */
+  html += `<div class="panel"><h2>Players ${gw!==null?`<span class="tag">In / out applies to GW ${gw}</span>`:""}</h2>
+    <div class="tbl-scroll"><table>
+    <tr><th>Player</th><th>Login code</th><th class="num">GW ${gw??"—"}</th><th style="text-align:right">Actions</th></tr>`;
+  for (const [pid,p] of roster){
+    const out = gw!==null && isOut(gw,pid);
+    const code = CODES[pid];
+    html += `<tr>
+      <td><b>${esc(p.name)}</b> ${p.admin?'<span class="pill adm">Admin</span>':""}</td>
+      <td>${code?`<span class="codecell">${esc(fmtCode(code))}</span>
+            <button class="btn btn-sm" onclick="copyCode('${pid}','${esc(p.name)}')" title="Copy invite message">📋 Copy</button>`
+          :'<span class="faint">—</span>'}
+        <button class="btn btn-sm" onclick="resetCode('${pid}')">Reset</button></td>
+      <td class="num">${gw!==null?`<button class="btn btn-sm" onclick="toggleOut(${gw},'${pid}')">${out?'<span class="pill out">Out</span>':'<span class="pill in">In</span>'}</button>`:"—"}</td>
+      <td style="text-align:right">
+        <button class="btn btn-sm" onclick="renamePlayer('${pid}')">Rename</button>
+        <button class="btn btn-sm" onclick="setPlayer('${pid}',{admin:${p.admin?"false":"true"}})" ${pid===MYPID?"disabled title='You cannot change your own admin status'":""}>${p.admin?"Remove admin":"Make admin"}</button>
+        <button class="btn btn-sm btn-danger" onclick="retirePlayer('${pid}','${esc(p.name)}')" ${pid===MYPID?"disabled":""}>Remove</button>
+      </td></tr>`;
+  }
+  html += `</table></div>
+  <p class="faint" style="margin-top:8px">Toggle a player <b>Out</b> for each gameweek they haven't paid for — they're excluded from that week's table and can't enter predictions. Everyone defaults to In each week. Removing a player keeps their history in finalised weeks but hides them from login and tables; codes can be reset any time if someone loses theirs.</p>`;
+  if (retired.length){
+    html += `<p class="muted" style="margin-top:10px">Removed: ${retired.map(([pid,p])=>`${esc(p.name)} <button class="btn btn-sm" onclick="setPlayer('${pid}',{active:true})">Restore</button>`).join(" · ")}</p>`;
+  }
+  html += `</div>`;
+
+  if (gw === null){ el.innerHTML = html + `<div class="panel"><p class="muted">No fixture data — gameweek tools unavailable.</p></div>`; return; }
+
+  /* gameweek management */
+  const fx = gwFixtures(gw);
+  const resultsIn = fx.filter(f=>fixtureResult(gw,f)).length;
+  html += `<div class="panel"><h2>Gameweek control</h2>${gwNavHtml("admin", gw)}
+    <p class="muted" style="margin-bottom:10px">Results in for <b>${resultsIn}/${fx.length}</b> fixtures.
+    ${gwDoc?.finalized ? `This week is <b style="color:var(--gold)">finalised</b> (scored at ${gwDoc.pointsUsed?.result}/${gwDoc.pointsUsed?.exact} pts).` : "Not yet finalised."}</p>`;
+  if (!gwDoc?.finalized){
+    html += `<button class="btn btn-gold" onclick="finalizeGw(${gw})">Finalise GW ${gw} — declare winner &amp; runner-up</button>
+      ${resultsIn<fx.length?'<span class="faint" style="margin-left:10px">⚠ not all results are in</span>':""}`;
+  } else {
+    html += `<button class="btn btn-danger" onclick="unfinalizeGw(${gw})">Un-finalise (re-open this week)</button>`;
+  }
+
+  /* manual results */
+  html += `<h2 style="margin-top:22px">Results — manual entry / override</h2>
+    <p class="faint" style="margin-bottom:8px">Normally results arrive automatically from the fixtures feed. Use this to enter or correct a score by hand; a manual entry always wins over the feed.</p>`;
+  for (const f of fx){
+    const ov = gwDoc?.overrides?.[f.id];
+    const feedRes = (f.finished && f.hs!==null && f.hs!==undefined) ? `feed: ${f.hs}–${f.as}` : "no feed result";
+    html += `<div class="fixture">
+      <div class="team home"><span>${esc(teamName(f.h))}</span><span class="badge">${esc(teamShort(f.h))}</span></div>
+      <div class="mid"><div class="scorebox">
+        <input type="number" min="0" max="15" id="ov-${f.id}-h" value="${ov?.h ?? ""}">
+        <span class="dash">–</span>
+        <input type="number" min="0" max="15" id="ov-${f.id}-a" value="${ov?.a ?? ""}">
+      </div><span class="ko">${feedRes}${ov?' · <b style="color:var(--gold)">override set</b>':""}</span></div>
+      <div class="team"><span class="badge">${esc(teamShort(f.a))}</span><span>${esc(teamName(f.a))}</span></div>
+    </div>`;
+  }
+  html += `<div class="savebar"><span id="ov-msg" class="faint"></span><button class="btn btn-primary" onclick="saveOverrides(${gw})">Save manual results</button></div></div>`;
+  el.innerHTML = html;
+}
+
+function adminMsg(text, cls="ok"){
+  const m = $("admin-msg"); if (!m) return;
+  m.innerHTML = `<div class="banner ${cls}">${text}</div>`;
+}
+
+/* ---------- admin actions ---------- */
+async function saveConfig(){
+  const result = Math.max(0,+$("cfg-result").value||0), exact = Math.max(0,+$("cfg-exact").value||0);
+  await DB.collection("config").doc("settings").set({ result, exact }, { merge:true });
+  adminMsg("Scoring saved — correct result " + result + " pts, exact score " + exact + " pts.");
+}
+async function setPlayer(pid, patch){
+  await DB.collection("players").doc(pid).set(patch, { merge:true });
+}
+async function renamePlayer(pid){
+  const name = prompt("New name for " + (PLAYERS[pid]?.name || "player") + ":", PLAYERS[pid]?.name || "");
+  if (name && name.trim()) await setPlayer(pid, { name: name.trim() });
+}
+async function retirePlayer(pid, name){
+  if (!confirm(`Remove ${name} from the league? Their history stays in finalised weeks, but they can no longer log in. You can restore them later.`)) return;
+  await setPlayer(pid, { active:false });
+}
+async function addPlayer(){
+  const name = $("np-name").value.trim();
+  if (!name){ adminMsg("Enter a name first.", "err"); return; }
+  try {
+    const pid = randomPid(), code = randomCode();
+    const uid = await createHiddenUser(loginEmail(pid, 1), code);
+    await DB.collection("players").doc(pid).set({
+      name, admin:false, active:true, codeVersion:1, uid,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    await DB.collection("uids").doc(uid).set({ pid });
+    await DB.collection("codes").doc(pid).set({ code });
+    $("np-name").value = "";
+    adminMsg(`<b>${esc(name)}</b> added. Their login code is <b class="codecell">${fmtCode(code)}</b> — use the 📋 Copy button to grab a ready-made WhatsApp message.`);
+  } catch(e){ adminMsg("Couldn't add player: " + esc(e.message), "err"); }
+}
+async function resetCode(pid){
+  const p = PLAYERS[pid];
+  if (!confirm(`Reset ${p.name}'s login code? Their old code stops working immediately.`)) return;
+  try {
+    const code = randomCode(), v = (p.codeVersion||1) + 1;
+    const uid = await createHiddenUser(loginEmail(pid, v), code);
+    await DB.collection("players").doc(pid).set({ codeVersion:v, uid }, { merge:true });
+    await DB.collection("uids").doc(uid).set({ pid });
+    if (p.uid) await DB.collection("uids").doc(p.uid).delete().catch(()=>{});
+    await DB.collection("codes").doc(pid).set({ code });
+    adminMsg(`New code for <b>${esc(p.name)}</b>: <b class="codecell">${fmtCode(code)}</b>`);
+  } catch(e){ adminMsg("Couldn't reset code: " + esc(e.message), "err"); }
+}
+function copyCode(pid, name){
+  const code = CODES[pid]; if (!code) return;
+  const msg = `⚽ Prediction League — you're in, ${name}!\n${location.origin}${location.pathname}\nPick your name and enter your code: ${fmtCode(code)}`;
+  navigator.clipboard.writeText(msg).then(()=>adminMsg(`Invite message for <b>${esc(name)}</b> copied — paste it into WhatsApp.`));
+}
+async function toggleOut(gw, pid){
+  const ref = DB.collection("gameweeks").doc("gw"+gw);
+  const cur = GAMEWEEKS["gw"+gw]?.out || [];
+  const out = cur.includes(pid) ? cur.filter(x=>x!==pid) : [...cur, pid];
+  await ref.set({ out }, { merge:true });
+}
+async function saveOverrides(gw){
+  const fx = gwFixtures(gw), overrides = { ...(GAMEWEEKS["gw"+gw]?.overrides || {}) };
+  for (const f of fx){
+    const h = $("ov-"+f.id+"-h").value, a = $("ov-"+f.id+"-a").value;
+    if (h==="" || a==="") delete overrides[f.id];
+    else overrides[f.id] = { h:+h, a:+a };
+  }
+  await DB.collection("gameweeks").doc("gw"+gw).set({ overrides }, { merge:true });
+  const m = $("ov-msg"); if (m){ m.textContent = "Saved ✓"; m.style.color="var(--green)"; }
+}
+async function finalizeGw(gw){
+  const rows = scoreWeek(gw);
+  if (!rows.length){ alert("No players in this gameweek."); return; }
+  const winners = rows.filter(r=>r.rank===1).map(r=>({pid:r.pid,name:r.name,pts:r.pts}));
+  const second = rows.find(r=>r.rank>1)?.rank;
+  const runnersUp = second ? rows.filter(r=>r.rank===second).map(r=>({pid:r.pid,name:r.name,pts:r.pts})) : [];
+  const msg = `Finalise Gameweek ${gw}?\n\n🏆 Winner: ${winners.map(w=>w.name).join(" & ")} (${winners[0].pts} pts)\n🥈 Runner-up: ${runnersUp.map(r=>r.name).join(" & ") || "—"}`;
+  if (!confirm(msg)) return;
+  await DB.collection("gameweeks").doc("gw"+gw).set({
+    finalized: true,
+    finalizedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    monthKey: monthKeyOf(gw),
+    pointsUsed: { ...CONFIG },
+    table: rows, winners, runnersUp
+  }, { merge:true });
+}
+async function unfinalizeGw(gw){
+  if (!confirm(`Re-open Gameweek ${gw}? It will drop out of the leaderboard until finalised again.`)) return;
+  await DB.collection("gameweeks").doc("gw"+gw).set({
+    finalized:false, table: firebase.firestore.FieldValue.delete(),
+    winners: firebase.firestore.FieldValue.delete(), runnersUp: firebase.firestore.FieldValue.delete()
+  }, { merge:true });
+}
+
+/* ---------- auth actions ---------- */
+function authErr(msg){ const e=$("auth-err"); e.textContent=msg; e.classList.remove("hidden"); }
+async function doLogin(){
+  const pid = $("li-player").value, code = normCode($("li-code").value);
+  if (!pid){ authErr("Pick your name from the list."); return; }
+  if (code.length < 6){ authErr("That code looks too short — check it and try again."); return; }
+  try {
+    const pdoc = await DB.collection("players").doc(pid).get();
+    if (!pdoc.exists || pdoc.data().active === false) throw { code:"auth/invalid-credential" };
+    await AUTH.signInWithEmailAndPassword(loginEmail(pid, pdoc.data().codeVersion || 1), code);
+  } catch(e){
+    authErr(e.code === "auth/invalid-credential" || e.code === "auth/wrong-password" || e.code === "auth/user-not-found"
+      ? "That code isn't right for " + ($("li-player").selectedOptions[0]?.text || "that player") + ". Codes look like XXXX-XXXX — ask the admin to resend or reset it."
+      : ("Sign-in failed: " + (e.message || e.code)));
+  }
+}
+async function doFound(){
+  const name = $("fd-name").value.trim();
+  if (!name){ const e=$("founder-err"); e.textContent="Enter your name."; e.classList.remove("hidden"); return; }
+  founding = true;
+  try {
+    const pid = randomPid(), code = randomCode();
+    const cred = await AUTH.createUserWithEmailAndPassword(loginEmail(pid, 1), code);
+    const uid = cred.user.uid;
+    await DB.collection("players").doc(pid).set({
+      name, admin:true, active:true, codeVersion:1, uid,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    await DB.collection("uids").doc(uid).set({ pid });
+    await DB.collection("codes").doc(pid).set({ code });
+    await DB.collection("config").doc("settings").set(DEFAULT_POINTS);
+    $("fd-code").textContent = fmtCode(code);
+    $("founder-form").classList.add("hidden");
+    $("founder-done").classList.remove("hidden");
+    show("founder");
+  } catch(e){
+    founding = false;
+    const el=$("founder-err"); el.textContent = "Setup failed: " + e.message; el.classList.remove("hidden");
+  }
+}
+
+boot();
+</script>
+</body>
+</html>
