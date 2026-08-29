@@ -92,22 +92,29 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 
 /* ---------- predictions grid (sticky own column) ---------- */
 .predgrid-wrap{overflow-x:auto;position:relative}
-.predgrid{border-collapse:separate;border-spacing:0;min-width:100%;width:auto}
-.predgrid th,.predgrid td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
-.predgrid th{font-family:"Oswald";font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-dim);border-bottom:2px solid var(--line)}
+.predgrid{width:auto;border-collapse:separate;border-spacing:0}
+.predgrid th,.predgrid td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
+.predgrid th{font-family:"Oswald";font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-dim);border-bottom:2px solid var(--line);max-width:72px;overflow:hidden;text-overflow:ellipsis}
 .predgrid tr:last-child td{border-bottom:none}
-.predgrid .colfix{position:sticky;left:0;z-index:2;background:var(--panel);text-align:left;width:148px;min-width:148px;max-width:148px;overflow:hidden;text-overflow:ellipsis}
-.predgrid .colme{position:sticky;left:148px;z-index:2;background:var(--panel);border-right:2px solid var(--gold)}
-.predgrid .colme .scorebox{justify-content:center}
-.predgrid input[type=number]{width:46px;font-size:15px;padding:6px 4px}
-.predgrid .vsep{color:var(--ink-faint);font-weight:400;font-size:12px}
+.predgrid td:not(.colme){min-width:52px}
+.predgrid .colme{position:sticky;left:0;z-index:2;background:var(--panel);border-right:2px solid var(--gold);text-align:left;width:216px;min-width:216px;max-width:216px}
+.predgrid th.colme{text-align:left;max-width:216px}
+.myrow{display:flex;align-items:center;gap:5px}
+.tcode{font-family:"Oswald";font-size:13px;font-weight:600;color:var(--steel);width:36px;flex-shrink:0}
+.tcode.ta{text-align:right}
+.predgrid input[type=number]{width:44px;font-size:15px;padding:6px 2px}
+.predgrid .ko{display:block;margin-top:2px}
 .tick-ok{color:var(--green);font-weight:700;font-size:15px}
 .tick-no{color:var(--ink-faint)}
+.predgrid .ptsbadge{padding:2px 6px}
 @media(max-width:640px){
-  .predgrid th,.predgrid td{padding:8px 6px}
-  .predgrid .colfix{width:112px;min-width:112px;max-width:112px}
-  .predgrid .colme{left:112px}
-  .predgrid input[type=number]{width:40px;font-size:14px}
+  .predgrid th,.predgrid td{padding:6px 5px}
+  .predgrid td:not(.colme){min-width:46px}
+  .predgrid .colme{width:184px;min-width:184px;max-width:184px}
+  .predgrid th.colme{max-width:184px}
+  .predgrid input[type=number]{width:38px;font-size:14px;padding:5px 1px}
+  .tcode{width:31px;font-size:12px}
+  .predgrid .ko{font-size:10px}
 }
 
 /* ---------- tables ---------- */
@@ -634,17 +641,21 @@ function renderPredict(){
     const preds = PREDS[gw] || {};
     const revealed = gwLocked(gw); // admin unlock also re-hides picks
     html += `<div class="predgrid-wrap"><table class="predgrid">
-      <tr><th class="colfix">Fixture</th><th class="colme">You</th>${others.map(([,p])=>`<th>${esc(p.name.split(" ")[0])}</th>`).join("")}</tr>`;
+      <tr><th class="colme">You</th>${others.map(([,p])=>`<th>${esc(p.name.split(" ")[0])}</th>`).join("")}</tr>`;
     for (const f of fx){
       const pk = mine[f.id] || {};
       const res = fixtureResult(gw, f);
       html += `<tr>
-        <td class="colfix" title="${esc(teamName(f.h))} v ${esc(teamName(f.a))}"><b>${esc(teamShort(f.h))}</b> <span class="vsep">v</span> <b>${esc(teamShort(f.a))}</b><br><span class="ko">${fmtKo(f.kickoff)}${res?` · FT ${res.h}–${res.a}`:""}</span></td>
-        <td class="colme"><div class="scorebox">
-          <input type="number" min="0" max="15" id="pk-${f.id}-h" value="${pk.h ?? ""}" ${locked||out?"disabled":""}>
-          <span class="dash">–</span>
-          <input type="number" min="0" max="15" id="pk-${f.id}-a" value="${pk.a ?? ""}" ${locked||out?"disabled":""}>
-        </div></td>`;
+        <td class="colme" title="${esc(teamName(f.h))} v ${esc(teamName(f.a))}">
+          <div class="myrow">
+            <span class="tcode">${esc(teamShort(f.h))}</span>
+            <input type="number" min="0" max="15" id="pk-${f.id}-h" value="${pk.h ?? ""}" ${locked||out?"disabled":""}>
+            <span class="dash">–</span>
+            <input type="number" min="0" max="15" id="pk-${f.id}-a" value="${pk.a ?? ""}" ${locked||out?"disabled":""}>
+            <span class="tcode ta">${esc(teamShort(f.a))}</span>
+          </div>
+          <span class="ko">${fmtKo(f.kickoff)}${res?` · FT ${res.h}–${res.a}`:""}</span>
+        </td>`;
       for (const [pid] of others){
         const opk = preds[pid]?.picks?.[f.id];
         if (revealed){
