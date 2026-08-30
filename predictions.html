@@ -178,6 +178,11 @@ tr.pos2 td{background:linear-gradient(90deg,rgba(154,167,181,.10),transparent 70
 .roast-card .lbl{font-family:"Oswald";font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
 .roast-card .name{font-family:"Oswald";font-size:32px;font-weight:700;margin:6px 0 10px}
 .roast-card p{color:var(--ink-dim);font-size:15px;margin-bottom:18px}
+.roast-card.inplay{border-color:var(--green)}
+.roast-card.inplay .lbl{color:var(--green)}
+.roast-card.dead{border-color:var(--red)}
+.roast-card.dead .lbl{color:var(--red)}
+.roast-card.dead .name{color:var(--red)}
 
 /* ---------- global mobile pass ---------- */
 @media(max-width:640px){
@@ -314,6 +319,17 @@ code{background:var(--bg2);border:1px solid var(--line);border-radius:4px;paddin
     <div id="roast-name" class="name"></div>
     <p id="roast-msg"></p>
     <button class="btn btn-gold" onclick="document.getElementById('roast-overlay').classList.add('hidden')">😂 Seen</button>
+  </div>
+</div>
+
+<!-- mid-gameweek "still in it?" verdict -->
+<div id="stillin-overlay" class="roast-overlay hidden" onclick="this.classList.add('hidden')">
+  <div id="stillin-card" class="roast-card" onclick="event.stopPropagation()">
+    <div id="stillin-spoon" class="roast-spoon">⚽</div>
+    <div id="stillin-title" class="lbl"></div>
+    <div id="stillin-name" class="name"></div>
+    <p id="stillin-msg"></p>
+    <button class="btn btn-gold" onclick="document.getElementById('stillin-overlay').classList.add('hidden')">Got it</button>
   </div>
 </div>
 
@@ -706,6 +722,89 @@ function maybeShowRoast(){
   $("roast-overlay").classList.remove("hidden");
 }
 
+/* ---------- still in it? (mid-gameweek verdict) ---------- */
+// Best case for you: every remaining game lands exactly on your prediction.
+// Rivals only gain where their picks coincide with yours; games you didn't
+// predict are scored as a result nobody called. If even that scenario doesn't
+// put you top, you genuinely cannot win the week.
+function stillInStatus(gw){
+  const fx = gwFixtures(gw);
+  const remaining = fx.filter(f => !fixtureResult(gw, f));
+  const rows = scoreWeek(gw);
+  const me = rows.find(r => r.pid === MYPID);
+  if (!me) return null;
+  const preds = PREDS[gw] || {};
+  const myPicks = preds[MYPID]?.picks || {};
+  const finals = {};
+  for (const r of rows) finals[r.pid] = r.pts;
+  for (const f of remaining){
+    const mp = myPicks[f.id];
+    if (!mp) continue;
+    for (const r of rows){
+      if (r.pid === MYPID){ finals[r.pid] += CONFIG.exact; continue; }
+      const pk = preds[r.pid]?.picks?.[f.id];
+      if (!pk) continue;
+      if (+pk.h === +mp.h && +pk.a === +mp.a) finals[r.pid] += CONFIG.exact;
+      else if (Math.sign(pk.h - pk.a) === Math.sign(mp.h - mp.a)) finals[r.pid] += CONFIG.result;
+    }
+  }
+  const rivals = rows.filter(r => r.pid !== MYPID);
+  const bestRival = rivals.length ? Math.max(...rivals.map(r => finals[r.pid])) : 0;
+  return {
+    stillIn: finals[MYPID] >= bestRival,
+    leading: me.rank === 1,
+    myPts: me.pts, myBest: finals[MYPID],
+    leader: rows[0],
+    chasing: rivals.filter(r => r.pts >= me.pts).slice(0, 3),
+    done: fx.length - remaining.length, total: fx.length, left: remaining.length,
+  };
+}
+
+const OUT_MSGS = [
+  "It's over, {name}. Mathematically fucked with {left} game{s} still to play. Even a miracle can't save you.",
+  "Dead and buried, {name}. You cannot win this week no matter what happens. Absolutely tragic stuff.",
+  "{name} can no longer win the week. Money well donated, you muppet. See you next Friday.",
+  "Done. Cooked. Finished. {name}, you couldn't predict sunrise. This week's cash says thanks.",
+  "Mathematically impossible for you to win now, {name}. Shite picks, shite week, shite luck. LOSER.",
+];
+let stillInChecked = false;
+function maybeShowStillIn(){
+  if (stillInChecked || !ME) return;
+  const gw = currentGw();
+  if (gw === null || GAMEWEEKS["gw"+gw]?.finalized || !gwLocked(gw) || isOut(gw, MYPID)) return;
+  if (!PREDS[gw]) return; // predictions still loading
+  const fx = gwFixtures(gw);
+  const done = fx.filter(f => fixtureResult(gw, f)).length;
+  if (done < 4 || done >= fx.length) return;
+  stillInChecked = true;
+  const st = stillInStatus(gw);
+  if (!st) return;
+  const card = $("stillin-card");
+  if (st.stillIn){
+    card.classList.add("inplay"); card.classList.remove("dead");
+    $("stillin-spoon").textContent = st.leading ? "🔥" : "⚽";
+    $("stillin-title").textContent = `GW ${gw} · ${st.done}/${st.total} played`;
+    $("stillin-name").textContent = "STILL IN IT!";
+    $("stillin-msg").textContent = st.leading
+      ? `You're top on ${st.myPts} pts with ${st.left} game${st.left>1?"s":""} left — best case ${st.myBest}. ${st.chasing[0] ? st.chasing[0].name + " is lurking on " + st.chasing[0].pts + " pts. " : ""}Don't bottle it.`
+      : `You're on ${st.myPts} pts and can still hit ${st.myBest}. You're up against ${st.chasing.map(r=>r.name).join(", ") || st.leader.name} — ${st.leader.name} leads on ${st.leader.pts} pts. Game on.`;
+  } else {
+    card.classList.add("dead"); card.classList.remove("inplay");
+    $("stillin-spoon").textContent = "💀";
+    $("stillin-title").textContent = `GW ${gw} · ${st.done}/${st.total} played`;
+    $("stillin-name").textContent = "LOSER!";
+    $("stillin-msg").textContent = OUT_MSGS[st.done % OUT_MSGS.length]
+      .replaceAll("{name}", ME.name).replaceAll("{left}", String(st.left)).replaceAll("{s}", st.left === 1 ? "" : "s");
+  }
+  // queue behind the roast modal if that's on screen
+  const roast = $("roast-overlay");
+  if (!roast.classList.contains("hidden")){
+    const iv = setInterval(() => {
+      if (roast.classList.contains("hidden")){ clearInterval(iv); $("stillin-overlay").classList.remove("hidden"); }
+    }, 600);
+  } else $("stillin-overlay").classList.remove("hidden");
+}
+
 /* ---------- chrome / tabs ---------- */
 function renderChrome(){
   $("who-name").textContent = ME.name;
@@ -718,6 +817,7 @@ function renderChrome(){
   if (adminGw === null) adminGw = viewGw;
   if (viewGw !== null && !PREDS[viewGw]) watchPreds(viewGw);
   maybeShowRoast();
+  maybeShowStillIn();
 }
 function setTab(t){
   curTab = t;
@@ -745,6 +845,7 @@ function gwNavHtml(which, gw){
 
 function renderAll(){
   if (!ME) return;
+  maybeShowStillIn();
   if (curTab==="predict") renderPredict();
   if (curTab==="week") renderWeek();
   if (curTab==="board") renderBoard();
