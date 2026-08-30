@@ -92,6 +92,7 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 .fixture .scorebox .dash{color:var(--ink-faint);font-weight:700}
 .fixture .ko{font-size:11px;color:var(--ink-faint)}
 .fixture .final{font-family:"Oswald";font-size:20px;font-weight:700;letter-spacing:.1em;background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:2px 14px}
+.fixture .final.live{border-color:var(--green);color:var(--green)}
 .fixture .ptsbadge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px}
 .ptsbadge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px}
 .pts-exact{background:linear-gradient(160deg,#ffe589 0%,#ffd24a 45%,#e8a825 100%);color:#241703;font-weight:800;box-shadow:0 0 9px rgba(255,213,74,.45);border:1px solid #ffe589}
@@ -544,13 +545,41 @@ function watchCodes(){
   }, err => console.warn("codes not readable", err));
 }
 
+let FEED_RAW = "", lastFeedFetch = 0;
 async function loadFeed(){
   try {
     const r = await fetch(FIXTURES_URL + "?t=" + Date.now());
     if (!r.ok) throw new Error(r.status);
-    FEED = await r.json();
+    FEED_RAW = await r.text();
+    FEED = JSON.parse(FEED_RAW);
+    lastFeedFetch = Date.now();
   } catch(e){ FEED = null; }
 }
+
+// While a gameweek is live (locked, results outstanding), quietly re-fetch the
+// feed so scores appear without a reload; also refresh when the tab wakes up.
+function feedIsLive(){
+  const gw = currentGw();
+  if (gw === null || GAMEWEEKS["gw"+gw]?.finalized || !gwLocked(gw)) return false;
+  return gwFixtures(gw).some(f => !fixtureResult(gw, f));
+}
+async function refreshFeed(force){
+  if (!ME || (!force && !feedIsLive())) return;
+  lastFeedFetch = Date.now();
+  try {
+    const r = await fetch(FIXTURES_URL + "?t=" + Date.now());
+    if (!r.ok) return;
+    const txt = await r.text();
+    if (txt !== FEED_RAW){
+      FEED_RAW = txt; FEED = JSON.parse(txt);
+      renderChrome(); renderAll();
+    }
+  } catch(e){}
+}
+setInterval(() => { if (!document.hidden) refreshFeed(); }, 5 * 60 * 1000);
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden && Date.now() - lastFeedFetch > 60 * 1000) refreshFeed(true);
+});
 
 /* ---------- fixtures helpers ---------- */
 function allGws(){
@@ -585,6 +614,7 @@ function gwLocked(gw){
   const d = gwDeadline(gw);
   return d ? new Date() >= d : false;
 }
+function kickedOffLive(f){ return f.kickoff && new Date(f.kickoff) <= new Date(); }
 function gwUnlockedByAdmin(gw){
   const d = gwDeadline(gw);
   return !!GAMEWEEKS["gw"+gw]?.unlocked && !!d && new Date() >= d;
@@ -933,7 +963,9 @@ function renderPredict(){
             <input type="number" min="0" max="15" id="pk-${f.id}-a" value="${pk.a ?? ""}" ${locked||out?"disabled":""}>
             <span class="tcode ta">${esc(teamShort(f.a))}</span>
           </div>
-          <span class="ko">${res?`FT ${res.h}–${res.a}`:fmtKo(f.kickoff)}${marker}</span>
+          <span class="ko">${res?`FT ${res.h}–${res.a}`
+            : (f.hs!==null&&f.hs!==undefined&&kickedOffLive(f))?`<span style="color:var(--green);font-weight:700">● ${f.hs}–${f.as} live</span>`
+            : fmtKo(f.kickoff)}${marker}</span>
         </td>`;
       for (const [pid] of others){
         const opk = preds[pid]?.picks?.[f.id];
@@ -1037,7 +1069,7 @@ function renderWeek(){
     if (spoons.length) html += `<div class="banner err">🥄 Wooden spoon: <b>${esc(spoons.map(s=>s.name).join(" & "))}</b> — ${spoons[0].pts} pts. Shameful scenes.</div>`;
   } else {
     const anyResult = fx.some(f => fixtureResult(gw,f));
-    html += `<div class="banner info">${anyResult ? "Live standings — the week hasn't been finalised by the admin yet." : "No results in yet. Standings will appear as matches finish."}</div>`;
+    html += `<div class="banner info">${anyResult ? "Live standings — updates automatically as results come in. The week hasn't been finalised yet." : "No results in yet. Scores update automatically as matches are played — points count at full time."}</div>`;
   }
 
   html += `<div class="panel"><h2>Gameweek ${gw} table</h2><div class="tbl-scroll"><table>
@@ -1058,7 +1090,9 @@ function renderWeek(){
     const res = fixtureResult(gw, f);
     html += `<div class="fixture ${res?"done":""}">
       <div class="team home"><span><span class="tn-l">${esc(teamName(f.h))}</span><span class="tn-s">${esc(teamShort(f.h))}</span></span><span class="badge">${esc(teamShort(f.h))}</span></div>
-      <div class="mid">${res?`<span class="final">${res.h}–${res.a}</span>${res.override?'<span class="faint">admin entry</span>':""}`:`<span class="ko">${fmtKo(f.kickoff)}</span>`}</div>
+      <div class="mid">${res?`<span class="final">${res.h}–${res.a}</span>${res.override?'<span class="faint">admin entry</span>':""}`
+        : (f.hs!==null&&f.hs!==undefined&&kickedOffLive(f))?`<span class="final live">${f.hs}–${f.as}</span><span class="faint" style="color:var(--green)">● live</span>`
+        : `<span class="ko">${fmtKo(f.kickoff)}</span>`}</div>
       <div class="team"><span class="badge">${esc(teamShort(f.a))}</span><span><span class="tn-l">${esc(teamName(f.a))}</span><span class="tn-s">${esc(teamShort(f.a))}</span></span></div>
     </div>`;
     if (revealed){
