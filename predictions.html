@@ -225,6 +225,7 @@ tr.pos2 td{background:linear-gradient(90deg,rgba(154,167,181,.10),transparent 70
 .authcard .btn{width:100%;padding:11px;margin-top:6px;font-size:14px}
 .authswitch{text-align:center;margin-top:16px;font-size:13px;color:var(--ink-dim)}
 .codeinput{text-align:center;font-family:"Oswald";font-size:22px!important;letter-spacing:.2em;text-transform:uppercase}
+.pm-hidden{position:absolute;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none}
 .codeshow{font-family:"Oswald";font-size:26px;letter-spacing:.18em;background:var(--bg2);border:1px dashed var(--gold);border-radius:8px;padding:12px;text-align:center;color:var(--gold);margin:10px 0;user-select:all}
 
 /* ---------- admin ---------- */
@@ -280,10 +281,16 @@ code{background:var(--bg2);border:1px solid var(--line);border-radius:4px;paddin
     <h1>LEFUCK</h1>
     <div class="sub">Premier League · predict &amp; win</div>
     <div id="auth-err" class="banner err hidden"></div>
-    <div class="field"><label>Who are you?</label><select id="li-player"><option value="">Loading players…</option></select></div>
-    <div class="field"><label>Your login code</label><input id="li-code" class="codeinput" maxlength="12" placeholder="XXXX-XXXX" autocomplete="off"></div>
-    <button class="btn btn-primary" onclick="doLogin()">Sign in</button>
-    <p class="faint" style="margin-top:16px;text-align:center">No code, or lost it? Ask the league admin — they can send or reset it.</p>
+    <form id="login-fm" autocomplete="on" onsubmit="doLogin(); return false;">
+      <div class="field"><label>Who are you?</label><select id="li-player" onchange="syncLoginUser()"><option value="">Loading players…</option></select></div>
+      <!-- hidden username so password managers save & autofill name+code together -->
+      <input id="li-user" name="username" type="text" autocomplete="username" class="pm-hidden" tabindex="-1" aria-hidden="true">
+      <div class="field"><label>Your login code
+          <a href="#" onclick="const c=document.getElementById('li-code');c.type=c.type==='password'?'text':'password';return false" style="float:right;font-size:11px">show/hide</a></label>
+        <input id="li-code" name="password" type="password" class="codeinput" maxlength="12" placeholder="XXXX-XXXX" autocomplete="current-password"></div>
+      <button type="submit" class="btn btn-primary">Sign in</button>
+    </form>
+    <p class="faint" style="margin-top:16px;text-align:center">No code, or lost it? Ask the league admin — they can send or reset it. Say yes when your phone offers to save the code and you won't need it again.</p>
   </div>
 </div>
 
@@ -471,19 +478,38 @@ async function boot(){
   });
 }
 
+let LOGIN_LIST = {}; // pid -> {name, codeVersion}, for the pre-auth login screen
 async function showLogin(){
   show("auth");
   try {
     const snap = await DB.collection("players").get();
     if (snap.empty){ show("founder"); return; }
     const list = [];
-    snap.forEach(d => { const p = d.data(); if (p.active !== false) list.push({ pid:d.id, name:p.name }); });
+    LOGIN_LIST = {};
+    snap.forEach(d => { const p = d.data(); if (p.active !== false){
+      list.push({ pid:d.id, name:p.name });
+      LOGIN_LIST[d.id] = { name: p.name, codeVersion: p.codeVersion || 1 };
+    }});
     list.sort((a,b)=>a.name.localeCompare(b.name));
     $("li-player").innerHTML = `<option value="">— select your name —</option>` +
       list.map(p=>`<option value="${p.pid}">${esc(p.name)}</option>`).join("");
+    let last = null; try { last = localStorage.getItem("lefuck_last_pid"); } catch(e){}
+    if (last && LOGIN_LIST[last]) $("li-player").value = last;
+    syncLoginUser();
+    // a password manager autofilling the hidden username tells us who this is
+    $("li-user").addEventListener("input", () => {
+      const pid = String($("li-user").value).split(".")[0];
+      if (LOGIN_LIST[pid]) $("li-player").value = pid;
+    });
   } catch(e){
     authErr("Couldn't load the player list: " + e.message);
   }
+}
+// keep the hidden username in step with the chosen player so the browser
+// saves "name + code" as one credential
+function syncLoginUser(){
+  const pid = $("li-player").value;
+  $("li-user").value = pid && LOGIN_LIST[pid] ? loginEmail(pid, LOGIN_LIST[pid].codeVersion) : "";
 }
 
 function startSubscriptions(){
@@ -1392,6 +1418,7 @@ async function doLogin(){
     const pdoc = await DB.collection("players").doc(pid).get();
     if (!pdoc.exists || pdoc.data().active === false) throw { code:"auth/invalid-credential" };
     await AUTH.signInWithEmailAndPassword(loginEmail(pid, pdoc.data().codeVersion || 1), code);
+    try { localStorage.setItem("lefuck_last_pid", pid); } catch(e){}
   } catch(e){
     authErr(e.code === "auth/invalid-credential" || e.code === "auth/wrong-password" || e.code === "auth/user-not-found"
       ? "That code isn't right for " + ($("li-player").selectedOptions[0]?.text || "that player") + ". Codes look like XXXX-XXXX — ask the admin to resend or reset it."
