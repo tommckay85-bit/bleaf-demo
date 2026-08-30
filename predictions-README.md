@@ -23,10 +23,10 @@ league with your mates. No app to install — it runs in the browser from GitHub
   **Out** for any gameweek they haven't paid for and they're excluded from that week.
 - **The pot** — a money ledger (no real payments): stake per player per week (default £5,
   configurable, per-week override available). The pot for the week shows on everyone's
-  Predictions tab. On finalise, the runner-up gets their stake back and the winner takes
-  the rest (ties split fairly). The Leaderboard tab tracks each player's staked/won/net
-  since the last pay-out; the admin hits "Settle up & reset" whenever they true up —
-  weekly, monthly, or any period — and past pay-outs are kept as history.
+  Predictions tab. On finalise the winner takes the whole pot (joint first splits it
+  evenly; the runner-up gets glory only). The Leaderboard tab tracks each player's
+  staked/won/net since the last pay-out; the admin hits "Settle up & reset" whenever they
+  true up — weekly, monthly, or any period — and past pay-outs are kept as history.
 - **Login codes, no passwords** — you create each player in the Admin tab; the system
   generates a unique login code (like `KX7M-29QF`). Send it to them on WhatsApp (there's a
   copy-ready invite button). They log in by picking their name and typing the code. Lost
