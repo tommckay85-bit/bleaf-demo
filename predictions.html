@@ -638,18 +638,15 @@ function gwStake(gw){
   if (g?.finalized && g.stakeUsed !== undefined && g.stakeUsed !== null) return g.stakeUsed;
   return g?.stake ?? CONFIG.stake;
 }
-// Payout split: every runner-up gets their stake back; winners split the rest.
+// Payout: winner takes the whole pot; joint first splits it evenly.
+// Runner-up gets nothing (glory only).
 function gwMoney(gw, rows){
   const stake = gwStake(gw);
   const winners = rows.filter(r=>r.rank===1);
-  const second = rows.find(r=>r.rank>1)?.rank;
-  const runnersUp = second ? rows.filter(r=>r.rank===second) : [];
   const pot = round2(rows.length * stake);
-  const refund = round2(runnersUp.length * stake);
-  const winShare = winners.length ? round2((pot - refund) / winners.length) : 0;
+  const winShare = winners.length ? round2(pot / winners.length) : 0;
   const payouts = {};
   winners.forEach(w => payouts[w.pid] = winShare);
-  runnersUp.forEach(r => payouts[r.pid] = stake);
   return { stake, pot, winShare, payouts };
 }
 function settledGwSet(){
@@ -874,7 +871,7 @@ function renderPredict(){
     } else {
       const inRows = scoreWeek(gw), stake = gwStake(gw);
       const m = gwMoney(gw, inRows);
-      html += `<div class="banner info">💰 This week's pot: <b>${fmtMoney(m.pot)}</b> (${inRows.length} players × ${fmtMoney(stake)}) — winner takes <b>${fmtMoney(m.pot - stake)}</b>, runner-up gets their ${fmtMoney(stake)} back.</div>`;
+      html += `<div class="banner info">💰 This week's pot: <b>${fmtMoney(m.pot)}</b> (${inRows.length} players × ${fmtMoney(stake)}) — winner takes the lot. Joint first splits it.</div>`;
     }
   }
   html += `<div class="panel"><h2>Your predictions <span class="tag">${CONFIG.result} pts result · ${CONFIG.exact} pts exact score</span></h2>`;
@@ -1006,7 +1003,7 @@ function renderWeek(){
     const runAmt = r[0] && gwDoc.payouts ? gwDoc.payouts[r[0].pid] : null;
     html += `<div class="podium">
       <div class="card win"><div class="lbl">🏆 Winner${w.length>1?"s (tied)":""}</div><div class="name">${esc(w.map(x=>x.name).join(" & ")) || "—"}</div><div class="pts">${w[0]?w[0].pts+" pts":""}${winAmt!=null?` · wins <b style="color:var(--gold)">${fmtMoney(winAmt)}</b>${w.length>1?" each":""}`:""}</div></div>
-      <div class="card run"><div class="lbl">🥈 Runner-up${r.length>1?"s (tied)":""}</div><div class="name">${esc(r.map(x=>x.name).join(" & ")) || "—"}</div><div class="pts">${r[0]?r[0].pts+" pts":""}${runAmt!=null?` · stake back (${fmtMoney(runAmt)})`:""}</div></div>
+      <div class="card run"><div class="lbl">🥈 Runner-up${r.length>1?"s (tied)":""}</div><div class="name">${esc(r.map(x=>x.name).join(" & ")) || "—"}</div><div class="pts">${r[0]?r[0].pts+" pts":""}${runAmt!=null?` · stake back (${fmtMoney(runAmt)})`:gwDoc.payouts?" · glory only":""}</div></div>
     </div>
     ${gwDoc.pot!==undefined?`<div class="banner info">💰 Pot: <b>${fmtMoney(gwDoc.pot)}</b> (${(gwDoc.table||[]).length} players × ${fmtMoney(gwDoc.stakeUsed||0)})</div>`:""}`;
     const maxRank = Math.max(...(gwDoc.table||[]).map(x=>x.rank||1));
@@ -1225,7 +1222,7 @@ function renderAdmin(){
     html += `<div class="cfgrow" style="margin-bottom:12px">
       <div class="field"><label>Stake this week (£)</label><input type="number" id="gw-stake" value="${gwStake(gw)}" min="0" step="0.5"></div>
       <button class="btn" onclick="saveGwStake(${gw})">Save stake</button>
-      <span class="muted">Pot: <b>${fmtMoney(liveRows.length * gwStake(gw))}</b> (${liveRows.length} in × ${fmtMoney(gwStake(gw))}) — winner ${fmtMoney(liveRows.length * gwStake(gw) - gwStake(gw))}, runner-up stake back</span>
+      <span class="muted">Pot: <b>${fmtMoney(liveRows.length * gwStake(gw))}</b> (${liveRows.length} in × ${fmtMoney(gwStake(gw))}) — winner takes the lot</span>
     </div>`;
   }
   if (!gwDoc?.finalized){
@@ -1364,7 +1361,7 @@ async function finalizeGw(gw){
   const second = rows.find(r=>r.rank>1)?.rank;
   const runnersUp = second ? rows.filter(r=>r.rank===second).map(r=>({pid:r.pid,name:r.name,pts:r.pts})) : [];
   const money = gwMoney(gw, rows);
-  const msg = `Finalise Gameweek ${gw}?\n\n💰 Pot: ${fmtMoney(money.pot)} (${rows.length} × ${fmtMoney(money.stake)})\n🏆 Winner: ${winners.map(w=>w.name).join(" & ")} (${winners[0].pts} pts) — wins ${fmtMoney(money.winShare)}${winners.length>1?" each":""}\n🥈 Runner-up: ${runnersUp.map(r=>r.name).join(" & ") || "—"}${runnersUp.length?` — stake back (${fmtMoney(money.stake)})`:""}`;
+  const msg = `Finalise Gameweek ${gw}?\n\n💰 Pot: ${fmtMoney(money.pot)} (${rows.length} × ${fmtMoney(money.stake)})\n🏆 Winner: ${winners.map(w=>w.name).join(" & ")} (${winners[0].pts} pts) — takes ${fmtMoney(money.winShare)}${winners.length>1?" each (pot split)":" (the lot)"}\n🥈 Runner-up: ${runnersUp.map(r=>r.name).join(" & ") || "—"} — glory only`;
   if (!confirm(msg)) return;
   await DB.collection("gameweeks").doc("gw"+gw).set({
     finalized: true,
