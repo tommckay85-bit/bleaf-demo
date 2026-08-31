@@ -872,6 +872,20 @@ function renderChrome(){
   maybeShowRoast();
   maybeShowStillIn();
 }
+// Quick entry: typing a digit hops to the next score box; focusing a filled
+// box selects its value so typing overwrites it. (Attach once — the grid is
+// re-rendered inside this container.)
+$("tab-predict").addEventListener("input", e => {
+  const el = e.target;
+  if (!el.matches(".predgrid input[type=number]") || el.value === "") return;
+  const inputs = [...document.querySelectorAll("#tab-predict .predgrid input[type=number]:not([disabled])")];
+  const next = inputs[inputs.indexOf(el) + 1];
+  if (next){ next.focus(); try { next.select(); } catch(err){} }
+});
+$("tab-predict").addEventListener("focusin", e => {
+  if (e.target.matches(".predgrid input[type=number]")){ try { e.target.select(); } catch(err){} }
+});
+
 function setTab(t){
   curTab = t;
   document.querySelectorAll("#tabs button").forEach(b => b.classList.toggle("on", b.dataset.tab===t));
