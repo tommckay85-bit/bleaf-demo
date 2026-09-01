@@ -648,9 +648,9 @@ async function refreshFeed(force){
     }
   } catch(e){}
 }
-setInterval(() => { if (!document.hidden) refreshFeed(); }, 5 * 60 * 1000);
+setInterval(() => { if (!document.hidden) refreshFeed(); }, 60 * 1000); // only fetches while a gameweek is live
 document.addEventListener("visibilitychange", () => {
-  if (!document.hidden && Date.now() - lastFeedFetch > 60 * 1000) refreshFeed(true);
+  if (!document.hidden && Date.now() - lastFeedFetch > 45 * 1000) refreshFeed(true);
 });
 
 /* ---------- fixtures helpers ---------- */
