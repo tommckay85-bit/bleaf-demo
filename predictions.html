@@ -22,6 +22,10 @@ html{color-scheme:dark}
 body{background:radial-gradient(1200px 700px at 50% -220px,#0d1c33 0%,var(--bg) 55%) fixed,var(--bg);color:var(--ink);font:15px/1.5 "Inter",system-ui,sans-serif;min-height:100vh}
 body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.05;
   background:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="140" height="140"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2"/></filter><rect width="140" height="140" filter="url(%23n)" opacity="0.55"/></svg>')}
+/* faint geometric constellation drifting in from the top right */
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 700" fill="none"><polygon points="940,60 850,215.9 670,215.9 580,60 670,-95.9 850,-95.9" stroke="rgba(56,214,255,0.13)" stroke-width="2"/><polygon points="970,220 915,315.3 805,315.3 750,220 805,124.7 915,124.7" stroke="rgba(56,214,255,0.09)" stroke-width="2"/><polygon points="730,-30 685,47.9 595,47.9 550,-30 595,-107.9 685,-107.9" stroke="rgba(255,215,94,0.09)" stroke-width="2"/><polygon points="690,130 747,171.5 725.3,238.5 654.7,238.5 633,171.5" stroke="rgba(56,214,255,0.11)" stroke-width="2"/><circle cx="820" cy="110" r="250" stroke="rgba(56,214,255,0.05)" stroke-width="1.6"/><circle cx="585" cy="120" r="24" stroke="rgba(255,215,94,0.12)" stroke-width="1.6"/><line x1="460" y1="0" x2="900" y2="380" stroke="rgba(56,214,255,0.06)" stroke-width="1.4"/><line x1="560" y1="0" x2="900" y2="295" stroke="rgba(56,214,255,0.05)" stroke-width="1.4"/><circle cx="612" cy="302" r="3" fill="rgba(56,214,255,0.18)"/><circle cx="652" cy="286" r="3.4" fill="rgba(255,215,94,0.18)"/><circle cx="692" cy="302" r="3" fill="rgba(49,232,140,0.18)"/><path d="M612 302 L652 286 L692 302" stroke="rgba(56,214,255,0.08)" stroke-width="1.2"/></svg>') top right no-repeat;
+  background-size:min(880px,120vw) auto}
 #view-app,.authwrap{position:relative;z-index:1}
 h1,h2,h3,h4,.hd{font-family:"Oswald","Inter",sans-serif;letter-spacing:.02em;text-transform:uppercase}
 a{color:var(--steel)}
@@ -662,14 +666,26 @@ function gwFixtures(gw){
   return (FEED?.fixtures || []).filter(f => f.gw === gw)
     .sort((a,b) => (a.kickoff||"").localeCompare(b.kickoff||""));
 }
+// A finished gameweek stays the default through Monday night; the app moves on
+// to the next one on Tuesday morning (04:00 UTC). Midweek rounds are capped at
+// 60 hours after the last kickoff so a Wednesday finish doesn't linger a week.
+function gwHoldUntil(lastKoIso){
+  const d = new Date(lastKoIso);
+  const tue = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  do { tue.setUTCDate(tue.getUTCDate() + 1); } while (tue.getUTCDay() !== 2);
+  tue.setUTCHours(4, 0, 0, 0);
+  const cap = new Date(d.getTime() + 60 * 3600 * 1000);
+  return tue < cap ? tue : cap;
+}
 function currentGw(){
   const gws = allGws(); if (!gws.length) return null;
   const now = new Date();
   for (const gw of gws){
     const fx = gwFixtures(gw);
     const allDone = fx.every(f => fixtureResult(gw, f) !== null);
+    if (!allDone) return gw;
     const lastKo = fx.reduce((m,f)=> f.kickoff && f.kickoff>m ? f.kickoff : m, "");
-    if (!allDone || (lastKo && (now - new Date(lastKo)) < 3*864e5)) return gw; // stay on a GW until 3 days after it finishes
+    if (lastKo && now < gwHoldUntil(lastKo)) return gw;
   }
   return gws[gws.length-1];
 }
