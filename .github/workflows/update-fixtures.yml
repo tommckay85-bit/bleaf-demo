@@ -10,6 +10,9 @@ name: Update fixtures
 
 on:
   schedule:
+    - cron: '*/5 11-23 * * 6'       # Saturday burst: every 5 min, noon-midnight UK
+    - cron: '*/5 18-23 * * 5'       # Friday-night burst: every 5 min, ~7pm-midnight UK
+    - cron: '*/5 11-21 * * 0'       # Sunday burst: every 5 min, ~noon-10pm UK
     - cron: '*/30 * * * 5,6,0,1'    # every 30 min Fri-Mon (match days, UTC)
     - cron: '15 6,12,17,22 * * 2-4' # 4x daily Tue-Thu
   workflow_dispatch:
