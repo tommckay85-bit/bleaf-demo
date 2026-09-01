@@ -415,38 +415,44 @@ const LOGIN_DOMAIN = "predleague.app";
    would make url(#...) references fail and blank the crest. */
 const LOGO_DEFS = `<defs>
     <linearGradient id="lf-bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#2a4a7c"/><stop offset=".55" stop-color="#152a4a"/><stop offset="1" stop-color="#0a1424"/>
+      <stop offset="0" stop-color="#14223c"/><stop offset=".6" stop-color="#0d1830"/><stop offset="1" stop-color="#060c18"/>
     </linearGradient>
     <linearGradient id="lf-rim" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#ffeb9e"/><stop offset=".5" stop-color="#e8a33d"/><stop offset="1" stop-color="#a86c10"/>
+      <stop offset="0" stop-color="#5fd0ff"/><stop offset=".45" stop-color="#4b8fd4"/><stop offset="1" stop-color="#ffd75e"/>
     </linearGradient>
     <linearGradient id="lf-gloss" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#fff" stop-opacity=".30"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+      <stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
     </linearGradient>
     <filter id="lf-shadow" x="-30%" y="-20%" width="160%" height="150%">
       <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000" flood-opacity=".55"/>
     </filter>
+    <filter id="lf-glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="1.5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
   </defs>`;
 const LOGO_SVG = `<svg viewBox="0 0 100 118" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LEFUCK crest">
   <g filter="url(#lf-shadow)">
-    <path d="M50 3 L92 15 V55 C92 86 74 103 50 115 C26 103 8 86 8 55 V15 Z" fill="url(#lf-rim)"/>
-    <path d="M50 8 L87 19 V54 C87 82 71 98 50 109 C29 98 13 82 13 54 V19 Z" fill="url(#lf-bg)"/>
-    <circle cx="50" cy="63" r="31" fill="none" stroke="#e8a33d" stroke-width="3" stroke-dasharray="6 17" opacity=".65"/>
-    <g>
-      <circle cx="33" cy="27" r="5.5" fill="#4b8fd4"/><path d="M25 41 a8 7 0 0 1 16 0 z" fill="#4b8fd4"/>
-      <circle cx="50" cy="22" r="6" fill="#ffd75e"/><path d="M41 38 a9 8 0 0 1 18 0 z" fill="#ffd75e"/>
-      <circle cx="67" cy="27" r="5.5" fill="#3fae6a"/><path d="M59 41 a8 7 0 0 1 16 0 z" fill="#3fae6a"/>
+    <path d="M50 3 L90 20 V62 L50 115 L10 62 V20 Z" fill="url(#lf-rim)"/>
+    <path d="M50 9 L85 24 V60 L50 107 L15 60 V24 Z" fill="url(#lf-bg)"/>
+    <g filter="url(#lf-glow)">
+      <circle cx="36" cy="25" r="3.6" fill="#4b8fd4"/>
+      <circle cx="50" cy="19.5" r="4" fill="#ffd75e"/>
+      <circle cx="64" cy="25" r="3.6" fill="#3fae6a"/>
+      <path d="M36 25 L50 19.5 L64 25" stroke="#3a4c66" stroke-width="1.2" fill="none"/>
     </g>
-    <circle cx="50" cy="63" r="20" fill="#f2f5f8" stroke="#0d1218" stroke-width="2"/>
-    <polygon points="50,54 58,60 55,69.5 45,69.5 42,60" fill="#0d1218"/>
-    <g stroke="#0d1218" stroke-width="2" stroke-linecap="round">
-      <line x1="50" y1="54" x2="50" y2="44.5"/><line x1="58" y1="60" x2="66.5" y2="55.5"/>
-      <line x1="55" y1="69.5" x2="60" y2="78"/><line x1="45" y1="69.5" x2="40" y2="78"/>
-      <line x1="42" y1="60" x2="33.5" y2="55.5"/>
+    <g filter="url(#lf-glow)" stroke="#5fd0ff" fill="none" stroke-linecap="round">
+      <circle cx="50" cy="56" r="21" stroke-width="2"/>
+      <polygon points="50,46 59,52.8 55.5,63.5 44.5,63.5 41,52.8" stroke-width="2"/>
+      <line x1="50" y1="46" x2="50" y2="35.5" stroke-width="1.6"/>
+      <line x1="59" y1="52.8" x2="68.5" y2="48" stroke-width="1.6"/>
+      <line x1="55.5" y1="63.5" x2="61" y2="72.5" stroke-width="1.6"/>
+      <line x1="44.5" y1="63.5" x2="39" y2="72.5" stroke-width="1.6"/>
+      <line x1="41" y1="52.8" x2="31.5" y2="48" stroke-width="1.6"/>
     </g>
-    <text x="21" y="97" font-family="Arial,sans-serif" font-size="12" font-weight="bold" fill="#ffd75e">£</text>
-    <text x="70" y="97" font-family="Arial,sans-serif" font-size="12" font-weight="bold" fill="#ffd75e">£</text>
-    <path d="M50 8 L87 19 V44 C70 52 30 52 13 44 V19 Z" fill="url(#lf-gloss)"/>
+    <text x="50" y="94" font-family="Arial,sans-serif" font-size="16" font-weight="bold" fill="#ffd75e"
+          text-anchor="middle" filter="url(#lf-glow)">£</text>
+    <path d="M50 9 L85 24 V42 C70 49 30 49 15 42 V24 Z" fill="url(#lf-gloss)"/>
   </g>
 </svg>`;
 document.body.insertAdjacentHTML("afterbegin",
@@ -461,7 +467,7 @@ document.querySelectorAll(".logo-slot").forEach(el => el.innerHTML = LOGO_SVG);
 
 let AUTH, DB, MYPID = null, ME = null;
 let CONFIG = { ...DEFAULT_POINTS, stake: DEFAULT_STAKE }; // {result, exact, stake}
-let MSGS = { winner:[], loser:[], stillin:[], out:[] };    // admin's bespoke banter
+let MSGS = { winner:[], loser:[], stillin:[], out:[], perPlayer:{} }; // admin's bespoke banter
 let SETTLEMENTS = [];                         // past pay-outs (money resets)
 let PLAYERS = {};                             // pid -> player doc
 let CODES = {};                               // pid -> code (admins only)
@@ -589,7 +595,8 @@ function startSubscriptions(){
   });
   DB.collection("config").doc("messages").onSnapshot(d => {
     const m = d.exists ? d.data() : {};
-    MSGS = { winner: m.winner||[], loser: m.loser||[], stillin: m.stillin||[], out: m.out||[] };
+    MSGS = { winner: m.winner||[], loser: m.loser||[], stillin: m.stillin||[], out: m.out||[],
+             perPlayer: m.perPlayer||{} };
   });
   DB.collection("settlements").onSnapshot(snap => {
     SETTLEMENTS = []; snap.forEach(d => SETTLEMENTS.push({ id: d.id, ...d.data() }));
@@ -825,10 +832,12 @@ const ROASTS = [
   "Breaking: local idiot {name} discovers new ways to lose money. {pts} points. Superb stuff.",
   "{name}, {pts} points?! My dog walked across the keyboard and outscored you.",
 ];
-// One pool per category: the built-ins plus the admin's saved lines, picked
-// deterministically so the whole league sees the same message for a week.
-function pickMsg(cat, builtins, seed, subs){
-  const pool = [...builtins, ...(MSGS[cat] || [])];
+// Message pools, most specific wins: lines saved for the individual player
+// replace the rotation entirely; otherwise the league-wide custom lines join
+// the built-ins. Picked deterministically so everyone sees the same line.
+function pickMsg(cat, builtins, seed, subs, pid){
+  const personal = pid ? (MSGS.perPlayer?.[pid]?.[cat] || []) : [];
+  const pool = personal.length ? personal : [...builtins, ...(MSGS[cat] || [])];
   if (!pool.length) return "";
   let msg = String(pool[Math.abs(seed) % pool.length]);
   for (const [k,v] of Object.entries(subs || {})) msg = msg.replaceAll("{"+k+"}", String(v));
@@ -866,7 +875,7 @@ function maybeShowWinner(){
   try { if (sessionStorage.getItem(key)) return; sessionStorage.setItem(key, "1"); } catch(e){}
   const amount = g.payouts?.[MYPID] != null ? fmtMoney(g.payouts[MYPID]) : "the pot";
   $("win-title").textContent = `GW ${g.gw} · you won the week`;
-  $("win-msg").textContent = pickMsg("winner", WINNER_MSGS, g.gw, { name: ME.name, pts: me.pts, amount });
+  $("win-msg").textContent = pickMsg("winner", WINNER_MSGS, g.gw, { name: ME.name, pts: me.pts, amount }, MYPID);
   $("win-overlay").classList.remove("hidden");
   celebrate();
 }
@@ -890,7 +899,8 @@ function maybeShowRoast(){
   const isMe = losers.some(l=>l.pid===MYPID);
   $("roast-title").textContent = isMe ? `GW ${g.gw}: it's you. It's actually you.` : `GW ${g.gw} loser of the week`;
   $("roast-name").textContent = names;
-  $("roast-msg").textContent = pickMsg("loser", ROASTS, g.gw, { name: names, pts: losers[0].pts });
+  $("roast-msg").textContent = pickMsg("loser", ROASTS, g.gw, { name: names, pts: losers[0].pts },
+    losers.length === 1 ? losers[0].pid : null);
   showAfter(["win-overlay"], "roast-overlay");
 }
 
@@ -980,13 +990,13 @@ function maybeShowStillIn(){
     const standard = st.leading
       ? `You're top on ${st.myPts} pts with ${st.left} game${st.left>1?"s":""} left — best case ${st.myBest}. ${st.chasing[0] ? st.chasing[0].name + " is lurking on " + st.chasing[0].pts + " pts. " : ""}Don't bottle it.`
       : `You're on ${st.myPts} pts and can still hit ${st.myBest}. You're up against ${st.chasing.map(r=>r.name).join(", ") || st.leader.name} — ${st.leader.name} leads on ${st.leader.pts} pts. Game on.`;
-    $("stillin-msg").textContent = pickMsg("stillin", [standard], gw + st.done, subs);
+    $("stillin-msg").textContent = pickMsg("stillin", [standard], gw + st.done, subs, MYPID);
   } else {
     card.classList.add("dead"); card.classList.remove("inplay");
     $("stillin-spoon").textContent = "💀";
     $("stillin-title").textContent = `GW ${gw} · ${st.done}/${st.total} played`;
     $("stillin-name").textContent = "LOSER!";
-    $("stillin-msg").textContent = pickMsg("out", OUT_MSGS, st.done, subs);
+    $("stillin-msg").textContent = pickMsg("out", OUT_MSGS, st.done, subs, MYPID);
   }
   showAfter(["win-overlay","roast-overlay"], "stillin-overlay");
 }
@@ -1391,15 +1401,31 @@ function renderAdmin(){
     <p class="faint">Changes apply to any week not yet finalised. Finalised weeks keep the points and stake they were scored with. The stake can also be overridden for a single week in Gameweek control.</p></div>`;
 
   /* banter messages */
+  const mpid = adminMsgPid && PLAYERS[adminMsgPid] ? adminMsgPid : "";
+  const mscope = mpid ? (MSGS.perPlayer?.[mpid] || {}) : MSGS;
+  const customised = Object.entries(MSGS.perPlayer || {})
+    .filter(([,v]) => ["winner","loser","stillin","out"].some(k => (v?.[k]||[]).length))
+    .map(([p]) => PLAYERS[p]?.name).filter(Boolean);
   html += `<div class="panel"><h2>Banter messages</h2>
-    <p class="faint" style="margin-bottom:10px">One message per line — your lines join the built-in rotation and the whole league sees the same one for a given week. Placeholders: <code>{name}</code> <code>{pts}</code>; still-in/out also take <code>{best}</code> <code>{leader}</code> <code>{leaderpts}</code> <code>{left}</code>; winner also takes <code>{amount}</code>.</p>
-    <div class="grid2">
-      <div class="field"><label>🏆 Winner congrats</label><textarea id="msg-winner" rows="4">${esc((MSGS.winner||[]).join("\n"))}</textarea></div>
-      <div class="field"><label>🥄 Weekly loser roast</label><textarea id="msg-loser" rows="4">${esc((MSGS.loser||[]).join("\n"))}</textarea></div>
-      <div class="field"><label>⚽ Still in it</label><textarea id="msg-stillin" rows="4">${esc((MSGS.stillin||[]).join("\n"))}</textarea></div>
-      <div class="field"><label>💀 Out mid-week (LOSER!)</label><textarea id="msg-out" rows="4">${esc((MSGS.out||[]).join("\n"))}</textarea></div>
+    <div class="cfgrow" style="margin-bottom:10px">
+      <div class="field"><label>Who are these for?</label>
+        <select onchange="adminMsgPid=this.value;renderAll()">
+          <option value="">Everyone (league default)</option>
+          ${roster.map(([pid,p])=>`<option value="${pid}" ${pid===mpid?"selected":""}>${esc(p.name)} only</option>`).join("")}
+        </select></div>
     </div>
-    <button class="btn btn-primary" style="margin-top:10px" onclick="saveMsgs()">Save messages</button></div>`;
+    <p class="faint" style="margin-bottom:10px">${mpid
+      ? `Personal lines for <b>${esc(PLAYERS[mpid].name)}</b> — when any exist for a category they <b>replace</b> the standard rotation for them alone. Leave a box empty to fall back to the defaults.`
+      : `League-wide lines — one per line, they join the built-in rotation for everyone without personal ones.`}
+      Placeholders: <code>{name}</code> <code>{pts}</code>; still-in/out also take <code>{best}</code> <code>{leader}</code> <code>{leaderpts}</code> <code>{left}</code>; winner also takes <code>{amount}</code>.
+      ${customised.length ? `Personalised so far: <b>${esc(customised.join(", "))}</b>.` : ""}</p>
+    <div class="grid2">
+      <div class="field"><label>🏆 Winner congrats</label><textarea id="msg-winner" rows="4">${esc((mscope.winner||[]).join("\n"))}</textarea></div>
+      <div class="field"><label>🥄 Weekly loser roast</label><textarea id="msg-loser" rows="4">${esc((mscope.loser||[]).join("\n"))}</textarea></div>
+      <div class="field"><label>⚽ Still in it</label><textarea id="msg-stillin" rows="4">${esc((mscope.stillin||[]).join("\n"))}</textarea></div>
+      <div class="field"><label>💀 Out mid-week (LOSER!)</label><textarea id="msg-out" rows="4">${esc((mscope.out||[]).join("\n"))}</textarea></div>
+    </div>
+    <button class="btn btn-primary" style="margin-top:10px" onclick="saveMsgs()">Save ${mpid?`${esc(PLAYERS[mpid].name)}'s`:"league"} messages</button></div>`;
 
   /* add player */
   html += `<div class="panel"><h2>Add a player</h2>
@@ -1594,13 +1620,18 @@ function copyCode(pid, name){
   const msg = `⚽ LEFUCK — you're in, ${name}!\n${location.origin}${location.pathname}\nPick your name and enter your code: ${fmtCode(code)}`;
   navigator.clipboard.writeText(msg).then(()=>adminMsg(`Invite message for <b>${esc(name)}</b> copied — paste it into WhatsApp.`));
 }
+let adminMsgPid = "";
 async function saveMsgs(){
   const parse = id => $(id).value.split("\n").map(s=>s.trim()).filter(Boolean).slice(0,30).map(s=>s.slice(0,300));
-  await DB.collection("config").doc("messages").set({
-    winner: parse("msg-winner"), loser: parse("msg-loser"),
-    stillin: parse("msg-stillin"), out: parse("msg-out"),
-  });
-  adminMsg("Banter saved — your lines are in the rotation.");
+  const lines = { winner: parse("msg-winner"), loser: parse("msg-loser"),
+                  stillin: parse("msg-stillin"), out: parse("msg-out") };
+  if (adminMsgPid && PLAYERS[adminMsgPid]){
+    await DB.collection("config").doc("messages").set({ perPlayer: { [adminMsgPid]: lines } }, { merge:true });
+    adminMsg(`Saved — ${esc(PLAYERS[adminMsgPid].name)} now gets their own personal treatment.`);
+  } else {
+    await DB.collection("config").doc("messages").set(lines, { merge:true });
+    adminMsg("League banter saved — your lines are in the rotation.");
+  }
 }
 async function saveGwStake(gw){
   const stake = Math.max(0, round2(+$("gw-stake").value||0));
