@@ -31,19 +31,21 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 /* ---------- top bar ---------- */
 .topbar{background:linear-gradient(135deg,#101722 0%,#16202e 55%,#1c3a5e 100%);border-bottom:3px solid var(--gold);padding:16px 18px;display:flex;flex-direction:column;align-items:center;position:relative}
 .brandrow{display:flex;flex-direction:column;align-items:center;gap:7px}
-.brandrow .logo-slot svg{width:54px;height:54px;display:block}
+.brandrow .logo-slot svg{width:52px;height:61px;display:block}
 .topbar h1{font-size:38px;font-weight:700;letter-spacing:.1em;line-height:1;text-align:center}
 .topbar h1 small{display:block;font-family:"Inter";font-size:11px;font-weight:600;letter-spacing:.22em;color:var(--gold);text-transform:uppercase;margin-top:5px}
-.userbox{position:absolute;right:16px;top:16px;display:flex;align-items:center;gap:10px}
-.whoami{text-align:right;font-size:13px;color:var(--ink-dim)}
+.whoami{font-size:13px;color:var(--ink-dim)}
 .whoami b{color:var(--ink);display:block;font-size:14px}
+.who-left{position:absolute;left:16px;top:50%;transform:translateY(-50%);text-align:left}
+.signout-right{position:absolute;right:16px;top:50%;transform:translateY(-50%)}
 @media(max-width:760px){
-  .userbox{position:static;margin-top:8px;justify-content:center}
-  .whoami{text-align:center}
   .brandrow{gap:5px}
-  .brandrow .logo-slot svg{width:42px;height:42px}
-  .topbar h1{font-size:27px}
+  .brandrow .logo-slot svg{width:40px;height:47px}
+  .topbar h1{font-size:26px}
   .topbar h1 small{font-size:9px;letter-spacing:.16em;margin-top:3px}
+  .who-left{left:10px;font-size:10.5px}
+  .who-left b{font-size:12px}
+  .signout-right{right:10px;padding:6px 9px;font-size:11.5px}
 }
 .btn{border:1px solid var(--line);background:var(--panel2);color:var(--ink);padding:8px 14px;border-radius:7px;font-weight:600;font-size:13px}
 .btn:hover{border-color:var(--steel)}
@@ -107,11 +109,15 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 .predgrid th{font-family:"Oswald";font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-dim);border-bottom:2px solid var(--line);max-width:72px;overflow:hidden;text-overflow:ellipsis}
 .predgrid tr:last-child td{border-bottom:none}
 .predgrid td:not(.colme){min-width:52px}
-.predgrid .colme{position:sticky;left:0;z-index:2;background:var(--panel);border-right:2px solid var(--gold);text-align:left;width:216px;min-width:216px;max-width:216px}
-.predgrid th.colme{text-align:left;max-width:216px}
+.predgrid .colme{position:sticky;left:0;z-index:2;background:var(--panel);border-right:2px solid var(--gold);text-align:left;width:248px;min-width:248px;max-width:248px}
+.predgrid th.colme{text-align:left;max-width:248px}
 .myrow{display:flex;align-items:center;gap:5px}
-.tcode{font-family:"Oswald";font-size:13px;font-weight:600;color:var(--steel);width:36px;flex-shrink:0}
-.tcode.ta{text-align:right}
+.tcode{font-family:"Oswald";font-size:13px;font-weight:600;color:var(--steel);width:54px;flex-shrink:0;display:flex;align-items:center;gap:4px}
+.tcode.ta{justify-content:flex-end}
+.crest-sm{width:17px;height:17px;object-fit:contain;flex-shrink:0}
+.crest{width:26px;height:26px;object-fit:contain;flex-shrink:0}
+.hstat{font-family:"Inter";font-size:11.5px;font-weight:700;color:var(--gold);margin-top:2px;letter-spacing:0;text-transform:none}
+.hstat.hdead{color:var(--red)}
 .predgrid input[type=number]{width:44px;font-size:15px;padding:6px 2px}
 .predgrid .ko{display:block;margin-top:2px}
 .tick-ok{color:var(--green);font-weight:700;font-size:15px}
@@ -120,10 +126,12 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 @media(max-width:640px){
   .predgrid th,.predgrid td{padding:6px 5px}
   .predgrid td:not(.colme){min-width:46px}
-  .predgrid .colme{width:184px;min-width:184px;max-width:184px}
-  .predgrid th.colme{max-width:184px}
+  .predgrid .colme{width:210px;min-width:210px;max-width:210px}
+  .predgrid th.colme{max-width:210px}
   .predgrid input[type=number]{width:38px;font-size:14px;padding:5px 1px}
-  .tcode{width:31px;font-size:12px}
+  .tcode{width:47px;font-size:12px;gap:3px}
+  .crest-sm{width:15px;height:15px}
+  .crest{width:22px;height:22px}
   .predgrid .ko{font-size:10px}
 }
 
@@ -299,10 +307,8 @@ code{background:var(--bg2);border:1px solid var(--line);border-radius:4px;paddin
 <div id="view-app" class="hidden">
   <div class="topbar">
     <div class="brandrow"><span class="logo-slot"></span><h1>LEFUCK<small>Premier League · Weekly scores</small></h1></div>
-    <div class="userbox">
-      <div class="whoami"><b id="who-name"></b><span id="who-role"></span></div>
-      <button class="btn btn-sm" onclick="AUTH.signOut()">Sign out</button>
-    </div>
+    <div class="whoami who-left"><b id="who-name"></b><span id="who-role"></span></div>
+    <button class="btn btn-sm signout-right" onclick="AUTH.signOut()">Sign out</button>
   </div>
   <div class="tabs" id="tabs">
     <button data-tab="predict" class="on" onclick="setTab('predict')">Predictions</button>
@@ -375,33 +381,52 @@ const DEFAULT_STAKE = 5; // £ per player per week
    ========================================================================== */
 const LOGIN_DOMAIN = "predleague.app";
 
-/* LEFUCK badge: poker chip (the betting) + football + three mates on top */
-const LOGO_SVG = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LEFUCK logo">
-  <circle cx="50" cy="52" r="46" fill="#152a45" stroke="#e8a33d" stroke-width="4"/>
-  <circle cx="50" cy="52" r="40" fill="none" stroke="#e8a33d" stroke-width="5"
-          stroke-dasharray="7.9 23.5" stroke-dashoffset="4" opacity=".9"/>
-  <text x="13" y="60" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#e8a33d">£</text>
-  <text x="79" y="60" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#e8a33d">£</text>
-  <g>
-    <circle cx="31" cy="30" r="6.5" fill="#4b8fd4"/><path d="M21 47 a10 8 0 0 1 20 0 z" fill="#4b8fd4"/>
-    <circle cx="50" cy="24" r="7" fill="#e8a33d"/><path d="M39 42 a11 9 0 0 1 22 0 z" fill="#e8a33d"/>
-    <circle cx="69" cy="30" r="6.5" fill="#3fae6a"/><path d="M59 47 a10 8 0 0 1 20 0 z" fill="#3fae6a"/>
-  </g>
-  <circle cx="50" cy="63" r="23" fill="#edf1f5" stroke="#0d1218" stroke-width="2.5"/>
-  <polygon points="50,53 59,59.5 55.5,70.5 44.5,70.5 41,59.5" fill="#0d1218"/>
-  <g stroke="#0d1218" stroke-width="2.5" stroke-linecap="round">
-    <line x1="50" y1="53" x2="50" y2="42"/>
-    <line x1="59" y1="59.5" x2="69.5" y2="54.5"/>
-    <line x1="55.5" y1="70.5" x2="61" y2="80.5"/>
-    <line x1="44.5" y1="70.5" x2="39" y2="80.5"/>
-    <line x1="41" y1="59.5" x2="30.5" y2="54.5"/>
+/* LEFUCK crest: glossy shield, football, three mates, a hint of the pot.
+   The defs live in one always-rendered 0x0 svg — a copy inside a hidden view
+   would make url(#...) references fail and blank the crest. */
+const LOGO_DEFS = `<defs>
+    <linearGradient id="lf-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2a4a7c"/><stop offset=".55" stop-color="#152a4a"/><stop offset="1" stop-color="#0a1424"/>
+    </linearGradient>
+    <linearGradient id="lf-rim" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffeb9e"/><stop offset=".5" stop-color="#e8a33d"/><stop offset="1" stop-color="#a86c10"/>
+    </linearGradient>
+    <linearGradient id="lf-gloss" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity=".30"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="lf-shadow" x="-30%" y="-20%" width="160%" height="150%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000" flood-opacity=".55"/>
+    </filter>
+  </defs>`;
+const LOGO_SVG = `<svg viewBox="0 0 100 118" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LEFUCK crest">
+  <g filter="url(#lf-shadow)">
+    <path d="M50 3 L92 15 V55 C92 86 74 103 50 115 C26 103 8 86 8 55 V15 Z" fill="url(#lf-rim)"/>
+    <path d="M50 8 L87 19 V54 C87 82 71 98 50 109 C29 98 13 82 13 54 V19 Z" fill="url(#lf-bg)"/>
+    <circle cx="50" cy="63" r="31" fill="none" stroke="#e8a33d" stroke-width="3" stroke-dasharray="6 17" opacity=".65"/>
+    <g>
+      <circle cx="33" cy="27" r="5.5" fill="#4b8fd4"/><path d="M25 41 a8 7 0 0 1 16 0 z" fill="#4b8fd4"/>
+      <circle cx="50" cy="22" r="6" fill="#ffd75e"/><path d="M41 38 a9 8 0 0 1 18 0 z" fill="#ffd75e"/>
+      <circle cx="67" cy="27" r="5.5" fill="#3fae6a"/><path d="M59 41 a8 7 0 0 1 16 0 z" fill="#3fae6a"/>
+    </g>
+    <circle cx="50" cy="63" r="20" fill="#f2f5f8" stroke="#0d1218" stroke-width="2"/>
+    <polygon points="50,54 58,60 55,69.5 45,69.5 42,60" fill="#0d1218"/>
+    <g stroke="#0d1218" stroke-width="2" stroke-linecap="round">
+      <line x1="50" y1="54" x2="50" y2="44.5"/><line x1="58" y1="60" x2="66.5" y2="55.5"/>
+      <line x1="55" y1="69.5" x2="60" y2="78"/><line x1="45" y1="69.5" x2="40" y2="78"/>
+      <line x1="42" y1="60" x2="33.5" y2="55.5"/>
+    </g>
+    <text x="21" y="97" font-family="Arial,sans-serif" font-size="12" font-weight="bold" fill="#ffd75e">£</text>
+    <text x="70" y="97" font-family="Arial,sans-serif" font-size="12" font-weight="bold" fill="#ffd75e">£</text>
+    <path d="M50 8 L87 19 V44 C70 52 30 52 13 44 V19 Z" fill="url(#lf-gloss)"/>
   </g>
 </svg>`;
+document.body.insertAdjacentHTML("afterbegin",
+  `<svg width="0" height="0" style="position:absolute" aria-hidden="true">${LOGO_DEFS}</svg>`);
 document.querySelectorAll(".logo-slot").forEach(el => el.innerHTML = LOGO_SVG);
 (() => {
   const link = document.createElement("link");
   link.rel = "icon"; link.type = "image/svg+xml";
-  link.href = "data:image/svg+xml," + encodeURIComponent(LOGO_SVG);
+  link.href = "data:image/svg+xml," + encodeURIComponent(LOGO_SVG.replace("<g filter", LOGO_DEFS + "<g filter"));
   document.head.appendChild(link);
 })();
 
@@ -603,6 +628,21 @@ function currentGw(){
 }
 function teamName(id){ return FEED?.teams?.[id]?.name || ("Team "+id); }
 function teamShort(id){ return FEED?.teams?.[id]?.short || ("T"+id); }
+// Official club crest from the Premier League CDN (the feed carries each
+// team's PL code); falls back to the text roundel if unavailable.
+function crestUrl(id){
+  const code = FEED?.teams?.[id]?.code;
+  return code ? `https://resources.premierleague.com/premierleague/badges/50/t${code}.png` : null;
+}
+function crestSm(id){ // small inline crest for the predictions grid
+  const u = crestUrl(id);
+  return u ? `<img class="crest-sm" src="${u}" alt="" loading="lazy" onerror="this.style.display='none'">` : "";
+}
+function crestOrBadge(id){ // fixture rows: crest if we have one, text roundel if not
+  const u = crestUrl(id);
+  return u ? `<img class="crest" src="${u}" alt="" loading="lazy" onerror="this.style.display='none'">`
+           : `<span class="badge">${esc(teamShort(id))}</span>`;
+}
 // The whole gameweek locks at the kickoff of its FIRST match: no new
 // predictions and no edits after that, and only then are picks revealed.
 function gwDeadline(gw){
@@ -780,6 +820,37 @@ function maybeShowRoast(){
 // Rivals only gain where their picks coincide with yours; games you didn't
 // predict are scored as a result nobody called. If even that scenario doesn't
 // put you top, you genuinely cannot win the week.
+function bestCaseFinals(gw, pid, rows, preds){
+  const fx = gwFixtures(gw);
+  const remaining = fx.filter(f => !fixtureResult(gw, f));
+  const finals = {};
+  for (const r of rows) finals[r.pid] = r.pts;
+  const myPicks = preds[pid]?.picks || {};
+  for (const f of remaining){
+    const mp = myPicks[f.id];
+    if (!mp) continue;
+    for (const r of rows){
+      if (r.pid === pid){ finals[r.pid] += CONFIG.exact; continue; }
+      const pk = preds[r.pid]?.picks?.[f.id];
+      if (!pk) continue;
+      if (+pk.h === +mp.h && +pk.a === +mp.a) finals[r.pid] += CONFIG.exact;
+      else if (Math.sign(pk.h - pk.a) === Math.sign(mp.h - mp.a)) finals[r.pid] += CONFIG.result;
+    }
+  }
+  return finals;
+}
+// Everyone who can no longer win the week, by the same best-case test.
+function eliminatedSet(gw){
+  const dead = new Set();
+  const rows = scoreWeek(gw), preds = PREDS[gw] || {};
+  if (rows.length < 2) return dead;
+  for (const r of rows){
+    const finals = bestCaseFinals(gw, r.pid, rows, preds);
+    const bestRival = Math.max(...rows.filter(x => x.pid !== r.pid).map(x => finals[x.pid]));
+    if (finals[r.pid] < bestRival) dead.add(r.pid);
+  }
+  return dead;
+}
 function stillInStatus(gw){
   const fx = gwFixtures(gw);
   const remaining = fx.filter(f => !fixtureResult(gw, f));
@@ -787,20 +858,7 @@ function stillInStatus(gw){
   const me = rows.find(r => r.pid === MYPID);
   if (!me) return null;
   const preds = PREDS[gw] || {};
-  const myPicks = preds[MYPID]?.picks || {};
-  const finals = {};
-  for (const r of rows) finals[r.pid] = r.pts;
-  for (const f of remaining){
-    const mp = myPicks[f.id];
-    if (!mp) continue;
-    for (const r of rows){
-      if (r.pid === MYPID){ finals[r.pid] += CONFIG.exact; continue; }
-      const pk = preds[r.pid]?.picks?.[f.id];
-      if (!pk) continue;
-      if (+pk.h === +mp.h && +pk.a === +mp.a) finals[r.pid] += CONFIG.exact;
-      else if (Math.sign(pk.h - pk.a) === Math.sign(mp.h - mp.a)) finals[r.pid] += CONFIG.result;
-    }
-  }
+  const finals = bestCaseFinals(gw, MYPID, rows, preds);
   const rivals = rows.filter(r => r.pid !== MYPID);
   const bestRival = rivals.length ? Math.max(...rivals.map(r => finals[r.pid])) : 0;
   return {
@@ -955,8 +1013,21 @@ function renderPredict(){
       .sort((a,b)=>a[1].name.localeCompare(b[1].name));
     const preds = PREDS[gw] || {};
     const revealed = gwLocked(gw); // admin unlock also re-hides picks
+    // header tally: current points under each name, medal for the top three
+    // while the week is in play, skull for anyone mathematically out
+    const wkRows = scoreWeek(gw);
+    const anyRes = fx.some(f => fixtureResult(gw, f));
+    const inPlay = revealed && anyRes && !GAMEWEEKS["gw"+gw]?.finalized && fx.some(f => !fixtureResult(gw, f));
+    const dead = inPlay ? eliminatedSet(gw) : new Set();
+    const statFor = pid => {
+      if (!anyRes || !revealed) return "";
+      const r = wkRows.find(x => x.pid === pid);
+      if (!r) return "";
+      const mark = dead.has(pid) ? "💀" : r.rank===1 ? "🥇" : r.rank===2 ? "🥈" : r.rank===3 ? "🥉" : "";
+      return `<div class="hstat ${dead.has(pid)?"hdead":""}">${r.pts} ${mark}</div>`;
+    };
     html += `<div class="predgrid-wrap"><table class="predgrid">
-      <tr><th class="colme">You</th>${others.map(([,p])=>`<th>${esc(p.name.split(" ")[0])}</th>`).join("")}</tr>`;
+      <tr><th class="colme">You${statFor(MYPID)}</th>${others.map(([pid,p])=>`<th>${esc(p.name.split(" ")[0])}${statFor(pid)}</th>`).join("")}</tr>`;
     const ptsCfg = GAMEWEEKS["gw"+gw]?.finalized ? (GAMEWEEKS["gw"+gw].pointsUsed || CONFIG) : CONFIG;
     for (const f of fx){
       const pk = mine[f.id] || {};
@@ -971,11 +1042,11 @@ function renderPredict(){
       html += `<tr class="${res?"done":""}">
         <td class="colme" title="${esc(teamName(f.h))} v ${esc(teamName(f.a))}">
           <div class="myrow">
-            <span class="tcode">${esc(teamShort(f.h))}</span>
+            <span class="tcode">${crestSm(f.h)}${esc(teamShort(f.h))}</span>
             <input type="number" min="0" max="15" id="pk-${f.id}-h" value="${pk.h ?? ""}" ${locked||out?"disabled":""}>
             <span class="dash">–</span>
             <input type="number" min="0" max="15" id="pk-${f.id}-a" value="${pk.a ?? ""}" ${locked||out?"disabled":""}>
-            <span class="tcode ta">${esc(teamShort(f.a))}</span>
+            <span class="tcode ta">${esc(teamShort(f.a))}${crestSm(f.a)}</span>
           </div>
           <span class="ko">${res?`FT ${res.h}–${res.a}`
             : (f.hs!==null&&f.hs!==undefined&&kickedOffLive(f))?`<span style="color:var(--green);font-weight:700">● ${f.hs}–${f.as} live</span>`
@@ -994,16 +1065,6 @@ function renderPredict(){
         } else {
           html += `<td>${opk ? '<span class="tick-ok">✓</span>' : '<span class="tick-no">—</span>'}</td>`;
         }
-      }
-      html += `</tr>`;
-    }
-    if (fx.some(f => fixtureResult(gw, f))){
-      const wk = scoreWeek(gw);
-      const meRow = wk.find(r=>r.pid===MYPID);
-      html += `<tr class="totrow"><td class="colme">Points so far${meRow?`: <b style="color:var(--gold)">${meRow.pts}</b>`:""}</td>`;
-      for (const [pid] of others){
-        const r = wk.find(x=>x.pid===pid);
-        html += `<td>${r && revealed ? `<b>${r.pts}</b>` : "—"}</td>`;
       }
       html += `</tr>`;
     }
@@ -1103,11 +1164,11 @@ function renderWeek(){
   for (const f of fx){
     const res = fixtureResult(gw, f);
     html += `<div class="fixture ${res?"done":""}">
-      <div class="team home"><span><span class="tn-l">${esc(teamName(f.h))}</span><span class="tn-s">${esc(teamShort(f.h))}</span></span><span class="badge">${esc(teamShort(f.h))}</span></div>
+      <div class="team home"><span><span class="tn-l">${esc(teamName(f.h))}</span><span class="tn-s">${esc(teamShort(f.h))}</span></span>${crestOrBadge(f.h)}</div>
       <div class="mid">${res?`<span class="final">${res.h}–${res.a}</span>${res.override?'<span class="faint">admin entry</span>':""}`
         : (f.hs!==null&&f.hs!==undefined&&kickedOffLive(f))?`<span class="final live">${f.hs}–${f.as}</span><span class="faint" style="color:var(--green)">● live</span>`
         : `<span class="ko">${fmtKo(f.kickoff)}</span>`}</div>
-      <div class="team"><span class="badge">${esc(teamShort(f.a))}</span><span><span class="tn-l">${esc(teamName(f.a))}</span><span class="tn-s">${esc(teamShort(f.a))}</span></span></div>
+      <div class="team">${crestOrBadge(f.a)}<span><span class="tn-l">${esc(teamName(f.a))}</span><span class="tn-s">${esc(teamShort(f.a))}</span></span></div>
     </div>`;
     if (revealed){
       html += `<div style="padding:0 8px 12px;display:flex;flex-wrap:wrap;gap:6px;border-bottom:1px solid var(--line)">`;
@@ -1323,13 +1384,13 @@ function renderAdmin(){
     const ov = gwDoc?.overrides?.[f.id];
     const feedRes = (f.finished && f.hs!==null && f.hs!==undefined) ? `feed: ${f.hs}–${f.as}` : "no feed result";
     html += `<div class="fixture">
-      <div class="team home"><span><span class="tn-l">${esc(teamName(f.h))}</span><span class="tn-s">${esc(teamShort(f.h))}</span></span><span class="badge">${esc(teamShort(f.h))}</span></div>
+      <div class="team home"><span><span class="tn-l">${esc(teamName(f.h))}</span><span class="tn-s">${esc(teamShort(f.h))}</span></span>${crestOrBadge(f.h)}</div>
       <div class="mid"><div class="scorebox">
         <input type="number" min="0" max="15" id="ov-${f.id}-h" value="${ov?.h ?? ""}">
         <span class="dash">–</span>
         <input type="number" min="0" max="15" id="ov-${f.id}-a" value="${ov?.a ?? ""}">
       </div><span class="ko">${feedRes}${ov?' · <b style="color:var(--gold)">override set</b>':""}</span></div>
-      <div class="team"><span class="badge">${esc(teamShort(f.a))}</span><span><span class="tn-l">${esc(teamName(f.a))}</span><span class="tn-s">${esc(teamShort(f.a))}</span></span></div>
+      <div class="team">${crestOrBadge(f.a)}<span><span class="tn-l">${esc(teamName(f.a))}</span><span class="tn-s">${esc(teamShort(f.a))}</span></span></div>
     </div>`;
   }
   html += `<div class="savebar"><span id="ov-msg" class="faint"></span><button class="btn btn-primary" onclick="saveOverrides(${gw})">Save manual results</button></div></div>`;

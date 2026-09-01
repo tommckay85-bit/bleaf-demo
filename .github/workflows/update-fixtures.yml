@@ -49,7 +49,7 @@ jobs:
             updated: (now | todate),
             source: "fantasy.premierleague.com",
             teams: ($b[0].teams | map({ key: (.id|tostring),
-                                        value: { name: .name, short: .short_name } }) | from_entries),
+                                        value: { name: .name, short: .short_name, code: .code } }) | from_entries),
             fixtures: ($f[0] | map({
               id: .id,
               gw: .event,
