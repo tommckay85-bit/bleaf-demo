@@ -1310,6 +1310,10 @@ function renderAdmin(){
     <span class="faint" style="margin-left:10px">${gwDoc?.unlocked
       ? "Unlocked — the deadline is ignored and everyone can edit predictions. Picks are hidden again while unlocked."
       : "Testing tool: lets everyone edit predictions even after the deadline. Re-lock before the games count!"}</span>
+  </div>
+  <div style="margin-top:12px">
+    <button class="btn btn-danger btn-sm" onclick="wipeGw(${gw})">🗑 Wipe GW ${gw} data</button>
+    <span class="faint" style="margin-left:10px">Deletes everyone's GW ${gw} predictions, results overrides, in/out flags and any finalised table — a clean slate for this week. Players, codes and other weeks untouched.</span>
   </div>`;
 
   /* manual results */
@@ -1406,6 +1410,18 @@ async function settleUp(){
     rows: rows.map(r => ({ pid:r.pid, name:r.name, weeks:r.weeks, staked:r.staked, won:r.won, net:r.net })),
   });
   adminMsg("Pay-out recorded — balances reset. It's in Past pay-outs on the Leaderboard tab.");
+}
+async function wipeGw(gw){
+  if (!confirm(`Wipe ALL data for Gameweek ${gw}?\n\nThis deletes everyone's predictions, any manual results, in/out flags and the finalised table for GW ${gw}. It drops out of the leaderboard and money completely.\n\nPlayers, codes and other weeks are untouched. This cannot be undone.`)) return;
+  try {
+    const snap = await DB.collection("predictions").where("gw","==",gw).get();
+    const dels = [];
+    snap.forEach(d => dels.push(d.ref.delete()));
+    await Promise.all(dels);
+    await DB.collection("gameweeks").doc("gw"+gw).delete();
+    PREDS[gw] = {};
+    adminMsg(`GW ${gw} wiped — ${dels.length} prediction${dels.length===1?"":"s"} deleted. Fresh start.`);
+  } catch(e){ adminMsg("Wipe failed: " + esc(e.message), "err"); }
 }
 async function toggleUnlock(gw){
   const cur = !!GAMEWEEKS["gw"+gw]?.unlocked;
