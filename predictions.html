@@ -19,7 +19,10 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{color-scheme:dark}
-body{background:var(--bg);color:var(--ink);font:15px/1.5 "Inter",system-ui,sans-serif;min-height:100vh}
+body{background:radial-gradient(1200px 700px at 50% -220px,#1a2740 0%,var(--bg) 55%) fixed,var(--bg);color:var(--ink);font:15px/1.5 "Inter",system-ui,sans-serif;min-height:100vh}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.05;
+  background:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="140" height="140"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2"/></filter><rect width="140" height="140" filter="url(%23n)" opacity="0.55"/></svg>')}
+#view-app,.authwrap{position:relative;z-index:1}
 h1,h2,h3,h4,.hd{font-family:"Oswald","Inter",sans-serif;letter-spacing:.02em;text-transform:uppercase}
 a{color:var(--steel)}
 button{font:inherit;cursor:pointer}
@@ -47,12 +50,14 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
   .who-left b{font-size:12px}
   .signout-right{right:10px;padding:6px 9px;font-size:11.5px}
 }
-.btn{border:1px solid var(--line);background:var(--panel2);color:var(--ink);padding:8px 14px;border-radius:7px;font-weight:600;font-size:13px}
-.btn:hover{border-color:var(--steel)}
-.btn-primary{background:var(--steel);border-color:var(--steel);color:#0b1016}
-.btn-primary:hover{background:#5f9edd}
-.btn-gold{background:var(--gold);border-color:var(--gold);color:#161006}
-.btn-gold:hover{background:#f2b355}
+.btn{border:1px solid var(--line);background:linear-gradient(180deg,#26313f,#1d2733);color:var(--ink);padding:8px 14px;border-radius:8px;font-weight:600;font-size:13px;
+  box-shadow:0 2px 6px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.06);transition:transform .12s,box-shadow .12s}
+.btn:hover{border-color:var(--steel);transform:translateY(-1px);box-shadow:0 4px 10px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.06)}
+.btn:active{transform:translateY(0)}
+.btn-primary{background:linear-gradient(180deg,#5f9edd,#3f7fc2);border-color:var(--steel);color:#0b1016}
+.btn-primary:hover{background:linear-gradient(180deg,#6fabe8,#4a8ccf)}
+.btn-gold{background:linear-gradient(180deg,#ffd76a,#e09a2b);border-color:#f2b355;color:#161006;box-shadow:0 2px 8px rgba(232,163,61,.35),inset 0 1px 0 rgba(255,255,255,.35)}
+.btn-gold:hover{background:linear-gradient(180deg,#ffe289,#eda634)}
 .btn-danger{background:transparent;border-color:var(--red);color:var(--red)}
 .btn-sm{padding:4px 10px;font-size:12px}
 .btn:disabled{opacity:.45;cursor:not-allowed}
@@ -64,7 +69,8 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 .tabs button:hover{color:var(--ink)}
 
 .wrap{max-width:1060px;margin:0 auto;padding:20px 16px 60px}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:18px}
+.panel{background:linear-gradient(180deg,#1c2531 0%,#19212b 100%);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:18px;
+  box-shadow:0 10px 28px rgba(0,0,0,.38),inset 0 1px 0 rgba(255,255,255,.045)}
 .panel h2{font-size:17px;color:var(--ink);margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .panel h2 .tag{font-family:"Inter";font-size:11px;font-weight:600;letter-spacing:.08em;background:var(--navy);color:var(--steel);padding:3px 8px;border-radius:4px;text-transform:uppercase}
 .muted{color:var(--ink-dim);font-size:13px}
@@ -192,6 +198,18 @@ tr.pos2 td{background:linear-gradient(90deg,rgba(154,167,181,.10),transparent 70
 .roast-card.dead{border-color:var(--red)}
 .roast-card.dead .lbl{color:var(--red)}
 .roast-card.dead .name{color:var(--red)}
+.roast-card.champ{border-color:#ffd75e;background:linear-gradient(165deg,#2b230e,#1a222c 65%);box-shadow:0 0 60px rgba(255,215,94,.25),0 18px 60px rgba(0,0,0,.6)}
+.roast-card.champ .lbl{color:#ffd75e}
+.roast-card.champ .name{color:#ffd75e;text-shadow:0 0 18px rgba(255,215,94,.5)}
+.fx-canvas{position:fixed;inset:0;pointer-events:none;z-index:60}
+textarea{width:100%;font:inherit;font-size:13px;background:var(--bg2);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:8px 10px;resize:vertical}
+textarea:focus{outline:2px solid var(--steel-dim);border-color:var(--steel)}
+input,select{box-shadow:inset 0 2px 5px rgba(0,0,0,.3)}
+.stat{background:linear-gradient(180deg,#242f3d,#1d2733);box-shadow:0 4px 12px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.05)}
+.topbar{box-shadow:0 6px 22px rgba(0,0,0,.45)}
+.tabs{box-shadow:0 4px 14px rgba(0,0,0,.3)}
+.podium .card{box-shadow:0 10px 28px rgba(0,0,0,.4)}
+.podium .card.win{box-shadow:0 0 34px rgba(232,163,61,.22),0 10px 28px rgba(0,0,0,.45)}
 
 /* ---------- global mobile pass ---------- */
 @media(max-width:640px){
@@ -336,6 +354,17 @@ code{background:var(--bg2);border:1px solid var(--line);border-radius:4px;paddin
   </div>
 </div>
 
+<!-- gameweek winner celebration -->
+<div id="win-overlay" class="roast-overlay hidden" onclick="this.classList.add('hidden')">
+  <div class="roast-card champ" onclick="event.stopPropagation()">
+    <div class="roast-spoon">🏆</div>
+    <div id="win-title" class="lbl"></div>
+    <div class="name">CHAMPION!</div>
+    <p id="win-msg"></p>
+    <button class="btn btn-gold" onclick="document.getElementById('win-overlay').classList.add('hidden')">🍻 Cheers</button>
+  </div>
+</div>
+
 <!-- mid-gameweek "still in it?" verdict -->
 <div id="stillin-overlay" class="roast-overlay hidden" onclick="this.classList.add('hidden')">
   <div id="stillin-card" class="roast-card" onclick="event.stopPropagation()">
@@ -432,6 +461,7 @@ document.querySelectorAll(".logo-slot").forEach(el => el.innerHTML = LOGO_SVG);
 
 let AUTH, DB, MYPID = null, ME = null;
 let CONFIG = { ...DEFAULT_POINTS, stake: DEFAULT_STAKE }; // {result, exact, stake}
+let MSGS = { winner:[], loser:[], stillin:[], out:[] };    // admin's bespoke banter
 let SETTLEMENTS = [];                         // past pay-outs (money resets)
 let PLAYERS = {};                             // pid -> player doc
 let CODES = {};                               // pid -> code (admins only)
@@ -556,6 +586,10 @@ function startSubscriptions(){
   DB.collection("gameweeks").onSnapshot(snap => {
     GAMEWEEKS = {}; snap.forEach(d => GAMEWEEKS[d.id] = d.data());
     if (ME) renderAll();
+  });
+  DB.collection("config").doc("messages").onSnapshot(d => {
+    const m = d.exists ? d.data() : {};
+    MSGS = { winner: m.winner||[], loser: m.loser||[], stillin: m.stillin||[], out: m.out||[] };
   });
   DB.collection("settlements").onSnapshot(snap => {
     SETTLEMENTS = []; snap.forEach(d => SETTLEMENTS.push({ id: d.id, ...d.data() }));
@@ -791,6 +825,52 @@ const ROASTS = [
   "Breaking: local idiot {name} discovers new ways to lose money. {pts} points. Superb stuff.",
   "{name}, {pts} points?! My dog walked across the keyboard and outscored you.",
 ];
+// One pool per category: the built-ins plus the admin's saved lines, picked
+// deterministically so the whole league sees the same message for a week.
+function pickMsg(cat, builtins, seed, subs){
+  const pool = [...builtins, ...(MSGS[cat] || [])];
+  if (!pool.length) return "";
+  let msg = String(pool[Math.abs(seed) % pool.length]);
+  for (const [k,v] of Object.entries(subs || {})) msg = msg.replaceAll("{"+k+"}", String(v));
+  return msg;
+}
+// Show an overlay once the listed ones have been dismissed.
+function showAfter(blockers, id){
+  const blocked = () => blockers.some(b => !$(b).classList.contains("hidden"));
+  if (!blocked()){ $(id).classList.remove("hidden"); return; }
+  const iv = setInterval(() => {
+    if (!blocked()){ clearInterval(iv); $(id).classList.remove("hidden"); }
+  }, 600);
+}
+
+const WINNER_MSGS = [
+  "Get in, {name}! {pts} points of pure filth. {amount} says you're the smartest man in the group chat this week.",
+  "{name} takes the lot — {amount}. Bow down, peasants.",
+  "Champion: {name}. Read the form, called the scores, robbed your mates of {amount}. Beautiful work.",
+  "{name} wins the week with {pts} points — someone check VAR, because that was outrageous.",
+  "All hail {name}. The rest of them paid {amount} for the privilege of watching you win.",
+];
+let winnerChecked = false;
+function maybeShowWinner(){
+  if (winnerChecked || !ME) return;
+  const done = Object.entries(GAMEWEEKS)
+    .filter(([,g]) => g.finalized && g.winners?.length)
+    .map(([id,g]) => ({ gw: +id.replace("gw",""), ...g }))
+    .sort((a,b)=>b.gw-a.gw);
+  if (!done.length) return;
+  winnerChecked = true;
+  const g = done[0];
+  const me = (g.winners || []).find(w => w.pid === MYPID);
+  if (!me) return;
+  const key = "win_seen_gw" + g.gw;
+  try { if (sessionStorage.getItem(key)) return; sessionStorage.setItem(key, "1"); } catch(e){}
+  const amount = g.payouts?.[MYPID] != null ? fmtMoney(g.payouts[MYPID]) : "the pot";
+  $("win-title").textContent = `GW ${g.gw} · you won the week`;
+  $("win-msg").textContent = pickMsg("winner", WINNER_MSGS, g.gw, { name: ME.name, pts: me.pts, amount });
+  $("win-overlay").classList.remove("hidden");
+  celebrate();
+}
+
 let roastChecked = false;
 function maybeShowRoast(){
   if (roastChecked || !ME) return;
@@ -808,11 +888,10 @@ function maybeShowRoast(){
   try { if (sessionStorage.getItem(key)) return; sessionStorage.setItem(key, "1"); } catch(e){}
   const names = losers.map(l=>l.name).join(" & ");
   const isMe = losers.some(l=>l.pid===MYPID);
-  const msg = ROASTS[g.gw % ROASTS.length].replaceAll("{name}", names).replaceAll("{pts}", String(losers[0].pts));
   $("roast-title").textContent = isMe ? `GW ${g.gw}: it's you. It's actually you.` : `GW ${g.gw} loser of the week`;
   $("roast-name").textContent = names;
-  $("roast-msg").textContent = msg;
-  $("roast-overlay").classList.remove("hidden");
+  $("roast-msg").textContent = pickMsg("loser", ROASTS, g.gw, { name: names, pts: losers[0].pts });
+  showAfter(["win-overlay"], "roast-overlay");
 }
 
 /* ---------- still in it? (mid-gameweek verdict) ---------- */
@@ -891,29 +970,25 @@ function maybeShowStillIn(){
   const st = stillInStatus(gw);
   if (!st) return;
   const card = $("stillin-card");
+  const subs = { name: ME.name, pts: st.myPts, best: st.myBest, leader: st.leader.name,
+                 leaderpts: st.leader.pts, left: st.left, s: st.left === 1 ? "" : "s" };
   if (st.stillIn){
     card.classList.add("inplay"); card.classList.remove("dead");
     $("stillin-spoon").textContent = st.leading ? "🔥" : "⚽";
     $("stillin-title").textContent = `GW ${gw} · ${st.done}/${st.total} played`;
     $("stillin-name").textContent = "STILL IN IT!";
-    $("stillin-msg").textContent = st.leading
+    const standard = st.leading
       ? `You're top on ${st.myPts} pts with ${st.left} game${st.left>1?"s":""} left — best case ${st.myBest}. ${st.chasing[0] ? st.chasing[0].name + " is lurking on " + st.chasing[0].pts + " pts. " : ""}Don't bottle it.`
       : `You're on ${st.myPts} pts and can still hit ${st.myBest}. You're up against ${st.chasing.map(r=>r.name).join(", ") || st.leader.name} — ${st.leader.name} leads on ${st.leader.pts} pts. Game on.`;
+    $("stillin-msg").textContent = pickMsg("stillin", [standard], gw + st.done, subs);
   } else {
     card.classList.add("dead"); card.classList.remove("inplay");
     $("stillin-spoon").textContent = "💀";
     $("stillin-title").textContent = `GW ${gw} · ${st.done}/${st.total} played`;
     $("stillin-name").textContent = "LOSER!";
-    $("stillin-msg").textContent = OUT_MSGS[st.done % OUT_MSGS.length]
-      .replaceAll("{name}", ME.name).replaceAll("{left}", String(st.left)).replaceAll("{s}", st.left === 1 ? "" : "s");
+    $("stillin-msg").textContent = pickMsg("out", OUT_MSGS, st.done, subs);
   }
-  // queue behind the roast modal if that's on screen
-  const roast = $("roast-overlay");
-  if (!roast.classList.contains("hidden")){
-    const iv = setInterval(() => {
-      if (roast.classList.contains("hidden")){ clearInterval(iv); $("stillin-overlay").classList.remove("hidden"); }
-    }, 600);
-  } else $("stillin-overlay").classList.remove("hidden");
+  showAfter(["win-overlay","roast-overlay"], "stillin-overlay");
 }
 
 /* ---------- chrome / tabs ---------- */
@@ -927,6 +1002,7 @@ function renderChrome(){
   if (viewGw === null) viewGw = currentGw();
   if (adminGw === null) adminGw = viewGw;
   if (viewGw !== null && !PREDS[viewGw]) watchPreds(viewGw);
+  maybeShowWinner();
   maybeShowRoast();
   maybeShowStillIn();
 }
@@ -1309,6 +1385,17 @@ function renderAdmin(){
     </div>
     <p class="faint">Changes apply to any week not yet finalised. Finalised weeks keep the points and stake they were scored with. The stake can also be overridden for a single week in Gameweek control.</p></div>`;
 
+  /* banter messages */
+  html += `<div class="panel"><h2>Banter messages</h2>
+    <p class="faint" style="margin-bottom:10px">One message per line — your lines join the built-in rotation and the whole league sees the same one for a given week. Placeholders: <code>{name}</code> <code>{pts}</code>; still-in/out also take <code>{best}</code> <code>{leader}</code> <code>{leaderpts}</code> <code>{left}</code>; winner also takes <code>{amount}</code>.</p>
+    <div class="grid2">
+      <div class="field"><label>🏆 Winner congrats</label><textarea id="msg-winner" rows="4">${esc((MSGS.winner||[]).join("\n"))}</textarea></div>
+      <div class="field"><label>🥄 Weekly loser roast</label><textarea id="msg-loser" rows="4">${esc((MSGS.loser||[]).join("\n"))}</textarea></div>
+      <div class="field"><label>⚽ Still in it</label><textarea id="msg-stillin" rows="4">${esc((MSGS.stillin||[]).join("\n"))}</textarea></div>
+      <div class="field"><label>💀 Out mid-week (LOSER!)</label><textarea id="msg-out" rows="4">${esc((MSGS.out||[]).join("\n"))}</textarea></div>
+    </div>
+    <button class="btn btn-primary" style="margin-top:10px" onclick="saveMsgs()">Save messages</button></div>`;
+
   /* add player */
   html += `<div class="panel"><h2>Add a player</h2>
     <div class="cfgrow">
@@ -1397,6 +1484,54 @@ function renderAdmin(){
   el.innerHTML = html;
 }
 
+/* confetti + fireworks for the weekly champion */
+function celebrate(ms = 8000){
+  const cv = document.createElement("canvas");
+  cv.className = "fx-canvas";
+  document.body.appendChild(cv);
+  const ctx = cv.getContext("2d");
+  const fit = () => { cv.width = innerWidth; cv.height = innerHeight; };
+  fit();
+  const COLS = ["#ffd75e","#e8a33d","#4b8fd4","#3fae6a","#f2f5f8","#d4574b"];
+  const conf = Array.from({ length: 130 }, () => ({
+    x: Math.random()*cv.width, y: -20 - Math.random()*cv.height*.6,
+    w: 5+Math.random()*6, h: 8+Math.random()*7,
+    vy: 2+Math.random()*2.6, vx: -1+Math.random()*2,
+    rot: Math.random()*Math.PI, vr: -.1+Math.random()*.2,
+    c: COLS[Math.random()*COLS.length|0],
+  }));
+  let sparks = [];
+  const burst = () => {
+    const bx = cv.width*(.15+Math.random()*.7), by = cv.height*(.12+Math.random()*.38);
+    const c = COLS[Math.random()*COLS.length|0];
+    for (let i=0;i<56;i++){
+      const a = Math.PI*2*i/56, s = 2+Math.random()*3.6;
+      sparks.push({ x:bx, y:by, vx:Math.cos(a)*s, vy:Math.sin(a)*s, life:1, c });
+    }
+  };
+  burst();
+  const bi = setInterval(burst, 850);
+  const end = Date.now() + ms;
+  (function tick(){
+    ctx.clearRect(0,0,cv.width,cv.height);
+    for (const p of conf){
+      p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+      if (p.y > cv.height+20){ p.y = -20; p.x = Math.random()*cv.width; }
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot);
+      ctx.fillStyle = p.c; ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h); ctx.restore();
+    }
+    sparks = sparks.filter(s => s.life > 0);
+    for (const s of sparks){
+      s.x += s.vx; s.y += s.vy; s.vy += .05; s.life -= .017;
+      ctx.globalAlpha = Math.max(s.life, 0); ctx.fillStyle = s.c;
+      ctx.beginPath(); ctx.arc(s.x, s.y, 2.2, 0, 7); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    if (Date.now() < end) requestAnimationFrame(tick);
+    else { clearInterval(bi); cv.remove(); }
+  })();
+}
+
 function adminMsg(text, cls="ok"){
   const m = $("admin-msg"); if (!m) return;
   m.innerHTML = `<div class="banner ${cls}">${text}</div>`;
@@ -1453,6 +1588,14 @@ function copyCode(pid, name){
   const code = CODES[pid]; if (!code) return;
   const msg = `⚽ LEFUCK — you're in, ${name}!\n${location.origin}${location.pathname}\nPick your name and enter your code: ${fmtCode(code)}`;
   navigator.clipboard.writeText(msg).then(()=>adminMsg(`Invite message for <b>${esc(name)}</b> copied — paste it into WhatsApp.`));
+}
+async function saveMsgs(){
+  const parse = id => $(id).value.split("\n").map(s=>s.trim()).filter(Boolean).slice(0,30).map(s=>s.slice(0,300));
+  await DB.collection("config").doc("messages").set({
+    winner: parse("msg-winner"), loser: parse("msg-loser"),
+    stillin: parse("msg-stillin"), out: parse("msg-out"),
+  });
+  adminMsg("Banter saved — your lines are in the rotation.");
 }
 async function saveGwStake(gw){
   const stake = Math.max(0, round2(+$("gw-stake").value||0));
