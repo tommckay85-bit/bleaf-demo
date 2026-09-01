@@ -1,86 +1,106 @@
 {
-  "updated": "2026-09-01T00:49:14Z",
+  "updated": "2026-09-01T06:27:54Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
       "name": "Arsenal",
-      "short": "ARS"
+      "short": "ARS",
+      "code": 3
     },
     "2": {
       "name": "Aston Villa",
-      "short": "AVL"
+      "short": "AVL",
+      "code": 7
     },
     "3": {
       "name": "Bournemouth",
-      "short": "BOU"
+      "short": "BOU",
+      "code": 91
     },
     "4": {
       "name": "Brentford",
-      "short": "BRE"
+      "short": "BRE",
+      "code": 94
     },
     "5": {
       "name": "Brighton",
-      "short": "BHA"
+      "short": "BHA",
+      "code": 36
     },
     "6": {
       "name": "Chelsea",
-      "short": "CHE"
+      "short": "CHE",
+      "code": 8
     },
     "7": {
       "name": "Coventry City",
-      "short": "COV"
+      "short": "COV",
+      "code": 9
     },
     "8": {
       "name": "Crystal Palace",
-      "short": "CRY"
+      "short": "CRY",
+      "code": 31
     },
     "9": {
       "name": "Everton",
-      "short": "EVE"
+      "short": "EVE",
+      "code": 11
     },
     "10": {
       "name": "Fulham",
-      "short": "FUL"
+      "short": "FUL",
+      "code": 54
     },
     "11": {
       "name": "Hull City",
-      "short": "HUL"
+      "short": "HUL",
+      "code": 88
     },
     "12": {
       "name": "Ipswich Town",
-      "short": "IPS"
+      "short": "IPS",
+      "code": 40
     },
     "13": {
       "name": "Leeds",
-      "short": "LEE"
+      "short": "LEE",
+      "code": 2
     },
     "14": {
       "name": "Liverpool",
-      "short": "LIV"
+      "short": "LIV",
+      "code": 14
     },
     "15": {
       "name": "Man City",
-      "short": "MCI"
+      "short": "MCI",
+      "code": 43
     },
     "16": {
       "name": "Man Utd",
-      "short": "MUN"
+      "short": "MUN",
+      "code": 1
     },
     "17": {
       "name": "Newcastle",
-      "short": "NEW"
+      "short": "NEW",
+      "code": 4
     },
     "18": {
       "name": "Nott'm Forest",
-      "short": "NFO"
+      "short": "NFO",
+      "code": 17
     },
     "19": {
       "name": "Spurs",
-      "short": "TOT"
+      "short": "TOT",
+      "code": 6
     },
     "20": {
       "name": "Sunderland",
-      "short": "SUN"
+      "short": "SUN",
+      "code": 56
     }
   },
   "fixtures": [
