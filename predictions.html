@@ -266,6 +266,13 @@ input,select{box-shadow:inset 0 2px 5px rgba(0,0,0,.3)}
 .savebar{position:sticky;bottom:0;background:var(--bg2);border-top:1px solid var(--line);padding:12px;margin:0 -18px -18px;border-radius:0 0 var(--radius) var(--radius);display:flex;gap:10px;align-items:center;justify-content:flex-end}
 code{background:var(--bg2);border:1px solid var(--line);border-radius:4px;padding:1px 6px;font-size:12.5px}
 .codecell{font-family:"Oswald";letter-spacing:.1em;color:var(--gold)}
+/* admin player cards */
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.pcard{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+.pline{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:3px 0}
+.pline .pspace{flex:1}
+.pname{font-size:15px}
+@media(max-width:640px){.pgrid{grid-template-columns:1fr}.pline .btn{padding:5px 9px;font-size:12px}}
 </style>
 </head>
 <body>
@@ -1436,25 +1443,31 @@ function renderAdmin(){
 
   /* players & weekly in/out */
   html += `<div class="panel"><h2>Players ${gw!==null?`<span class="tag">In / out applies to GW ${gw}</span>`:""}</h2>
-    <div class="tbl-scroll"><table>
-    <tr><th>Player</th><th>Login code</th><th class="num">GW ${gw??"—"}</th><th style="text-align:right">Actions</th></tr>`;
+    <div class="pgrid">`;
   for (const [pid,p] of roster){
     const out = gw!==null && isOut(gw,pid);
     const code = CODES[pid];
-    html += `<tr>
-      <td><b>${esc(p.name)}</b> ${p.admin?'<span class="pill adm">Admin</span>':""}</td>
-      <td>${code?`<span class="codecell">${esc(fmtCode(code))}</span>
-            <button class="btn btn-sm" onclick="copyCode('${pid}','${esc(p.name)}')" title="Copy invite message">📋 Copy</button>`
-          :'<span class="faint">—</span>'}
-        <button class="btn btn-sm" onclick="resetCode('${pid}')">Reset</button></td>
-      <td class="num">${gw!==null?`<button class="btn btn-sm" onclick="toggleOut(${gw},'${pid}')">${out?'<span class="pill out">Out</span>':'<span class="pill in">In</span>'}</button>`:"—"}</td>
-      <td style="text-align:right">
+    html += `<div class="pcard">
+      <div class="pline">
+        <b class="pname">${esc(p.name)}</b>
+        ${p.admin?'<span class="pill adm">Admin</span>':""}
+        <span class="pspace"></span>
+        ${gw!==null?`<button class="btn btn-sm" onclick="toggleOut(${gw},'${pid}')">${out?'<span class="pill out">Out</span>':'<span class="pill in">In</span>'}</button>`:""}
+      </div>
+      <div class="pline">
+        ${code?`<span class="codecell">${esc(fmtCode(code))}</span>
+          <button class="btn btn-sm" onclick="copyCode('${pid}','${esc(p.name)}')" title="Copy invite message">📋</button>`
+        :'<span class="faint">no code</span>'}
+        <button class="btn btn-sm" onclick="resetCode('${pid}')">Reset</button>
+      </div>
+      <div class="pline">
         <button class="btn btn-sm" onclick="renamePlayer('${pid}')">Rename</button>
         <button class="btn btn-sm" onclick="setPlayer('${pid}',{admin:${p.admin?"false":"true"}})" ${pid===MYPID?"disabled title='You cannot change your own admin status'":""}>${p.admin?"Remove admin":"Make admin"}</button>
         <button class="btn btn-sm btn-danger" onclick="retirePlayer('${pid}','${esc(p.name)}')" ${pid===MYPID?"disabled":""}>Remove</button>
-      </td></tr>`;
+      </div>
+    </div>`;
   }
-  html += `</table></div>
+  html += `</div>
   <p class="faint" style="margin-top:8px">Toggle a player <b>Out</b> for each gameweek they haven't paid for — they're excluded from that week's table and can't enter predictions. Everyone defaults to In each week. Removing a player keeps their history in finalised weeks but hides them from login and tables; codes can be reset any time if someone loses theirs.</p>`;
   if (retired.length){
     html += `<p class="muted" style="margin-top:10px">Removed: ${retired.map(([pid,p])=>`${esc(p.name)} <button class="btn btn-sm" onclick="setPlayer('${pid}',{active:true})">Restore</button>`).join(" · ")}</p>`;
