@@ -1095,11 +1095,16 @@ function renderPredict(){
     const anyRes = fx.some(f => fixtureResult(gw, f));
     const inPlay = revealed && anyRes && !GAMEWEEKS["gw"+gw]?.finalized && fx.some(f => !fixtureResult(gw, f));
     const dead = inPlay ? eliminatedSet(gw) : new Set();
+    // medals only once the week is genuinely under way (or finalised) AND the
+    // table has separated — otherwise everyone ties on rank 1 and all get gold
+    const separated = wkRows.some(r => r.rank > 1);
+    const showMedals = separated && (inPlay || !!GAMEWEEKS["gw"+gw]?.finalized);
     const statFor = pid => {
       if (!anyRes || !revealed) return "";
       const r = wkRows.find(x => x.pid === pid);
       if (!r) return "";
-      const mark = dead.has(pid) ? "💀" : r.rank===1 ? "🥇" : r.rank===2 ? "🥈" : r.rank===3 ? "🥉" : "";
+      const mark = dead.has(pid) ? "💀"
+        : showMedals ? (r.rank===1 ? "🥇" : r.rank===2 ? "🥈" : r.rank===3 ? "🥉" : "") : "";
       return `<div class="hstat ${dead.has(pid)?"hdead":""}">${r.pts} ${mark}</div>`;
     };
     html += `<div class="predgrid-wrap"><table class="predgrid">
