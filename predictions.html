@@ -1524,13 +1524,28 @@ function celebrate(ms = 8000){
   const fit = () => { cv.width = innerWidth; cv.height = innerHeight; };
   fit();
   const COLS = ["#ffd75e","#e8a33d","#4b8fd4","#3fae6a","#f2f5f8","#d4574b"];
-  const conf = Array.from({ length: 130 }, () => ({
-    x: Math.random()*cv.width, y: -20 - Math.random()*cv.height*.6,
+  const piece = extra => ({
     w: 5+Math.random()*6, h: 8+Math.random()*7,
+    rot: Math.random()*Math.PI, vr: -.12+Math.random()*.24,
+    c: COLS[Math.random()*COLS.length|0], g: 0, ...extra,
+  });
+  // steady rain from the top…
+  const conf = Array.from({ length: 110 }, () => piece({
+    x: Math.random()*cv.width, y: -20 - Math.random()*cv.height*.6,
     vy: 2+Math.random()*2.6, vx: -1+Math.random()*2,
-    rot: Math.random()*Math.PI, vr: -.1+Math.random()*.2,
-    c: COLS[Math.random()*COLS.length|0],
   }));
+  // …plus cannons firing up across the screen from both bottom corners
+  const cannon = side => {
+    for (let i=0;i<70;i++){
+      conf.push(piece({
+        x: side === "l" ? -10 : cv.width+10, y: cv.height*(0.75+Math.random()*.25),
+        vx: (side === "l" ? 1 : -1) * (4+Math.random()*8),
+        vy: -(9+Math.random()*7), g: .22,
+      }));
+    }
+  };
+  cannon("l"); cannon("r");
+  setTimeout(() => { cannon("l"); cannon("r"); }, 1100);
   let sparks = [];
   const burst = () => {
     const bx = cv.width*(.15+Math.random()*.7), by = cv.height*(.12+Math.random()*.38);
@@ -1546,8 +1561,8 @@ function celebrate(ms = 8000){
   (function tick(){
     ctx.clearRect(0,0,cv.width,cv.height);
     for (const p of conf){
-      p.x += p.vx; p.y += p.vy; p.rot += p.vr;
-      if (p.y > cv.height+20){ p.y = -20; p.x = Math.random()*cv.width; }
+      p.x += p.vx; p.y += p.vy; p.vy += p.g; p.rot += p.vr;
+      if (!p.g && p.y > cv.height+20){ p.y = -20; p.x = Math.random()*cv.width; }
       ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot);
       ctx.fillStyle = p.c; ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h); ctx.restore();
     }
@@ -1558,6 +1573,7 @@ function celebrate(ms = 8000){
       ctx.beginPath(); ctx.arc(s.x, s.y, 2.2, 0, 7); ctx.fill();
     }
     ctx.globalAlpha = 1;
+    if (Date.now() > end - 1000 && !cv.style.opacity){ cv.style.transition = "opacity 1s"; cv.style.opacity = "0"; }
     if (Date.now() < end) requestAnimationFrame(tick);
     else { clearInterval(bi); cv.remove(); }
   })();
