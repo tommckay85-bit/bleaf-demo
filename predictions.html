@@ -492,6 +492,7 @@ let GAMEWEEKS = {};                           // "gw5" -> gameweek doc
 let FEED = null;                              // fixtures.json content
 let PREDS = {};                               // cache: gw -> {pid: picks doc}
 let predUnsub = null, codesUnsub = null, curTab = "predict", viewGw = null, adminGw = null;
+let predDirty = false; // true only after the user actually edits a score box
 let subsStarted = false, founding = false;
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1051,6 +1052,7 @@ function renderChrome(){
 $("tab-predict").addEventListener("input", e => {
   const el = e.target;
   if (!el.matches(".predgrid input[type=number]")) return;
+  predDirty = true;
   const btn = $("save-btn");
   if (btn && btn.classList.contains("btn-saved")){
     btn.className = "btn btn-gold"; btn.textContent = "💾 Save predictions";
@@ -1074,7 +1076,7 @@ function setTab(t){
 function stepGw(el, delta){
   const gws = allGws(); if (!gws.length) return;
   const i = Math.max(0, Math.min(gws.length-1, gws.indexOf(el==="admin"?adminGw:viewGw) + delta));
-  if (el==="admin") adminGw = gws[i]; else viewGw = gws[i];
+  if (el==="admin") adminGw = gws[i]; else { viewGw = gws[i]; predDirty = false; }
   const gw = el==="admin" ? adminGw : viewGw;
   if (!PREDS[gw]) watchPreds(gw); else renderAll();
 }
@@ -1108,9 +1110,11 @@ function renderPredict(){
   const locked = gwLocked(gw), deadline = gwDeadline(gw);
   const myCount = Object.keys(mine).length;
   // keep half-typed scores across re-renders (e.g. someone else's save
-  // refreshes the grid); ids embed fixture ids so stale values never collide
+  // refreshes the grid); ids embed fixture ids so stale values never collide.
+  // Only once the user has actually typed — otherwise a grid rendered before
+  // the stored picks arrive would override them with empty boxes.
   const domVals = {};
-  if (!locked && !out) el.querySelectorAll(".predgrid input[type=number]").forEach(i => { domVals[i.id] = i.value; });
+  if (predDirty && !locked && !out) el.querySelectorAll(".predgrid input[type=number]").forEach(i => { domVals[i.id] = i.value; });
   const effPicks = {}; // what savePicks would store for the current inputs
   let html = gwNavHtml("view", gw);
   if (out) html += `<div class="banner warn">You're marked <b>out</b> for this gameweek (not in the pot), so your predictions won't count. Speak to the admin if that's wrong.</div>`;
@@ -1255,11 +1259,19 @@ async function savePicks(gw){
     if (h === "" || a === "") continue;
     picks[f.id] = { h: Math.max(0,Math.min(15,+h)), a: Math.max(0,Math.min(15,+a)) };
   }
+  // never silently overwrite saved picks with an emptier set (e.g. a save
+  // pressed before the stored picks have loaded, or after clearing boxes)
+  const stored = (PREDS[gw]||{})[MYPID]?.picks || {};
+  if (Object.keys(picks).length < Object.keys(stored).length){
+    if (!confirm("This would save FEWER predictions than you already have in (" +
+      Object.keys(picks).length + " vs " + Object.keys(stored).length + "). Overwrite your saved picks?")) return;
+  }
   try {
     await DB.collection("predictions").doc("gw"+gw+"_"+MYPID).set({
       gw, pid: MYPID, name: ME.name, picks,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
+    predDirty = false;
     const m = $("save-msg"); if (m){ m.textContent = "Saved " + new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}); m.style.color = "var(--green)"; }
     const b = $("save-btn"), n = Object.keys(picks).length;
     if (b && n > 0){
