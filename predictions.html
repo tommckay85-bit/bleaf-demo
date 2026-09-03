@@ -63,6 +63,8 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 .btn-primary:hover{background:linear-gradient(180deg,#6fabe8,#4a8ccf)}
 .btn-gold{background:linear-gradient(180deg,#ffd76a,#e09a2b);border-color:#f2b355;color:#161006;box-shadow:0 2px 8px rgba(232,163,61,.35),inset 0 1px 0 rgba(255,255,255,.35)}
 .btn-gold:hover{background:linear-gradient(180deg,#ffe289,#eda634)}
+.btn-saved{background:linear-gradient(180deg,#34d98a,#1c9e5d);border-color:#2fd184;color:#04160c;box-shadow:0 2px 8px rgba(49,232,140,.3),inset 0 1px 0 rgba(255,255,255,.3)}
+.btn-saved:hover{background:linear-gradient(180deg,#41e296,#23ad68)}
 .btn-danger{background:transparent;border-color:var(--red);color:var(--red)}
 .btn-sm{padding:4px 10px;font-size:12px}
 .btn:disabled{opacity:.45;cursor:not-allowed}
@@ -1048,7 +1050,13 @@ function renderChrome(){
 // re-rendered inside this container.)
 $("tab-predict").addEventListener("input", e => {
   const el = e.target;
-  if (!el.matches(".predgrid input[type=number]") || el.value === "") return;
+  if (!el.matches(".predgrid input[type=number]")) return;
+  const btn = $("save-btn");
+  if (btn && btn.classList.contains("btn-saved")){
+    btn.className = "btn btn-gold"; btn.textContent = "💾 Save predictions";
+    const m = $("save-msg"); if (m){ m.textContent = ""; }
+  }
+  if (el.value === "") return;
   const inputs = [...document.querySelectorAll("#tab-predict .predgrid input[type=number]:not([disabled])")];
   const next = inputs[inputs.indexOf(el) + 1];
   if (next){ next.focus(); try { next.select(); } catch(err){} }
@@ -1099,6 +1107,11 @@ function renderPredict(){
   const out = isOut(gw, MYPID);
   const locked = gwLocked(gw), deadline = gwDeadline(gw);
   const myCount = Object.keys(mine).length;
+  // keep half-typed scores across re-renders (e.g. someone else's save
+  // refreshes the grid); ids embed fixture ids so stale values never collide
+  const domVals = {};
+  if (!locked && !out) el.querySelectorAll(".predgrid input[type=number]").forEach(i => { domVals[i.id] = i.value; });
+  const effPicks = {}; // what savePicks would store for the current inputs
   let html = gwNavHtml("view", gw);
   if (out) html += `<div class="banner warn">You're marked <b>out</b> for this gameweek (not in the pot), so your predictions won't count. Speak to the admin if that's wrong.</div>`;
   else if (gwUnlockedByAdmin(gw)) html += `<div class="banner warn">🔓 The admin has <b>unlocked</b> this gameweek — predictions are editable even though the deadline has passed.</div>`;
@@ -1149,6 +1162,9 @@ function renderPredict(){
     const ptsCfg = GAMEWEEKS["gw"+gw]?.finalized ? (GAMEWEEKS["gw"+gw].pointsUsed || CONFIG) : CONFIG;
     for (const f of fx){
       const pk = mine[f.id] || {};
+      const dvH = domVals["pk-"+f.id+"-h"], dvA = domVals["pk-"+f.id+"-a"];
+      const vH = dvH !== undefined ? dvH : (pk.h ?? ""), vA = dvA !== undefined ? dvA : (pk.a ?? "");
+      if (vH !== "" && vA !== "") effPicks[f.id] = { h: Math.max(0,Math.min(15,+vH)), a: Math.max(0,Math.min(15,+vA)) };
       const res = fixtureResult(gw, f);
       let marker = "";
       if (res){
@@ -1161,9 +1177,9 @@ function renderPredict(){
         <td class="colme" title="${esc(teamName(f.h))} v ${esc(teamName(f.a))}">
           <div class="myrow">
             <span class="tcode">${crestSm(f.h)}${esc(teamShort(f.h))}</span>
-            <input type="number" min="0" max="15" id="pk-${f.id}-h" value="${pk.h ?? ""}" ${locked||out?"disabled":""}>
+            <input type="number" min="0" max="15" id="pk-${f.id}-h" value="${vH}" ${locked||out?"disabled":""}>
             <span class="dash">–</span>
-            <input type="number" min="0" max="15" id="pk-${f.id}-a" value="${pk.a ?? ""}" ${locked||out?"disabled":""}>
+            <input type="number" min="0" max="15" id="pk-${f.id}-a" value="${vA}" ${locked||out?"disabled":""}>
             <span class="tcode ta">${esc(teamShort(f.a))}${crestSm(f.a)}</span>
           </div>
           <span class="ko">${res?`FT ${res.h}–${res.a}`
@@ -1190,7 +1206,17 @@ function renderPredict(){
     if (!revealed && others.length) html += `<p class="faint" style="margin-top:8px">✓ = they've predicted that game (scores hidden until the deadline). Scroll sideways to see everyone — your picks stay put.</p>`;
   }
   if (fx.length && !out && !locked){
-    html += `<div class="savebar"><span id="save-msg" class="faint"></span><button class="btn btn-gold" onclick="savePicks(${gw})">Save predictions</button></div>`;
+    // green "saved" state when what's typed matches what's stored, so nobody
+    // keeps prodding a bright gold button after their picks are already in
+    let dirty = false;
+    for (const f of fx){
+      const a = effPicks[f.id], b = mine[f.id];
+      if (!a !== !b || (a && b && (+a.h !== +b.h || +a.a !== +b.a))){ dirty = true; break; }
+    }
+    const nEff = Object.keys(effPicks).length;
+    const savedState = !dirty && nEff > 0;
+    const label = savedState ? (nEff >= fx.length ? "✓ Saved — all in" : `✓ Saved (${nEff}/${fx.length})`) : "💾 Save predictions";
+    html += `<div class="savebar"><span id="save-msg" class="faint"></span><button id="save-btn" class="btn ${savedState?"btn-saved":"btn-gold"}" onclick="savePicks(${gw})">${label}</button></div>`;
   }
   html += `</div>`;
   html += whoPredictedHtml(gw);
@@ -1234,7 +1260,12 @@ async function savePicks(gw){
       gw, pid: MYPID, name: ME.name, picks,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
-    const m = $("save-msg"); if (m){ m.textContent = "Saved ✓ (" + new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}) + ")"; m.style.color = "var(--green)"; }
+    const m = $("save-msg"); if (m){ m.textContent = "Saved " + new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}); m.style.color = "var(--green)"; }
+    const b = $("save-btn"), n = Object.keys(picks).length;
+    if (b && n > 0){
+      b.className = "btn btn-saved";
+      b.textContent = n >= fx.length ? "✓ Saved — all in" : `✓ Saved (${n}/${fx.length})`;
+    }
   } catch(e){
     const m = $("save-msg"); if (m){ m.textContent = "Save failed: " + e.message; m.style.color = "var(--red)"; }
   }
