@@ -142,15 +142,16 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 .hstat.hdead{color:var(--red)}
 .predgrid input[type=number]{width:44px;font-size:15px;padding:6px 2px}
 .predgrid .ko{display:block;margin-top:2px}
-/* FT line sits right-aligned directly under the score boxes: the padding
-   matches the away team code's width + the row gap. Kickoff dates stay left. */
-.predgrid .ko-r{text-align:right;padding-right:59px}
-/* live score mirrors the prediction row so each digit sits under its box */
-.liverow{display:flex;align-items:center;gap:5px;justify-content:flex-end;margin-top:2px;font-size:11px}
-.liverow .ldot,.liverow .lsc,.liverow .ldash{color:var(--green);font-weight:700;animation:livepulse 1.6s ease-in-out infinite}
-.liverow .ldot{font-size:9px}
-.liverow .lsc{width:44px;text-align:center}
-.liverow .lmk{width:54px;flex-shrink:0;font-size:10.5px}
+/* Sub-line under your pick, three zones mirroring the row above:
+   status left (FT / ● live), score digits centred under their boxes,
+   points marker flush right. Upcoming games just show the grey kickoff. */
+.subrow{display:flex;align-items:center;gap:5px;margin-top:2px;font-size:11px}
+.subrow .sub-l{flex:1;text-align:left;color:var(--ink-faint);white-space:nowrap}
+.subrow .ssc{width:44px;text-align:center;font-weight:700;flex-shrink:0}
+.subrow .sdash{color:var(--ink-faint)}
+.subrow .sub-r{width:54px;flex-shrink:0;text-align:right;white-space:nowrap;font-size:10.5px}
+.subrow.ft .ssc{color:var(--ink-dim)}
+.subrow.live .sub-l,.subrow.live .ssc,.subrow.live .sdash{color:var(--green);animation:livepulse 1.6s ease-in-out infinite}
 .predgrid th.colme .hstat{text-align:right}
 .tick-ok{color:var(--green);font-weight:700;font-size:15px}
 .tick-no{color:var(--ink-faint)}
@@ -165,9 +166,9 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
   .crest-sm{width:15px;height:15px}
   .crest{width:22px;height:22px}
   .predgrid .ko{font-size:10px}
-  .predgrid .ko-r{padding-right:52px}
-  .liverow .lsc{width:38px}
-  .liverow .lmk{width:47px;font-size:10px}
+  .subrow{font-size:10px}
+  .subrow .ssc{width:38px}
+  .subrow .sub-r{width:47px;font-size:10px}
 }
 
 /* ---------- tables ---------- */
@@ -1215,7 +1216,7 @@ function renderPredict(){
       const eff = res || lv; // live scores colour picks/points provisionally
       let marker = "";
       if (eff){
-        if (pk.h === undefined || pk.h === null) marker = `<span class="res-bad">✗ no pick</span>`;
+        if (pk.h === undefined || pk.h === null) marker = `<span class="res-bad" title="no pick">✗ +0</span>`;
         else if (+pk.h === eff.h && +pk.a === eff.a) marker = `<span class="res-exact">★ +${ptsCfg.exact}</span>`;
         else if (Math.sign(pk.h - pk.a) === Math.sign(eff.h - eff.a)) marker = `<span class="res-ok">✓ +${ptsCfg.result}</span>`;
         else marker = `<span class="res-bad">✗ +0</span>`;
@@ -1229,8 +1230,8 @@ function renderPredict(){
             <input type="number" min="0" max="15" id="pk-${f.id}-a" value="${vA}" ${locked||out?"disabled":""}>
             <span class="tcode ta">${esc(teamShort(f.a))}${crestSm(f.a)}</span>
           </div>
-          ${res ? `<span class="ko ko-r">FT ${res.h}–${res.a}${marker ? " · " + marker : ""}</span>`
-            : lv ? `<div class="liverow"><span class="ldot">●</span><span class="lsc">${lv.h}</span><span class="ldash">–</span><span class="lsc">${lv.a}</span><span class="lmk">${marker}</span></div>`
+          ${res ? `<div class="subrow ft"><span class="sub-l">FT</span><span class="ssc">${res.h}</span><span class="sdash">–</span><span class="ssc">${res.a}</span><span class="sub-r">${marker}</span></div>`
+            : lv ? `<div class="subrow live"><span class="sub-l">● live</span><span class="ssc">${lv.h}</span><span class="sdash">–</span><span class="ssc">${lv.a}</span><span class="sub-r">${marker}</span></div>`
             : `<span class="ko">${fmtKo(f.kickoff)}</span>`}
         </td>`;
       for (const [pid] of others){
