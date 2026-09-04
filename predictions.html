@@ -141,7 +141,9 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 .hstat{font-family:"Inter";font-size:11.5px;font-weight:700;color:var(--gold);margin-top:2px;letter-spacing:0;text-transform:none}
 .hstat.hdead{color:var(--red)}
 .predgrid input[type=number]{width:44px;font-size:15px;padding:6px 2px}
-.predgrid .ko{display:block;margin-top:2px;text-align:right}
+/* FT / live-score line sits right-aligned directly under the score boxes:
+   the padding matches the away team code's width + the row gap */
+.predgrid .ko{display:block;margin-top:2px;text-align:right;padding-right:59px}
 .tick-ok{color:var(--green);font-weight:700;font-size:15px}
 .tick-no{color:var(--ink-faint)}
 .predgrid .ptsbadge{padding:2px 6px}
@@ -154,7 +156,7 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
   .tcode{width:47px;font-size:12px;gap:3px}
   .crest-sm{width:15px;height:15px}
   .crest{width:22px;height:22px}
-  .predgrid .ko{font-size:10px}
+  .predgrid .ko{font-size:10px;padding-right:52px}
 }
 
 /* ---------- tables ---------- */
