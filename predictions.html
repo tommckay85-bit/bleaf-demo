@@ -69,6 +69,8 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 .btn-gold:hover{background:linear-gradient(180deg,#ffe289,#eda634)}
 .btn-saved{background:linear-gradient(180deg,#34d98a,#1c9e5d);border-color:#2fd184;color:#04160c;box-shadow:0 2px 8px rgba(49,232,140,.3),inset 0 1px 0 rgba(255,255,255,.3)}
 .btn-saved:hover{background:linear-gradient(180deg,#41e296,#23ad68)}
+.livedot{color:var(--green);font-weight:700;animation:livepulse 1.6s ease-in-out infinite}
+@keyframes livepulse{50%{opacity:.45}}
 .btn-danger{background:transparent;border-color:var(--red);color:var(--red)}
 .btn-sm{padding:4px 10px;font-size:12px}
 .btn:disabled{opacity:.45;cursor:not-allowed}
@@ -417,7 +419,15 @@ const FIREBASE_CONFIG = {
 };
 
 // Where the fixtures feed lives (written automatically by the GitHub Action).
-const FIXTURES_URL = "data/fixtures.json";
+// On GitHub Pages, read the feed straight from raw.githubusercontent.com —
+// it reflects the fixture bot's pushes within seconds, while the Pages site
+// itself waits for a full deploy (and throttles them). Falls back to the
+// local copy anywhere else (previews, tests).
+const FIXTURES_URL = (() => {
+  const m = location.hostname.match(/^([\w-]+)\.github\.io$/i);
+  if (m) return `https://raw.githubusercontent.com/${m[1]}${location.pathname.replace(/\/[^/]*$/, "")}/gh-pages/data/fixtures.json`;
+  return "data/fixtures.json";
+})();
 
 // Fallbacks if the admin hasn't saved settings yet.
 const DEFAULT_POINTS = { result: 6, exact: 10 };
@@ -664,7 +674,7 @@ async function refreshFeed(force){
     }
   } catch(e){}
 }
-setInterval(() => { if (!document.hidden) refreshFeed(); }, 60 * 1000); // only fetches while a gameweek is live
+setInterval(() => { if (!document.hidden) refreshFeed(); }, 30 * 1000); // only fetches while a gameweek is live
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden && Date.now() - lastFeedFetch > 45 * 1000) refreshFeed(true);
 });
@@ -740,6 +750,14 @@ function fixtureResult(gw, f){
   if (f.finished && f.hs !== null && f.hs !== undefined) return { h:f.hs, a:f.as };
   return null;
 }
+// In-play score for a game that's kicked off but not finished. Used for the
+// live provisional tables only — finalising, eliminations and the banter
+// verdicts always wait for full time (fixtureResult).
+function liveScore(f){
+  return (!f.finished && f.hs !== null && f.hs !== undefined && kickedOffLive(f))
+    ? { h:+f.hs, a:+f.as, live:true } : null;
+}
+function fixtureResultLive(gw, f){ return fixtureResult(gw, f) || liveScore(f); }
 function fmtKo(iso){
   if (!iso) return "TBC";
   const d = new Date(iso);
@@ -769,7 +787,7 @@ function watchPreds(gw){
 
 /* ---------- scoring ---------- */
 function isOut(gw, pid){ return (GAMEWEEKS["gw"+gw]?.out || []).includes(pid); }
-function scoreWeek(gw){
+function scoreWeek(gw, opts){
   const fx = gwFixtures(gw), preds = PREDS[gw] || {};
   const pts = GAMEWEEKS["gw"+gw]?.finalized ? (GAMEWEEKS["gw"+gw].pointsUsed || CONFIG) : CONFIG;
   const rows = [];
@@ -778,7 +796,7 @@ function scoreWeek(gw){
     const picks = preds[pid]?.picks || {};
     let total=0, exact=0, correct=0, predicted=0;
     for (const f of fx){
-      const res = fixtureResult(gw, f), pk = picks[f.id];
+      const res = opts?.live ? fixtureResultLive(gw, f) : fixtureResult(gw, f), pk = picks[f.id];
       if (pk && pk.h !== null && pk.h !== undefined) predicted++;
       if (!res || !pk || pk.h === null || pk.h === undefined) continue;
       if (+pk.h === res.h && +pk.a === res.a){ total += pts.exact; exact++; correct++; }
@@ -1149,8 +1167,8 @@ function renderPredict(){
     const revealed = gwLocked(gw); // admin unlock also re-hides picks
     // header tally: current points under each name, medal for the top three
     // while the week is in play, skull for anyone mathematically out
-    const wkRows = scoreWeek(gw);
-    const anyRes = fx.some(f => fixtureResult(gw, f));
+    const wkRows = scoreWeek(gw, { live:true }); // provisional: in-play goals count as they stand
+    const anyRes = fx.some(f => fixtureResultLive(gw, f));
     const inPlay = revealed && anyRes && !GAMEWEEKS["gw"+gw]?.finalized && fx.some(f => !fixtureResult(gw, f));
     const dead = inPlay ? eliminatedSet(gw) : new Set();
     // medals only once the week is genuinely under way (or finalised) AND the
@@ -1174,11 +1192,13 @@ function renderPredict(){
       const vH = dvH !== undefined ? dvH : (pk.h ?? ""), vA = dvA !== undefined ? dvA : (pk.a ?? "");
       if (vH !== "" && vA !== "") effPicks[f.id] = { h: Math.max(0,Math.min(15,+vH)), a: Math.max(0,Math.min(15,+vA)) };
       const res = fixtureResult(gw, f);
+      const lv = res ? null : liveScore(f);
+      const eff = res || lv; // live scores colour picks/points provisionally
       let marker = "";
-      if (res){
+      if (eff){
         if (pk.h === undefined || pk.h === null) marker = ` · <span class="res-bad">✗ no pick</span>`;
-        else if (+pk.h === res.h && +pk.a === res.a) marker = ` · <span class="res-exact">★ +${ptsCfg.exact}</span>`;
-        else if (Math.sign(pk.h - pk.a) === Math.sign(res.h - res.a)) marker = ` · <span class="res-ok">✓ +${ptsCfg.result}</span>`;
+        else if (+pk.h === eff.h && +pk.a === eff.a) marker = ` · <span class="res-exact">★ +${ptsCfg.exact}</span>`;
+        else if (Math.sign(pk.h - pk.a) === Math.sign(eff.h - eff.a)) marker = ` · <span class="res-ok">✓ +${ptsCfg.result}</span>`;
         else marker = ` · <span class="res-bad">✗ +0</span>`;
       }
       html += `<tr class="${res?"done":""}">
@@ -1191,16 +1211,16 @@ function renderPredict(){
             <span class="tcode ta">${esc(teamShort(f.a))}${crestSm(f.a)}</span>
           </div>
           <span class="ko">${res?`FT ${res.h}–${res.a}`
-            : (f.hs!==null&&f.hs!==undefined&&kickedOffLive(f))?`<span style="color:var(--green);font-weight:700">● ${f.hs}–${f.as} live</span>`
+            : lv?`<span class="livedot">● ${lv.h}–${lv.a} live</span>`
             : fmtKo(f.kickoff)}${marker}</span>
         </td>`;
       for (const [pid] of others){
         const opk = preds[pid]?.picks?.[f.id];
         if (revealed){
           let cls = "pts-none", txt = opk ? `${opk.h}–${opk.a}` : "—";
-          if (opk && res){
-            if (+opk.h===res.h && +opk.a===res.a){ cls = "pts-exact"; txt = "★ " + txt; }
-            else if (Math.sign(opk.h-opk.a)===Math.sign(res.h-res.a)) cls = "pts-result";
+          if (opk && eff){
+            if (+opk.h===eff.h && +opk.a===eff.a){ cls = "pts-exact"; txt = "★ " + txt; }
+            else if (Math.sign(opk.h-opk.a)===Math.sign(eff.h-eff.a)) cls = "pts-result";
             else cls = "pts-wrong";
           }
           html += `<td><span class="ptsbadge ${cls}">${txt}</span></td>`;
@@ -1292,7 +1312,8 @@ function renderWeek(){
   const el = $("tab-week");
   if (viewGw === null){ el.innerHTML = `<div class="panel"><p class="muted">No fixtures loaded yet.</p></div>`; return; }
   const gw = viewGw, fx = gwFixtures(gw), gwDoc = GAMEWEEKS["gw"+gw];
-  const rows = scoreWeek(gw);
+  const rows = scoreWeek(gw, { live:true });
+  const liveNow = fx.some(f => liveScore(f) && !fixtureResult(gw, f));
   let html = gwNavHtml("view", gw);
 
   if (gwDoc?.finalized){
@@ -1308,11 +1329,11 @@ function renderWeek(){
     const spoons = (gwDoc.table||[]).filter(x=>x.rank===maxRank && maxRank>1);
     if (spoons.length) html += `<div class="banner err">🥄 Wooden spoon: <b>${esc(spoons.map(s=>s.name).join(" & "))}</b> — ${spoons[0].pts} pts. Shameful scenes.</div>`;
   } else {
-    const anyResult = fx.some(f => fixtureResult(gw,f));
-    html += `<div class="banner info">${anyResult ? "Live standings — updates automatically as results come in. The week hasn't been finalised yet." : "No results in yet. Scores update automatically as matches are played — points count at full time."}</div>`;
+    const anyResult = fx.some(f => fixtureResultLive(gw,f));
+    html += `<div class="banner info">${liveNow ? "<span class=\"livedot\">● LIVE</span> — points move with the goals as they go in. Nothing's final until full time." : anyResult ? "Live standings — updates automatically as results come in. The week hasn't been finalised yet." : "No results in yet. Scores update automatically as matches are played — points count at full time."}</div>`;
   }
 
-  html += `<div class="panel"><h2>Gameweek ${gw} table</h2><div class="tbl-scroll"><table>
+  html += `<div class="panel"><h2>Gameweek ${gw} table${liveNow?' <span class="livedot" style="font-size:13px">● LIVE</span>':''}</h2><div class="tbl-scroll"><table>
     <tr><th class="rank">#</th><th>Player</th><th class="num">Pts</th><th class="num">Exact</th><th class="num">Results</th><th class="num">Predicted</th></tr>`;
   const table = gwDoc?.finalized ? gwDoc.table : rows;
   for (const r of table){
@@ -1328,10 +1349,12 @@ function renderWeek(){
   const revealed = gwLocked(gw);
   for (const f of fx){
     const res = fixtureResult(gw, f);
+    const lv = res ? null : liveScore(f);
+    const eff = res || lv;
     html += `<div class="fixture ${res?"done":""}">
       <div class="team home"><span><span class="tn-l">${esc(teamName(f.h))}</span><span class="tn-s">${esc(teamShort(f.h))}</span></span>${crestOrBadge(f.h)}</div>
       <div class="mid">${res?`<span class="final">${res.h}–${res.a}</span>${res.override?'<span class="faint">admin entry</span>':""}`
-        : (f.hs!==null&&f.hs!==undefined&&kickedOffLive(f))?`<span class="final live">${f.hs}–${f.as}</span><span class="faint" style="color:var(--green)">● live</span>`
+        : lv?`<span class="final live">${lv.h}–${lv.a}</span><span class="livedot" style="font-size:11px">● live</span>`
         : `<span class="ko">${fmtKo(f.kickoff)}</span>`}</div>
       <div class="team">${crestOrBadge(f.a)}<span><span class="tn-l">${esc(teamName(f.a))}</span><span class="tn-s">${esc(teamShort(f.a))}</span></span></div>
     </div>`;
@@ -1341,9 +1364,9 @@ function renderWeek(){
         if (p.active === false || isOut(gw,pid)) continue;
         const pk = preds[pid]?.picks?.[f.id];
         let cls = "pts-none", txt = pk ? `${pk.h}–${pk.a}` : "—";
-        if (pk && res){
-          if (+pk.h===res.h && +pk.a===res.a){ cls = "pts-exact"; txt = "★ " + txt; }
-          else if (Math.sign(pk.h-pk.a)===Math.sign(res.h-res.a)) cls = "pts-result";
+        if (pk && eff){
+          if (+pk.h===eff.h && +pk.a===eff.a){ cls = "pts-exact"; txt = "★ " + txt; }
+          else if (Math.sign(pk.h-pk.a)===Math.sign(eff.h-eff.a)) cls = "pts-result";
           else cls = "pts-wrong";
         }
         html += `<span class="ptsbadge ${cls}" title="${esc(p.name)}">${esc(p.name.split(" ")[0])} ${txt}</span>`;

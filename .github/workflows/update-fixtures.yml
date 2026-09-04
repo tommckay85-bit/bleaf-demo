@@ -1,20 +1,24 @@
 name: Update fixtures
 
 # Pulls Premier League fixtures & results from the free Fantasy Premier League
-# API (no key needed) and commits them to data/fixtures.json on gh-pages,
-# where predictions.html reads them.
+# API (no key needed) and commits them to data/fixtures.json on gh-pages.
+# The app reads that file via raw.githubusercontent.com, so a push shows up
+# in the app within seconds.
 #
-# Runs four times a day; you can also run it on demand from the Actions tab
-# ("Run workflow"). Scheduled runs only fire once this file is on the
-# repository's default branch (gh-pages).
+# GitHub throttles frequent cron schedules heavily (a */5 cron can fire only
+# every few hours), so rapid updates can't come from the scheduler. Instead,
+# each run LOOPS while any match is in play: refetch every 2 minutes and push
+# whenever the data changes, for up to ~5.5 hours. The crons below just make
+# sure a looper is (re)started around match windows; concurrency cancels the
+# old one when a new run begins.
 
 on:
   schedule:
-    - cron: '*/5 11-23 * * 6'       # Saturday burst: every 5 min, noon-midnight UK
-    - cron: '*/5 18-23 * * 5'       # Friday-night burst: every 5 min, ~7pm-midnight UK
-    - cron: '*/5 11-21 * * 0'       # Sunday burst: every 5 min, ~noon-10pm UK
-    - cron: '*/30 * * * 5,6,0,1'    # every 30 min Fri-Mon (match days, UTC)
-    - cron: '15 6,12,17,22 * * 2-4' # 4x daily Tue-Thu
+    - cron: '0 11-22 * * 6'         # Saturday: hourly, noon-11pm UK
+    - cron: '0 17-22 * * 5'         # Friday evening: hourly
+    - cron: '0 12-21 * * 0'         # Sunday: hourly, ~1pm-10pm UK
+    - cron: '30 17-20 * * 1-4'      # weekday evenings (midweek rounds): hourly
+    - cron: '15 6,12,22 * * *'      # daily housekeeping (postponements, new GWs)
   workflow_dispatch:
   push:
     branches: [gh-pages]
@@ -31,49 +35,79 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
+    timeout-minutes: 350
     steps:
       - uses: actions/checkout@v4
         with:
           ref: gh-pages
 
-      - name: Fetch FPL data
+      - name: Fetch, publish, and loop while matches are live
         run: |
-          curl -fsS --retry 3 --retry-delay 5 \
-            -H "User-Agent: prediction-league-fixture-bot" \
-            https://fantasy.premierleague.com/api/bootstrap-static/ -o /tmp/bootstrap.json
-          curl -fsS --retry 3 --retry-delay 5 \
-            -H "User-Agent: prediction-league-fixture-bot" \
-            https://fantasy.premierleague.com/api/fixtures/ -o /tmp/fixtures.json
-
-      - name: Build data/fixtures.json
-        run: |
-          mkdir -p data
-          jq -n --slurpfile b /tmp/bootstrap.json --slurpfile f /tmp/fixtures.json '{
-            updated: (now | todate),
-            source: "fantasy.premierleague.com",
-            teams: ($b[0].teams | map({ key: (.id|tostring),
-                                        value: { name: .name, short: .short_name, code: .code } }) | from_entries),
-            fixtures: ($f[0] | map({
-              id: .id,
-              gw: .event,
-              kickoff: .kickoff_time,
-              h: .team_h,
-              a: .team_a,
-              hs: .team_h_score,
-              as: .team_a_score,
-              finished: (.finished or .finished_provisional)
-            }))
-          }' > data/fixtures.json
-          jq -e '.fixtures | length > 0' data/fixtures.json > /dev/null
-
-      - name: Commit and push if changed
-        run: |
+          set -u
           git config user.name "fixtures-bot"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/fixtures.json
-          if git diff --cached --quiet; then
-            echo "No changes."
-          else
-            git commit -m "Update fixtures data"
-            git push
-          fi
+
+          fetch_feed() {
+            curl -fsS --retry 3 --retry-delay 5 \
+              -H "User-Agent: prediction-league-fixture-bot" \
+              https://fantasy.premierleague.com/api/bootstrap-static/ -o /tmp/bootstrap.json \
+            && curl -fsS --retry 3 --retry-delay 5 \
+              -H "User-Agent: prediction-league-fixture-bot" \
+              https://fantasy.premierleague.com/api/fixtures/ -o /tmp/fixtures.json
+          }
+
+          build_feed() {
+            mkdir -p data
+            jq -n --slurpfile b /tmp/bootstrap.json --slurpfile f /tmp/fixtures.json '{
+              updated: (now | todate),
+              source: "fantasy.premierleague.com",
+              teams: ($b[0].teams | map({ key: (.id|tostring),
+                                          value: { name: .name, short: .short_name, code: .code } }) | from_entries),
+              fixtures: ($f[0] | map({
+                id: .id,
+                gw: .event,
+                kickoff: .kickoff_time,
+                h: .team_h,
+                a: .team_a,
+                hs: .team_h_score,
+                as: .team_a_score,
+                finished: (.finished or .finished_provisional)
+              }))
+            }' > data/fixtures.json
+            jq -e '.fixtures | length > 0' data/fixtures.json > /dev/null
+          }
+
+          publish() {
+            # push, and on a race (another push landed) rebuild on top and retry
+            for i in 1 2 3; do
+              git add data/fixtures.json
+              if git diff --cached --quiet; then echo "No changes."; return 0; fi
+              git commit -m "Update fixtures data"
+              if git push; then return 0; fi
+              git fetch origin gh-pages
+              git reset --hard origin/gh-pages
+              build_feed
+            done
+            echo "publish: giving up after 3 attempts" >&2
+            return 1
+          }
+
+          # true while any game kicked off in the last 3h isn't finished,
+          # or kicks off within the next 15 minutes
+          any_live() {
+            jq -e --argjson now "$(date -u +%s)" '
+              [ .fixtures[]
+                | select(.kickoff != null) | select(.finished | not)
+                | (.kickoff | fromdateiso8601) as $ko
+                | select($now >= ($ko - 900) and $now <= ($ko + 10800)) ]
+              | length > 0' data/fixtures.json > /dev/null
+          }
+
+          fetch_feed && build_feed && publish
+
+          deadline=$(( $(date +%s) + 340 * 60 ))
+          while [ "$(date +%s)" -lt "$deadline" ] && any_live; do
+            echo "Match in play — refreshing in 2 minutes..."
+            sleep 120
+            fetch_feed && build_feed && publish || true
+          done
