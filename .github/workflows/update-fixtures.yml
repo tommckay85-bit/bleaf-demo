@@ -71,6 +71,7 @@ jobs:
                 a: .team_a,
                 hs: .team_h_score,
                 as: .team_a_score,
+                min: .minutes,
                 finished: (.finished or .finished_provisional)
               }))
             }' > data/fixtures.json

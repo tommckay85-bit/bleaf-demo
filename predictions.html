@@ -775,6 +775,15 @@ function liveScore(f){
     ? { h:+f.hs, a:+f.as, live:true } : null;
 }
 function fixtureResultLive(gw, f){ return fixtureResult(gw, f) || liveScore(f); }
+// In-play status label from the feed's minutes-played (45 = the interval).
+// Older feed snapshots may not carry minutes yet — fall back to plain "live".
+function liveLabel(f){
+  const m = f.min;
+  if (m === null || m === undefined || m <= 0) return "live";
+  if (m >= 90) return "90′+";
+  if (m === 45) return "HT";
+  return m + "′";
+}
 function fmtKo(iso){
   if (!iso) return "TBC";
   const d = new Date(iso);
@@ -1231,7 +1240,7 @@ function renderPredict(){
             <span class="tcode ta">${esc(teamShort(f.a))}${crestSm(f.a)}</span>
           </div>
           ${res ? `<div class="subrow ft"><span class="sub-l">FT</span><span class="ssc">${res.h}</span><span class="sdash">–</span><span class="ssc">${res.a}</span><span class="sub-r">${marker}</span></div>`
-            : lv ? `<div class="subrow live"><span class="sub-l">● live</span><span class="ssc">${lv.h}</span><span class="sdash">–</span><span class="ssc">${lv.a}</span><span class="sub-r">${marker}</span></div>`
+            : lv ? `<div class="subrow live"><span class="sub-l">● ${liveLabel(f)}</span><span class="ssc">${lv.h}</span><span class="sdash">–</span><span class="ssc">${lv.a}</span><span class="sub-r">${marker}</span></div>`
             : `<span class="ko">${fmtKo(f.kickoff)}</span>`}
         </td>`;
       for (const [pid] of others){
@@ -1374,7 +1383,7 @@ function renderWeek(){
     html += `<div class="fixture ${res?"done":""}">
       <div class="team home"><span><span class="tn-l">${esc(teamName(f.h))}</span><span class="tn-s">${esc(teamShort(f.h))}</span></span>${crestOrBadge(f.h)}</div>
       <div class="mid">${res?`<span class="final">${res.h}–${res.a}</span>${res.override?'<span class="faint">admin entry</span>':""}`
-        : lv?`<span class="final live">${lv.h}–${lv.a}</span><span class="livedot" style="font-size:11px">● live</span>`
+        : lv?`<span class="final live">${lv.h}–${lv.a}</span><span class="livedot" style="font-size:11px">● ${liveLabel(f)}</span>`
         : `<span class="ko">${fmtKo(f.kickoff)}</span>`}</div>
       <div class="team">${crestOrBadge(f.a)}<span><span class="tn-l">${esc(teamName(f.a))}</span><span class="tn-s">${esc(teamShort(f.a))}</span></span></div>
     </div>`;
