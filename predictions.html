@@ -115,6 +115,9 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 .fixture .final{font-family:"Oswald";font-size:20px;font-weight:700;letter-spacing:.1em;background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:2px 14px}
 .fixture .final.live{border-color:var(--green);color:var(--green)}
 .fixture .ptsbadge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px}
+/* everyone's picks under a fixture: uniform, evenly-spaced cells */
+.pickgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px;padding:0 8px 12px;border-bottom:1px solid var(--line)}
+.pickgrid .ptsbadge{display:flex;align-items:center;justify-content:center;gap:4px;padding:4px 4px;white-space:nowrap}
 .ptsbadge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px}
 .pts-exact{background:linear-gradient(160deg,#ffe589 0%,#ffd24a 45%,#e8a825 100%);color:#241703;font-weight:800;box-shadow:0 0 9px rgba(255,213,74,.45);border:1px solid #ffe589}
 .pts-result{background:var(--green);color:#07130c}
@@ -130,7 +133,7 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 .predgrid td:not(.colme){min-width:52px}
 .predgrid .colme{position:sticky;left:0;z-index:2;background:var(--panel);border-right:2px solid var(--steel);text-align:left;width:248px;min-width:248px;max-width:248px}
 .predgrid th.colme{text-align:left;max-width:248px}
-.myrow{display:flex;align-items:center;gap:5px}
+.myrow{display:flex;align-items:center;gap:5px;justify-content:flex-end}
 .tcode{font-family:"Oswald";font-size:13px;font-weight:600;color:var(--steel);width:54px;flex-shrink:0;display:flex;align-items:center;gap:4px}
 .tcode.ta{justify-content:flex-end}
 .crest-sm{width:17px;height:17px;object-fit:contain;flex-shrink:0}
@@ -138,7 +141,7 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 .hstat{font-family:"Inter";font-size:11.5px;font-weight:700;color:var(--gold);margin-top:2px;letter-spacing:0;text-transform:none}
 .hstat.hdead{color:var(--red)}
 .predgrid input[type=number]{width:44px;font-size:15px;padding:6px 2px}
-.predgrid .ko{display:block;margin-top:2px}
+.predgrid .ko{display:block;margin-top:2px;text-align:right}
 .tick-ok{color:var(--green);font-weight:700;font-size:15px}
 .tick-no{color:var(--ink-faint)}
 .predgrid .ptsbadge{padding:2px 6px}
@@ -1160,14 +1163,17 @@ function renderPredict(){
     // Grid: fixture + your picks pinned on the left, one column per other
     // player to the right (horizontal scroll). Before the deadline their
     // cells only show ✓/— (predicted or not); scores appear at the deadline.
-    const others = Object.entries(PLAYERS)
-      .filter(([pid,p]) => pid !== MYPID && p.active !== false && !isOut(gw, pid))
-      .sort((a,b)=>a[1].name.localeCompare(b[1].name));
     const preds = PREDS[gw] || {};
     const revealed = gwLocked(gw); // admin unlock also re-hides picks
     // header tally: current points under each name, medal for the top three
     // while the week is in play, skull for anyone mathematically out
     const wkRows = scoreWeek(gw, { live:true }); // provisional: in-play goals count as they stand
+    // columns ordered by the live standings (leader first), alphabetical on
+    // ties — before any results everyone ties, so it's simply alphabetical
+    const rankOf = pid => wkRows.find(r => r.pid === pid)?.rank ?? 999;
+    const others = Object.entries(PLAYERS)
+      .filter(([pid,p]) => pid !== MYPID && p.active !== false && !isOut(gw, pid))
+      .sort((a,b) => rankOf(a[0]) - rankOf(b[0]) || a[1].name.localeCompare(b[1].name));
     const anyRes = fx.some(f => fixtureResultLive(gw, f));
     const inPlay = revealed && anyRes && !GAMEWEEKS["gw"+gw]?.finalized && fx.some(f => !fixtureResult(gw, f));
     const dead = inPlay ? eliminatedSet(gw) : new Set();
@@ -1359,7 +1365,7 @@ function renderWeek(){
       <div class="team">${crestOrBadge(f.a)}<span><span class="tn-l">${esc(teamName(f.a))}</span><span class="tn-s">${esc(teamShort(f.a))}</span></span></div>
     </div>`;
     if (revealed){
-      html += `<div style="padding:0 8px 12px;display:flex;flex-wrap:wrap;gap:6px;border-bottom:1px solid var(--line)">`;
+      html += `<div class="pickgrid">`;
       for (const [pid,p] of Object.entries(PLAYERS)){
         if (p.active === false || isOut(gw,pid)) continue;
         const pk = preds[pid]?.picks?.[f.id];
