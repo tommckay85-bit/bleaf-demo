@@ -141,9 +141,17 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 .hstat{font-family:"Inter";font-size:11.5px;font-weight:700;color:var(--gold);margin-top:2px;letter-spacing:0;text-transform:none}
 .hstat.hdead{color:var(--red)}
 .predgrid input[type=number]{width:44px;font-size:15px;padding:6px 2px}
-/* FT / live-score line sits right-aligned directly under the score boxes:
-   the padding matches the away team code's width + the row gap */
-.predgrid .ko{display:block;margin-top:2px;text-align:right;padding-right:59px}
+.predgrid .ko{display:block;margin-top:2px}
+/* FT line sits right-aligned directly under the score boxes: the padding
+   matches the away team code's width + the row gap. Kickoff dates stay left. */
+.predgrid .ko-r{text-align:right;padding-right:59px}
+/* live score mirrors the prediction row so each digit sits under its box */
+.liverow{display:flex;align-items:center;gap:5px;justify-content:flex-end;margin-top:2px;font-size:11px}
+.liverow .ldot,.liverow .lsc,.liverow .ldash{color:var(--green);font-weight:700;animation:livepulse 1.6s ease-in-out infinite}
+.liverow .ldot{font-size:9px}
+.liverow .lsc{width:44px;text-align:center}
+.liverow .lmk{width:54px;flex-shrink:0;font-size:10.5px}
+.predgrid th.colme .hstat{text-align:right}
 .tick-ok{color:var(--green);font-weight:700;font-size:15px}
 .tick-no{color:var(--ink-faint)}
 .predgrid .ptsbadge{padding:2px 6px}
@@ -156,7 +164,10 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
   .tcode{width:47px;font-size:12px;gap:3px}
   .crest-sm{width:15px;height:15px}
   .crest{width:22px;height:22px}
-  .predgrid .ko{font-size:10px;padding-right:52px}
+  .predgrid .ko{font-size:10px}
+  .predgrid .ko-r{padding-right:52px}
+  .liverow .lsc{width:38px}
+  .liverow .lmk{width:47px;font-size:10px}
 }
 
 /* ---------- tables ---------- */
@@ -1204,10 +1215,10 @@ function renderPredict(){
       const eff = res || lv; // live scores colour picks/points provisionally
       let marker = "";
       if (eff){
-        if (pk.h === undefined || pk.h === null) marker = ` · <span class="res-bad">✗ no pick</span>`;
-        else if (+pk.h === eff.h && +pk.a === eff.a) marker = ` · <span class="res-exact">★ +${ptsCfg.exact}</span>`;
-        else if (Math.sign(pk.h - pk.a) === Math.sign(eff.h - eff.a)) marker = ` · <span class="res-ok">✓ +${ptsCfg.result}</span>`;
-        else marker = ` · <span class="res-bad">✗ +0</span>`;
+        if (pk.h === undefined || pk.h === null) marker = `<span class="res-bad">✗ no pick</span>`;
+        else if (+pk.h === eff.h && +pk.a === eff.a) marker = `<span class="res-exact">★ +${ptsCfg.exact}</span>`;
+        else if (Math.sign(pk.h - pk.a) === Math.sign(eff.h - eff.a)) marker = `<span class="res-ok">✓ +${ptsCfg.result}</span>`;
+        else marker = `<span class="res-bad">✗ +0</span>`;
       }
       html += `<tr class="${res?"done":""}">
         <td class="colme" title="${esc(teamName(f.h))} v ${esc(teamName(f.a))}">
@@ -1218,9 +1229,9 @@ function renderPredict(){
             <input type="number" min="0" max="15" id="pk-${f.id}-a" value="${vA}" ${locked||out?"disabled":""}>
             <span class="tcode ta">${esc(teamShort(f.a))}${crestSm(f.a)}</span>
           </div>
-          <span class="ko">${res?`FT ${res.h}–${res.a}`
-            : lv?`<span class="livedot">● ${lv.h}–${lv.a} live</span>`
-            : fmtKo(f.kickoff)}${marker}</span>
+          ${res ? `<span class="ko ko-r">FT ${res.h}–${res.a}${marker ? " · " + marker : ""}</span>`
+            : lv ? `<div class="liverow"><span class="ldot">●</span><span class="lsc">${lv.h}</span><span class="ldash">–</span><span class="lsc">${lv.a}</span><span class="lmk">${marker}</span></div>`
+            : `<span class="ko">${fmtKo(f.kickoff)}</span>`}
         </td>`;
       for (const [pid] of others){
         const opk = preds[pid]?.picks?.[f.id];
