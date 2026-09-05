@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-05T11:54:46Z",
+  "updated": "2026-09-05T11:56:48Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -341,9 +341,9 @@
       "kickoff": "2026-09-05T11:30:00Z",
       "h": 17,
       "a": 3,
-      "hs": 0,
-      "as": 1,
-      "min": 19,
+      "hs": null,
+      "as": null,
+      "min": 0,
       "finished": false
     },
     {
