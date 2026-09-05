@@ -92,10 +92,31 @@ jobs:
             jq -e '.fixtures | length > 0' data/fixtures.json > /dev/null
           }
 
+          # Append score changes (vs the committed feed) to data/history-gwN.json —
+          # the event log behind the app's "how the weekend unfolded" chart.
+          update_history() {
+            git show HEAD:data/fixtures.json > /tmp/prev.json 2>/dev/null || echo '{"fixtures":[]}' > /tmp/prev.json
+            jq -n --slurpfile old /tmp/prev.json --slurpfile new data/fixtures.json '
+              ($old[0].fixtures // [] | map({key:(.id|tostring), value:.}) | from_entries) as $o
+              | [ $new[0].fixtures[]
+                  | select(.gw != null) | select(.hs != null)
+                  | . as $f | $o[(.id|tostring)] as $p
+                  | select($p == null or $p.hs != $f.hs or $p.as != $f.as or $p.finished != $f.finished)
+                  | {id, gw, hs, as, min, finished} ]' > /tmp/hist-delta.json
+            for gw in $(jq -r 'map(.gw) | unique | .[]' /tmp/hist-delta.json); do
+              hf="data/history-gw${gw}.json"
+              [ -f "$hf" ] || echo "{\"gw\":${gw},\"events\":[]}" > "$hf"
+              jq --slurpfile d /tmp/hist-delta.json --argjson now "$(date -u +%s)" --argjson gw "$gw" \
+                '.events += [{ t: $now, changes: ($d[0] | map(select(.gw == $gw)) | map(del(.gw))) }]' \
+                "$hf" > /tmp/hf.json && mv /tmp/hf.json "$hf"
+            done
+          }
+
           publish() {
             # push, and on a race (another push landed) rebuild on top and retry
             for i in 1 2 3; do
-              git add data/fixtures.json
+              update_history
+              git add data/
               if git diff --cached --quiet; then echo "No changes."; return 0; fi
               git commit -m "Update fixtures data"
               if git push; then return 0; fi

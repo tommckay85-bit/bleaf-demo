@@ -83,6 +83,13 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 .facts-cols .fact{font-size:12.5px;margin:4px 0;white-space:nowrap}
 .facts-cols .ta-r{text-align:right}
 .tapscore{cursor:pointer}
+/* weekend race chart */
+.race-grid{stroke:var(--line);stroke-width:1}
+.race-day{stroke:var(--line);stroke-width:1;stroke-dasharray:2 3}
+.race-guide{stroke:var(--steel-dim);stroke-width:1}
+.race-tick{fill:var(--ink-faint);font-size:10px;font-family:"Inter"}
+.race-name{fill:var(--ink-dim);font-size:11px;font-family:"Inter";font-weight:600}
+.race-me{fill:var(--ink);font-weight:700}
 .btn-danger{background:transparent;border-color:var(--red);color:var(--red)}
 .btn-sm{padding:4px 10px;font-size:12px}
 .btn:disabled{opacity:.45;cursor:not-allowed}
@@ -548,6 +555,8 @@ let PREDS = {};                               // cache: gw -> {pid: picks doc}
 let predUnsub = null, codesUnsub = null, curTab = "predict", viewGw = null, adminGw = null;
 let predDirty = false; // true only after the user actually edits a score box
 let factsFid = null;   // fixture shown in the match-facts popup (kept live)
+let HISTORY = {};      // gw -> score-change event log (data/history-gwN.json)
+let raceFocus = null;  // highlighted player line in the weekend race chart
 let subsStarted = false, founding = false;
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -712,9 +721,10 @@ async function refreshFeed(force){
     if (txt !== FEED_RAW){
       FEED_RAW = txt; FEED = JSON.parse(txt);
       renderChrome(); renderAll();
-      // keep an open match-facts popup live too
+      // keep an open match-facts popup and the race chart live too
       const fo = $("facts-overlay");
       if (factsFid && fo && !fo.classList.contains("hidden")) showFacts(factsFid);
+      if (curTab === "week" && viewGw !== null) loadHistory(viewGw, true);
     }
   } catch(e){}
 }
@@ -802,6 +812,125 @@ function liveScore(f){
     ? { h:+f.hs, a:+f.as, live:true } : null;
 }
 function fixtureResultLive(gw, f){ return fixtureResult(gw, f) || liveScore(f); }
+// ---- weekend race: score-change history + points timeline ----
+function historyUrl(gw){ return FIXTURES_URL.replace(/fixtures\.json$/, `history-gw${gw}.json`); }
+async function loadHistory(gw, force){
+  if (HISTORY[gw] !== undefined && !force) return;
+  if (HISTORY[gw] === undefined) HISTORY[gw] = null; // in-flight / not-found marker
+  try {
+    const r = await fetch(historyUrl(gw) + "?t=" + Date.now());
+    if (!r.ok) return;
+    const j = await r.json();
+    const had = (HISTORY[gw] && HISTORY[gw].events || []).length;
+    HISTORY[gw] = j;
+    if ((j.events || []).length !== had) renderAll();
+  } catch(e){}
+}
+// Replays the event log: at each score change, every player's provisional
+// points as they stood in that moment.
+function pointsTimeline(gw, hist){
+  if (!hist || !(hist.events||[]).length) return null;
+  const preds = PREDS[gw] || {};
+  const pts = GAMEWEEKS["gw"+gw]?.finalized ? (GAMEWEEKS["gw"+gw].pointsUsed || CONFIG) : CONFIG;
+  const series = Object.entries(PLAYERS)
+    .filter(([pid,p]) => p.active !== false && !isOut(gw, pid))
+    .map(([pid,p]) => ({ pid, name: p.name, pts: [0] }));
+  const state = {}; // fixture id -> current score
+  const times = [hist.events[0].t];
+  for (const ev of hist.events){
+    for (const c of (ev.changes || [])) state[c.id] = { h: c.hs, a: c.as };
+    times.push(ev.t);
+    for (const s of series){
+      const picks = preds[s.pid]?.picks || {};
+      let total = 0;
+      for (const [fid, sc] of Object.entries(state)){
+        const pk = picks[fid];
+        if (!pk || pk.h === null || pk.h === undefined || sc.h === null || sc.h === undefined) continue;
+        if (+pk.h === sc.h && +pk.a === sc.a) total += pts.exact;
+        else if (Math.sign(pk.h - pk.a) === Math.sign(sc.h - sc.a)) total += pts.result;
+      }
+      s.pts.push(total);
+    }
+  }
+  return { times, series };
+}
+// Fixed, validated 9-colour categorical palette (dark surface); colours follow
+// the player (alphabetical among active), 10th+ reuse the palette dashed.
+const RACE_COLORS = ["#e84b64","#1e93bf","#b1902b","#9d76e8","#7e8c34","#5a78e8","#cf7c2e","#26a862","#d95cb5"];
+function racePlayers(){
+  return Object.entries(PLAYERS).filter(([,p]) => p.active !== false)
+    .sort((a,b) => a[1].name.localeCompare(b[1].name)).map(([pid]) => pid);
+}
+function raceSvg(gw){
+  const tl = pointsTimeline(gw, HISTORY[gw]);
+  if (!tl || tl.times.length < 3 || !tl.series.length) return "";
+  const order = racePlayers();
+  const W=680, H=300, L=30, R=80, T=12, B=26;
+  const n = tl.times.length;
+  const maxP = Math.max(10, ...tl.series.map(s => Math.max(...s.pts)));
+  const x = i => L + (W-L-R) * i / (n-1), y = v => T + (H-T-B) * (1 - v/maxP);
+  let g = "";
+  const step = maxP > 60 ? 20 : 10;
+  for (let v = 0; v <= maxP; v += step)
+    g += `<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" class="race-grid"/><text x="${L-5}" y="${y(v)+3}" class="race-tick" text-anchor="end">${v}</text>`;
+  let lastDay = "";
+  tl.times.forEach((t,i) => {
+    const day = new Date(t*1000).toLocaleDateString("en-GB",{weekday:"short"});
+    if (day !== lastDay){ lastDay = day;
+      g += `<line x1="${x(i)}" x2="${x(i)}" y1="${T}" y2="${H-B}" class="race-day"/><text x="${x(i)+3}" y="${H-B+14}" class="race-tick">${day}</text>`; }
+  });
+  // end labels nudged apart so names never overlap
+  const finals = tl.series.map(s => ({ s, fy: y(s.pts[n-1]) })).sort((a,b) => a.fy - b.fy);
+  let prevY = -99;
+  for (const f of finals){ f.ly = Math.max(f.fy, prevY + 11); prevY = f.ly; }
+  let lines = "", labels = "";
+  for (const s of tl.series){
+    const idx = order.indexOf(s.pid);
+    const c = RACE_COLORS[((idx % RACE_COLORS.length) + RACE_COLORS.length) % RACE_COLORS.length];
+    const me = s.pid === MYPID, foc = !raceFocus || raceFocus === s.pid;
+    const toggle = `raceFocus = raceFocus==='${s.pid}' ? null : '${s.pid}'; renderAll()`;
+    const dash = idx >= RACE_COLORS.length ? 'stroke-dasharray="5 3"' : "";
+    lines += `<polyline points="${s.pts.map((v,i)=>x(i).toFixed(1)+","+y(v).toFixed(1)).join(" ")}" fill="none" stroke="${c}" stroke-width="${me?3:2}" ${dash} opacity="${foc?1:.15}" stroke-linejoin="round" stroke-linecap="round" style="cursor:pointer" onclick="${toggle}"/>`;
+    const f = finals.find(fn => fn.s === s);
+    labels += `<g opacity="${foc?1:.25}" style="cursor:pointer" onclick="${toggle}">
+      <line x1="${W-R+3}" x2="${W-R+13}" y1="${f.ly}" y2="${f.ly}" stroke="${c}" stroke-width="3"/>
+      <text x="${W-R+16}" y="${f.ly+3.5}" class="race-name ${me?"race-me":""}">${esc(s.name.split(" ")[0])} ${s.pts[n-1]}</text></g>`;
+  }
+  return `<svg id="race-svg" viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;touch-action:pan-y">
+      <clipPath id="race-clip"><rect id="race-clip-rect" x="0" y="0" width="${W}" height="${H}"/></clipPath>
+      ${g}<g clip-path="url(#race-clip)">${lines}${labels}</g>
+      <line id="race-guide" y1="${T}" y2="${H-B}" class="race-guide" style="display:none"/>
+    </svg><div id="race-tip" class="faint" style="font-size:11.5px;min-height:17px;text-align:center;margin-top:2px"></div>`;
+}
+function replayRace(){
+  const r = $("race-clip-rect");
+  if (!r) return;
+  const start = performance.now();
+  const tick = now => {
+    const p = Math.min(1, (now - start) / 6000);
+    r.setAttribute("width", 30 + 650 * p);
+    if (p < 1) requestAnimationFrame(tick);
+  };
+  r.setAttribute("width", 30);
+  requestAnimationFrame(tick);
+}
+function raceHover(gw, e){
+  const svg = $("race-svg"), tl = pointsTimeline(gw, HISTORY[gw]);
+  if (!svg || !tl) return;
+  const rect = svg.getBoundingClientRect();
+  const W=680, L=30, R=80, n = tl.times.length;
+  const sx = (e.clientX - rect.left) / rect.width * W;
+  const i = Math.max(0, Math.min(n-1, Math.round((sx - L) / (W-L-R) * (n-1))));
+  const guide = $("race-guide");
+  if (guide){ guide.setAttribute("x1", L + (W-L-R)*i/(n-1)); guide.setAttribute("x2", L + (W-L-R)*i/(n-1)); guide.style.display = ""; }
+  const at = tl.series.map(s => ({ name: s.name.split(" ")[0], pid: s.pid, v: s.pts[i] })).sort((a,b) => b.v - a.v);
+  const top = at.slice(0,3).map(r2 => `${esc(r2.name)} ${r2.v}`).join(" · ");
+  const meRow = at.find(r2 => r2.pid === MYPID);
+  const tip = $("race-tip");
+  if (tip) tip.textContent = fmtKo(new Date(tl.times[i]*1000).toISOString()) + " — " + top +
+    (meRow && at.indexOf(meRow) > 2 ? ` · you ${meRow.v}` : "");
+}
+
 // ---- match facts popup (scorers, cards, pens — from the feed's stats) ----
 function playerName(id){ return FEED?.players?.[id] || ("Player " + id); }
 // Key facts per side as display lines. FPL stats carry per-player counts,
@@ -1463,6 +1592,15 @@ function renderWeek(){
   if (!table.length) html += `<tr><td colspan="5" class="muted">No players in this week.</td></tr>`;
   html += `</table></div></div>`;
 
+  // weekend race chart, built from the score-change history the feed records
+  if (HISTORY[gw] === undefined) loadHistory(gw);
+  const race = raceSvg(gw);
+  if (race){
+    html += `<div class="panel"><div class="panelhead"><h2>📈 How the weekend unfolded</h2>
+      <button class="btn" onclick="replayRace()">▶ Replay</button></div>${race}
+      <p class="faint" style="margin-top:6px;font-size:11px">Points as each goal went in. Tap a line or name to spotlight a player${raceFocus?` — <a href="#" onclick="raceFocus=null;renderAll();return false" style="color:var(--steel)">show everyone</a>`:""}.</p></div>`;
+  }
+
   html += `<div class="panel"><h2>Fixtures &amp; picks</h2><p class="faint" style="margin-bottom:8px">Everyone's predictions are revealed once the first match of the gameweek kicks off.</p>`;
   const preds = PREDS[gw] || {};
   const revealed = gwLocked(gw);
@@ -1495,6 +1633,15 @@ function renderWeek(){
   }
   html += `</div>`;
   el.innerHTML = html;
+  const svg = $("race-svg");
+  if (svg){
+    svg.addEventListener("pointermove", e => raceHover(gw, e));
+    svg.addEventListener("pointerleave", () => {
+      const gd = $("race-guide"), tip = $("race-tip");
+      if (gd) gd.style.display = "none";
+      if (tip) tip.textContent = "";
+    });
+  }
 }
 
 /* ---------- TAB: leaderboard ---------- */
