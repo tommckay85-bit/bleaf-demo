@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-05T14:21:52Z",
+  "updated": "2026-09-05T14:23:54Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -138,6 +138,7 @@
     "313": "Clarke",
     "316": "Emersonn",
     "320": "Akpom",
+    "330": "Bogle",
     "335": "Stach",
     "346": "Calvert-Lewin",
     "367": "Gakpo",
@@ -159,7 +160,6 @@
     "464": "Wissa",
     "480": "Gibbs-White",
     "483": "Ndoye",
-    "532": "Ballard",
     "551": "N.Angulo",
     "553": "Isidor"
   },
@@ -897,21 +897,9 @@
       "h": 4,
       "a": 20,
       "hs": 0,
-      "as": 1,
-      "min": 7,
-      "finished": false,
-      "stats": [
-        {
-          "k": "goals_scored",
-          "h": [],
-          "a": [
-            {
-              "value": 1,
-              "element": 532
-            }
-          ]
-        }
-      ]
+      "as": 0,
+      "min": 19,
+      "finished": false
     },
     {
       "id": 23,
@@ -920,9 +908,21 @@
       "h": 5,
       "a": 13,
       "hs": 0,
-      "as": 0,
-      "min": 9,
-      "finished": false
+      "as": 1,
+      "min": 19,
+      "finished": false,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 330
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 24,
@@ -930,10 +930,22 @@
       "kickoff": "2026-09-05T14:00:00Z",
       "h": 10,
       "a": 8,
-      "hs": 0,
+      "hs": 1,
       "as": 0,
-      "min": 10,
-      "finished": false
+      "min": 19,
+      "finished": false,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [
+            {
+              "value": 1,
+              "element": 268
+            }
+          ],
+          "a": []
+        }
+      ]
     },
     {
       "id": 26,
@@ -943,7 +955,7 @@
       "a": 7,
       "hs": 0,
       "as": 0,
-      "min": 8,
+      "min": 18,
       "finished": false
     },
     {
@@ -954,7 +966,7 @@
       "a": 19,
       "hs": 0,
       "as": 0,
-      "min": 9,
+      "min": 20,
       "finished": false
     },
     {
