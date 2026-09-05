@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-05T15:29:07Z",
+  "updated": "2026-09-05T15:31:09Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -160,6 +160,7 @@
     "456": "J.Ramsey",
     "460": "Willock",
     "464": "Wissa",
+    "469": "N.Williams",
     "480": "Gibbs-White",
     "483": "Ndoye",
     "551": "N.Angulo",
@@ -898,10 +899,22 @@
       "kickoff": "2026-09-05T14:00:00Z",
       "h": 4,
       "a": 20,
-      "hs": 0,
+      "hs": 1,
       "as": 0,
-      "min": 52,
-      "finished": false
+      "min": 59,
+      "finished": false,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [
+            {
+              "value": 1,
+              "element": 98
+            }
+          ],
+          "a": []
+        }
+      ]
     },
     {
       "id": 23,
@@ -911,7 +924,7 @@
       "a": 13,
       "hs": 0,
       "as": 1,
-      "min": 61,
+      "min": 65,
       "finished": false,
       "stats": [
         {
@@ -934,7 +947,7 @@
       "a": 8,
       "hs": 2,
       "as": 2,
-      "min": 59,
+      "min": 63,
       "finished": false,
       "stats": [
         {
@@ -966,7 +979,7 @@
       "a": 7,
       "hs": 1,
       "as": 0,
-      "min": 62,
+      "min": 66,
       "finished": false,
       "stats": [
         {
@@ -987,10 +1000,22 @@
       "kickoff": "2026-09-05T14:00:00Z",
       "h": 18,
       "a": 19,
-      "hs": 0,
+      "hs": 1,
       "as": 0,
-      "min": 62,
-      "finished": false
+      "min": 66,
+      "finished": false,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [
+            {
+              "value": 1,
+              "element": 469
+            }
+          ],
+          "a": []
+        }
+      ]
     },
     {
       "id": 25,
