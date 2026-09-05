@@ -62,11 +62,18 @@ jobs:
 
           build_feed() {
             mkdir -p data
-            jq -n --slurpfile b /tmp/bootstrap.json --slurpfile f /tmp/fixtures.json '{
+            # key match facts only: goals, own goals, red cards, penalties
+            jq -n --slurpfile b /tmp/bootstrap.json --slurpfile f /tmp/fixtures.json '
+              def keystat: .identifier as $k
+                | ["goals_scored","own_goals","red_cards","penalties_missed","penalties_saved"] | index($k);
+              ([$f[0][] | (.stats // [])[] | select(keystat) | (.h[], .a[]) | .element] | unique) as $ids
+              | {
               updated: (now | todate),
               source: "fantasy.premierleague.com",
               teams: ($b[0].teams | map({ key: (.id|tostring),
                                           value: { name: .name, short: .short_name, code: .code } }) | from_entries),
+              players: ($b[0].elements | map(select(.id as $i | $ids | index($i)))
+                        | map({ key: (.id|tostring), value: .web_name }) | from_entries),
               fixtures: ($f[0] | map({
                 id: .id,
                 gw: .event,
@@ -76,8 +83,11 @@ jobs:
                 hs: .team_h_score,
                 as: .team_a_score,
                 min: .minutes,
-                finished: (.finished or .finished_provisional)
-              }))
+                finished: (.finished or .finished_provisional),
+                stats: ((.stats // []) | map(select(keystat))
+                        | map({ k: .identifier, h: .h, a: .a })
+                        | map(select((.h|length) + (.a|length) > 0)))
+              } | if (.stats | length) == 0 then del(.stats) else . end))
             }' > data/fixtures.json
             jq -e '.fixtures | length > 0' data/fixtures.json > /dev/null
           }

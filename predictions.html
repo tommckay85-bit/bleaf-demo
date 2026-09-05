@@ -71,6 +71,16 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 .btn-saved:hover{background:linear-gradient(180deg,#41e296,#23ad68)}
 .livedot{color:var(--green);font-weight:700;animation:livepulse 1.6s ease-in-out infinite}
 @keyframes livepulse{50%{opacity:.45}}
+/* match-facts popup */
+.facts-card{background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--steel);border-radius:12px;padding:18px;width:min(340px,92vw);box-shadow:0 18px 50px rgba(0,0,0,.6)}
+.facts-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.facts-team{display:flex;flex-direction:column;align-items:center;gap:4px;font-family:"Oswald";font-size:14px;color:var(--steel);min-width:64px}
+.facts-score{font-family:"Oswald";font-size:30px;font-weight:700;text-align:center}
+.facts-score small{display:block;font-size:11px;font-weight:400}
+.facts-cols{display:flex;justify-content:space-between;gap:12px;margin-top:10px}
+.facts-cols .fact{font-size:12.5px;margin:4px 0;white-space:nowrap}
+.facts-cols .ta-r{text-align:right}
+.tapscore{cursor:pointer}
 .btn-danger{background:transparent;border-color:var(--red);color:var(--red)}
 .btn-sm{padding:4px 10px;font-size:12px}
 .btn:disabled{opacity:.45;cursor:not-allowed}
@@ -785,6 +795,51 @@ function liveScore(f){
     ? { h:+f.hs, a:+f.as, live:true } : null;
 }
 function fixtureResultLive(gw, f){ return fixtureResult(gw, f) || liveScore(f); }
+// ---- match facts popup (scorers, cards, pens — from the feed's stats) ----
+function playerName(id){ return FEED?.players?.[id] || ("Player " + id); }
+// Key facts per side as display lines. FPL stats carry per-player counts,
+// not goal minutes, so scorers show as "Name ×2".
+function fixtureFacts(f){
+  const icons = { goals_scored:"⚽", own_goals:"⚽", red_cards:"🟥", penalties_missed:"❌", penalties_saved:"🧤" };
+  const suffix = { own_goals:" (og)", penalties_missed:" pen missed", penalties_saved:" pen saved" };
+  const out = { h:[], a:[] };
+  for (const s of (f.stats || [])){
+    for (const side of ["h","a"]){
+      for (const e of (s[side] || [])){
+        // an own goal in FPL is credited against the side that benefits
+        const target = s.k === "own_goals" ? (side === "h" ? "a" : "h") : side;
+        out[target].push(`${icons[s.k] || ""} ${playerName(e.element)}${e.value > 1 ? " ×" + e.value : ""}${suffix[s.k] || ""}`);
+      }
+    }
+  }
+  return out;
+}
+function showFacts(fid){
+  const f = (FEED?.fixtures || []).find(x => x.id === fid);
+  if (!f) return;
+  if (!$("facts-overlay")){
+    document.body.insertAdjacentHTML("beforeend",
+      `<div id="facts-overlay" class="roast-overlay hidden" onclick="this.classList.add('hidden')">
+         <div class="facts-card" onclick="event.stopPropagation()"><div id="facts-body"></div>
+         <button class="btn" style="width:100%;margin-top:12px" onclick="document.getElementById('facts-overlay').classList.add('hidden')">Close</button></div>
+       </div>`);
+  }
+  const res = fixtureResult(viewGw, f), lv = res ? null : liveScore(f);
+  const sc = res || lv || (f.hs !== null && f.hs !== undefined ? { h:f.hs, a:f.as } : null);
+  const status = res ? "FT" : lv ? `<span class="livedot">● ${liveLabel(f)}</span>` : "";
+  const facts = fixtureFacts(f);
+  const side = k => facts[k].length ? facts[k].map(x => `<div class="fact">${esc(x)}</div>`).join("") : `<div class="fact faint">—</div>`;
+  $("facts-body").innerHTML = `
+    <div class="facts-head">
+      <div class="facts-team">${crestUrl(f.h) ? crestOrBadge(f.h) : ""}<b>${esc(teamShort(f.h))}</b></div>
+      <div class="facts-score">${sc ? `${sc.h}–${sc.a}` : "v"}<small>${status}</small></div>
+      <div class="facts-team">${crestUrl(f.a) ? crestOrBadge(f.a) : ""}<b>${esc(teamShort(f.a))}</b></div>
+    </div>
+    ${(facts.h.length || facts.a.length)
+      ? `<div class="facts-cols"><div>${side("h")}</div><div class="ta-r">${side("a")}</div></div>`
+      : `<p class="faint" style="text-align:center;margin-top:8px">No key events yet.</p>`}`;
+  $("facts-overlay").classList.remove("hidden");
+}
 // In-play status label from the feed's minutes-played (45 = the interval).
 // Older feed snapshots may not carry minutes yet — fall back to plain "live".
 function liveLabel(f){
@@ -1245,8 +1300,8 @@ function renderPredict(){
             <input type="number" min="0" max="15" id="pk-${f.id}-a" value="${vA}" ${locked||out?"disabled":""}>
             <span class="tcode ta">${esc(teamShort(f.a))}${crestSm(f.a)}</span>
           </div>
-          ${res ? `<div class="subrow ft"><span class="sub-l">FT</span><span class="ssc">${res.h}</span><span class="sdash">–</span><span class="ssc">${res.a}</span><span class="sub-r">${marker}</span></div>`
-            : lv ? `<div class="subrow live"><span class="sub-l">● ${liveLabel(f)}</span><span class="ssc">${lv.h}</span><span class="sdash">–</span><span class="ssc">${lv.a}</span><span class="sub-r">${marker}</span></div>`
+          ${res ? `<div class="subrow ft tapscore" onclick="showFacts(${f.id})"><span class="sub-l">FT</span><span class="ssc">${res.h}</span><span class="sdash">–</span><span class="ssc">${res.a}</span><span class="sub-r">${marker}</span></div>`
+            : lv ? `<div class="subrow live tapscore" onclick="showFacts(${f.id})"><span class="sub-l">● ${liveLabel(f)}</span><span class="ssc">${lv.h}</span><span class="sdash">–</span><span class="ssc">${lv.a}</span><span class="sub-r">${marker}</span></div>`
             : `<span class="ko">${fmtKo(f.kickoff)}</span>`}
         </td>`;
       for (const [pid] of others){
@@ -1390,7 +1445,7 @@ function renderWeek(){
     const eff = res || lv;
     html += `<div class="fixture ${res?"done":""}">
       <div class="team home"><span><span class="tn-l">${esc(teamName(f.h))}</span><span class="tn-s">${esc(teamShort(f.h))}</span></span>${crestOrBadge(f.h)}</div>
-      <div class="mid">${res?`<span class="final">${res.h}–${res.a}</span>${res.override?'<span class="faint">admin entry</span>':""}`
+      <div class="mid ${res||lv?"tapscore":""}" ${res||lv?`onclick="showFacts(${f.id})"`:""}>${res?`<span class="final">${res.h}–${res.a}</span>${res.override?'<span class="faint">admin entry</span>':""}`
         : lv?`<span class="final live">${lv.h}–${lv.a}</span><span class="livedot" style="font-size:11px">● ${liveLabel(f)}</span>`
         : `<span class="ko">${fmtKo(f.kickoff)}</span>`}</div>
       <div class="team">${crestOrBadge(f.a)}<span><span class="tn-l">${esc(teamName(f.a))}</span><span class="tn-s">${esc(teamShort(f.a))}</span></span></div>
