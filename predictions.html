@@ -202,6 +202,7 @@ td.num,th.num{text-align:center}
 tr.me td{background:rgba(75,143,212,.08)}
 .rank{font-family:"Oswald";font-weight:700;color:var(--ink-dim);width:34px}
 .medal{font-size:16px}
+tr.deadrow td{opacity:.55}
 tr.pos1 td{background:linear-gradient(90deg,rgba(232,163,61,.14),transparent 70%)}
 tr.pos1 .rank{color:var(--gold)}
 tr.pos2 td{background:linear-gradient(90deg,rgba(154,167,181,.10),transparent 70%)}
@@ -1446,15 +1447,20 @@ function renderWeek(){
     html += `<div class="banner info">${liveNow ? "<span class=\"livedot\">● LIVE</span> — points move with the goals as they go in. Nothing's final until full time." : anyResult ? "Live standings — updates automatically as results come in. The week hasn't been finalised yet." : "No results in yet. Scores update automatically as matches are played — points count at full time."}</div>`;
   }
 
+  // skull anyone who can no longer win while the week is in play
+  const inPlayWk = !gwDoc?.finalized && gwLocked(gw)
+    && fx.some(f => fixtureResult(gw, f)) && fx.some(f => !fixtureResult(gw, f));
+  const deadWk = inPlayWk ? eliminatedSet(gw) : new Set();
   html += `<div class="panel"><h2>Gameweek ${gw} table${liveNow?' <span class="livedot" style="font-size:13px">● LIVE</span>':''}</h2><div class="tbl-scroll"><table>
-    <tr><th class="rank">#</th><th>Player</th><th class="num">Pts</th><th class="num">Exact</th><th class="num">Results</th><th class="num">Predicted</th></tr>`;
+    <tr><th class="rank">#</th><th>Player</th><th class="num">Pts</th><th class="num">Exact</th><th class="num">Results</th></tr>`;
   const table = gwDoc?.finalized ? gwDoc.table : rows;
   for (const r of table){
-    html += `<tr class="${r.pid===MYPID?"me":""} ${r.rank===1?"pos1":r.rank===2?"pos2":""}">
+    const dead = deadWk.has(r.pid);
+    html += `<tr class="${r.pid===MYPID?"me":""} ${r.rank===1?"pos1":r.rank===2?"pos2":""} ${dead?"deadrow":""}">
       <td class="rank">${r.rank===1?'<span class="medal">🥇</span>':r.rank===2?'<span class="medal">🥈</span>':r.rank}</td>
-      <td>${esc(r.name)}</td><td class="num"><b>${r.pts}</b></td><td class="num">${r.exact}</td><td class="num">${r.correct}</td><td class="num">${r.predicted}/${fx.length}</td></tr>`;
+      <td>${esc(r.name)}${dead?' <span title="mathematically out of the running">💀</span>':""}</td><td class="num"><b>${r.pts}</b></td><td class="num">${r.exact}</td><td class="num">${r.correct}</td></tr>`;
   }
-  if (!table.length) html += `<tr><td colspan="6" class="muted">No players in this week.</td></tr>`;
+  if (!table.length) html += `<tr><td colspan="5" class="muted">No players in this week.</td></tr>`;
   html += `</table></div></div>`;
 
   html += `<div class="panel"><h2>Fixtures &amp; picks</h2><p class="faint" style="margin-bottom:8px">Everyone's predictions are revealed once the first match of the gameweek kicks off.</p>`;
