@@ -86,6 +86,8 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
   box-shadow:0 10px 28px rgba(0,0,0,.5),0 0 24px rgba(56,214,255,.05),inset 0 1px 0 rgba(255,255,255,.05)}
 .panel h2{font-size:17px;color:var(--ink);margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .panel h2 .tag{font-family:"Inter";font-size:11px;font-weight:600;letter-spacing:.08em;background:var(--navy);color:var(--steel);padding:3px 8px;border-radius:4px;text-transform:uppercase}
+.panelhead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.potchip{font-family:"Oswald";font-size:14px;font-weight:600;color:var(--gold);background:var(--panel2);border:1px solid var(--gold-dim);border-radius:14px;padding:4px 11px;white-space:nowrap;flex-shrink:0;box-shadow:0 0 10px rgba(255,215,94,.12)}
 .muted{color:var(--ink-dim);font-size:13px}
 .faint{color:var(--ink-faint);font-size:12px}
 
@@ -1168,22 +1170,18 @@ function renderPredict(){
   if (predDirty && !locked && !out) el.querySelectorAll(".predgrid input[type=number]").forEach(i => { domVals[i.id] = i.value; });
   const effPicks = {}; // what savePicks would store for the current inputs
   let html = gwNavHtml("view", gw);
-  if (out) html += `<div class="banner warn">You're marked <b>out</b> for this gameweek (not in the pot), so your predictions won't count. Speak to the admin if that's wrong.</div>`;
-  else if (gwUnlockedByAdmin(gw)) html += `<div class="banner warn">🔓 The admin has <b>unlocked</b> this gameweek — predictions are editable even though the deadline has passed.</div>`;
-  else if (locked && !myCount) html += `<div class="banner err">🔒 The deadline has passed and you didn't get your predictions in — you've missed out this week.</div>`;
-  else if (locked) html += `<div class="banner info">🔒 Predictions are locked — the first match has kicked off. Everyone's picks are now visible on the This Week tab.</div>`;
-  else if (deadline) html += `<div class="banner ok">⏱ Deadline: <b>${fmtKo(deadline.toISOString())}</b> (first kickoff of the gameweek). All predictions lock then — no late entries, no edits.</div>`;
+  if (out) html += `<div class="banner warn">You're <b>out</b> this gameweek — predictions won't count.</div>`;
+  else if (gwUnlockedByAdmin(gw)) html += `<div class="banner warn">🔓 Admin unlocked — editable past the deadline.</div>`;
+  else if (locked && !myCount) html += `<div class="banner err">🔒 Deadline passed — no picks in, you've missed this week.</div>`;
+  else if (locked) html += `<div class="banner info">🔒 Predictions are locked.</div>`;
+  else if (deadline) html += `<div class="banner ok">⏱ Locks at <b>${fmtKo(deadline.toISOString())}</b>.</div>`;
+  let potChip = "";
   if (fx.length){
     const gwDoc = GAMEWEEKS["gw"+gw];
-    if (gwDoc?.finalized && gwDoc.pot !== undefined){
-      html += `<div class="banner info">💰 This week's pot was <b>${fmtMoney(gwDoc.pot)}</b> — see This Week for the payout.</div>`;
-    } else {
-      const inRows = scoreWeek(gw), stake = gwStake(gw);
-      const m = gwMoney(gw, inRows);
-      html += `<div class="banner info">💰 This week's pot: <b>${fmtMoney(m.pot)}</b> (${inRows.length} players × ${fmtMoney(stake)}) — winner takes the lot. Joint first splits it.</div>`;
-    }
+    const pot = gwDoc?.finalized && gwDoc.pot !== undefined ? gwDoc.pot : gwMoney(gw, scoreWeek(gw)).pot;
+    potChip = `<span class="potchip" title="winner takes the lot — joint first splits it">💰 ${fmtMoney(pot)} pot</span>`;
   }
-  html += `<div class="panel"><h2>Your predictions <span class="tag">${CONFIG.result} pts result · ${CONFIG.exact} pts exact score</span></h2>`;
+  html += `<div class="panel"><div class="panelhead"><h2>Your predictions <span class="tag">${CONFIG.result} pts result · ${CONFIG.exact} pts exact score</span></h2>${potChip}</div>`;
   if (!fx.length) html += `<p class="muted">No fixtures in this gameweek.</p>`;
   else {
     // Grid: fixture + your picks pinned on the left, one column per other
