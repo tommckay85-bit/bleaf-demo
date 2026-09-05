@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-05T12:31:15Z",
+  "updated": "2026-09-05T12:32:21Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -103,6 +103,64 @@
       "code": 56
     }
   },
+  "players": {
+    "12": "Saka",
+    "15": "Ødegaard",
+    "26": "Havertz",
+    "37": "Lindelöf",
+    "54": "Gomes",
+    "68": "Tavernier",
+    "69": "Scott",
+    "86": "Lewis-Potter",
+    "88": "Kayode",
+    "94": "Schade",
+    "98": "Janelt",
+    "106": "Thiago",
+    "115": "De Cuyper",
+    "123": "Hinshelwood",
+    "124": "Groß",
+    "605": "Yalcouyé",
+    "40": "Rogers",
+    "154": "Palmer",
+    "156": "Neto",
+    "161": "Lavia",
+    "165": "João Pedro",
+    "229": "Tarkowski",
+    "236": "Dewsbury-Hall",
+    "249": "Barry",
+    "268": "King",
+    "569": "Gonzalo",
+    "279": "Ajayi",
+    "287": "Millar",
+    "586": "Mendy",
+    "305": "Davis",
+    "306": "Greaves",
+    "313": "Clarke",
+    "316": "Emersonn",
+    "320": "Akpom",
+    "335": "Stach",
+    "346": "Calvert-Lewin",
+    "367": "Gakpo",
+    "368": "Szoboszlai",
+    "377": "Munoz",
+    "379": "Isak",
+    "384": "Donnarumma",
+    "388": "Guéhi",
+    "391": "Gvardiol",
+    "399": "Cherki",
+    "411": "Haaland",
+    "426": "B.Fernandes",
+    "427": "Mbeumo",
+    "445": "Thiaw",
+    "453": "Barnes",
+    "454": "Elanga",
+    "460": "Willock",
+    "464": "Wissa",
+    "480": "Gibbs-White",
+    "483": "Ndoye",
+    "551": "N.Angulo",
+    "553": "Isidor"
+  },
   "fixtures": [
     {
       "id": 1,
@@ -113,7 +171,27 @@
       "hs": 3,
       "as": 0,
       "min": 90,
-      "finished": true
+      "finished": true,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [
+            {
+              "value": 1,
+              "element": 12
+            },
+            {
+              "value": 1,
+              "element": 15
+            },
+            {
+              "value": 1,
+              "element": 26
+            }
+          ],
+          "a": []
+        }
+      ]
     },
     {
       "id": 4,
@@ -124,7 +202,23 @@
       "hs": 2,
       "as": 0,
       "min": 90,
-      "finished": true
+      "finished": true,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [
+            {
+              "value": 1,
+              "element": 279
+            },
+            {
+              "value": 1,
+              "element": 586
+            }
+          ],
+          "a": []
+        }
+      ]
     },
     {
       "id": 3,
@@ -135,7 +229,23 @@
       "hs": 2,
       "as": 0,
       "min": 90,
-      "finished": true
+      "finished": true,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [
+            {
+              "value": 1,
+              "element": 236
+            },
+            {
+              "value": 1,
+              "element": 249
+            }
+          ],
+          "a": []
+        }
+      ]
     },
     {
       "id": 5,
@@ -146,7 +256,28 @@
       "hs": 2,
       "as": 1,
       "min": 90,
-      "finished": true
+      "finished": true,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [
+            {
+              "value": 1,
+              "element": 313
+            },
+            {
+              "value": 1,
+              "element": 316
+            }
+          ],
+          "a": [
+            {
+              "value": 1,
+              "element": 551
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 6,
@@ -157,7 +288,19 @@
       "hs": 0,
       "as": 1,
       "min": 90,
-      "finished": true
+      "finished": true,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 335
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 2,
@@ -168,7 +311,37 @@
       "hs": 3,
       "as": 0,
       "min": 90,
-      "finished": true
+      "finished": true,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [
+            {
+              "value": 1,
+              "element": 86
+            },
+            {
+              "value": 1,
+              "element": 88
+            },
+            {
+              "value": 1,
+              "element": 98
+            }
+          ],
+          "a": []
+        },
+        {
+          "k": "penalties_missed",
+          "h": [
+            {
+              "value": 1,
+              "element": 106
+            }
+          ],
+          "a": []
+        }
+      ]
     },
     {
       "id": 7,
@@ -179,7 +352,43 @@
       "hs": 4,
       "as": 0,
       "min": 90,
-      "finished": true
+      "finished": true,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [
+            {
+              "value": 2,
+              "element": 123
+            },
+            {
+              "value": 1,
+              "element": 115
+            }
+          ],
+          "a": []
+        },
+        {
+          "k": "own_goals",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 37
+            }
+          ]
+        },
+        {
+          "k": "red_cards",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 54
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 8,
@@ -190,7 +399,28 @@
       "hs": 2,
       "as": 1,
       "min": 90,
-      "finished": true
+      "finished": true,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [
+            {
+              "value": 1,
+              "element": 388
+            },
+            {
+              "value": 1,
+              "element": 391
+            }
+          ],
+          "a": [
+            {
+              "value": 1,
+              "element": 68
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 9,
@@ -201,7 +431,32 @@
       "hs": 2,
       "as": 2,
       "min": 90,
-      "finished": true
+      "finished": true,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [
+            {
+              "value": 1,
+              "element": 454
+            },
+            {
+              "value": 1,
+              "element": 460
+            }
+          ],
+          "a": [
+            {
+              "value": 1,
+              "element": 367
+            },
+            {
+              "value": 1,
+              "element": 368
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 10,
@@ -212,7 +467,36 @@
       "hs": 2,
       "as": 3,
       "min": 90,
-      "finished": true
+      "finished": true,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [
+            {
+              "value": 1,
+              "element": 268
+            },
+            {
+              "value": 1,
+              "element": 569
+            }
+          ],
+          "a": [
+            {
+              "value": 1,
+              "element": 40
+            },
+            {
+              "value": 1,
+              "element": 154
+            },
+            {
+              "value": 1,
+              "element": 165
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 11,
@@ -223,7 +507,33 @@
       "hs": 1,
       "as": 4,
       "min": 90,
-      "finished": true
+      "finished": true,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [],
+          "a": [
+            {
+              "value": 2,
+              "element": 399
+            },
+            {
+              "value": 2,
+              "element": 411
+            }
+          ]
+        },
+        {
+          "k": "own_goals",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 384
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 14,
@@ -234,7 +544,32 @@
       "hs": 2,
       "as": 2,
       "min": 90,
-      "finished": true
+      "finished": true,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [
+            {
+              "value": 1,
+              "element": 377
+            },
+            {
+              "value": 1,
+              "element": 379
+            }
+          ],
+          "a": [
+            {
+              "value": 1,
+              "element": 480
+            },
+            {
+              "value": 1,
+              "element": 483
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 12,
@@ -245,7 +580,24 @@
       "hs": 1,
       "as": 1,
       "min": 90,
-      "finished": true
+      "finished": true,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [
+            {
+              "value": 1,
+              "element": 69
+            }
+          ],
+          "a": [
+            {
+              "value": 1,
+              "element": 229
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 13,
@@ -256,7 +608,19 @@
       "hs": 0,
       "as": 1,
       "min": 90,
-      "finished": true
+      "finished": true,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 287
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 15,
@@ -267,7 +631,23 @@
       "hs": 0,
       "as": 2,
       "min": 90,
-      "finished": true
+      "finished": true,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 454
+            },
+            {
+              "value": 1,
+              "element": 464
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 16,
@@ -278,7 +658,50 @@
       "hs": 4,
       "as": 3,
       "min": 90,
-      "finished": true
+      "finished": true,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [
+            {
+              "value": 1,
+              "element": 154
+            },
+            {
+              "value": 1,
+              "element": 156
+            },
+            {
+              "value": 1,
+              "element": 161
+            },
+            {
+              "value": 1,
+              "element": 165
+            }
+          ],
+          "a": [
+            {
+              "value": 1,
+              "element": 124
+            },
+            {
+              "value": 1,
+              "element": 605
+            }
+          ]
+        },
+        {
+          "k": "own_goals",
+          "h": [
+            {
+              "value": 1,
+              "element": 165
+            }
+          ],
+          "a": []
+        }
+      ]
     },
     {
       "id": 17,
@@ -289,7 +712,24 @@
       "hs": 1,
       "as": 1,
       "min": 90,
-      "finished": true
+      "finished": true,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [
+            {
+              "value": 1,
+              "element": 346
+            }
+          ],
+          "a": [
+            {
+              "value": 1,
+              "element": 94
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 19,
@@ -300,7 +740,19 @@
       "hs": 1,
       "as": 0,
       "min": 90,
-      "finished": true
+      "finished": true,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [
+            {
+              "value": 1,
+              "element": 553
+            }
+          ],
+          "a": []
+        }
+      ]
     },
     {
       "id": 18,
@@ -311,7 +763,42 @@
       "hs": 5,
       "as": 2,
       "min": 90,
-      "finished": true
+      "finished": true,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [
+            {
+              "value": 3,
+              "element": 426
+            },
+            {
+              "value": 1,
+              "element": 427
+            }
+          ],
+          "a": [
+            {
+              "value": 1,
+              "element": 305
+            },
+            {
+              "value": 1,
+              "element": 320
+            }
+          ]
+        },
+        {
+          "k": "own_goals",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 306
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 20,
@@ -322,7 +809,19 @@
       "hs": 0,
       "as": 1,
       "min": 90,
-      "finished": true
+      "finished": true,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 12
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 21,
@@ -333,7 +832,19 @@
       "hs": 0,
       "as": 2,
       "min": 90,
-      "finished": true
+      "finished": true,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [],
+          "a": [
+            {
+              "value": 2,
+              "element": 379
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 27,
@@ -343,8 +854,35 @@
       "a": 3,
       "hs": 1,
       "as": 2,
-      "min": 45,
-      "finished": false
+      "min": 44,
+      "finished": false,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [
+            {
+              "value": 1,
+              "element": 453
+            }
+          ],
+          "a": [
+            {
+              "value": 1,
+              "element": 68
+            }
+          ]
+        },
+        {
+          "k": "own_goals",
+          "h": [
+            {
+              "value": 1,
+              "element": 445
+            }
+          ],
+          "a": []
+        }
+      ]
     },
     {
       "id": 22,
