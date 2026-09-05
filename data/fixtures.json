@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-05T15:39:15Z",
+  "updated": "2026-09-05T15:41:17Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -119,6 +119,7 @@
     "115": "De Cuyper",
     "123": "Hinshelwood",
     "124": "Groß",
+    "504": "Vuskovic",
     "605": "Yalcouyé",
     "40": "Rogers",
     "154": "Palmer",
@@ -160,7 +161,6 @@
     "456": "J.Ramsey",
     "460": "Willock",
     "464": "Wissa",
-    "469": "N.Williams",
     "480": "Gibbs-White",
     "483": "Ndoye",
     "551": "N.Angulo",
@@ -901,7 +901,7 @@
       "a": 20,
       "hs": 1,
       "as": 0,
-      "min": 59,
+      "min": 69,
       "finished": false,
       "stats": [
         {
@@ -922,14 +922,19 @@
       "kickoff": "2026-09-05T14:00:00Z",
       "h": 5,
       "a": 13,
-      "hs": 0,
+      "hs": 1,
       "as": 1,
-      "min": 65,
+      "min": 76,
       "finished": false,
       "stats": [
         {
           "k": "goals_scored",
-          "h": [],
+          "h": [
+            {
+              "value": 1,
+              "element": 504
+            }
+          ],
           "a": [
             {
               "value": 1,
@@ -947,7 +952,7 @@
       "a": 8,
       "hs": 2,
       "as": 2,
-      "min": 63,
+      "min": 73,
       "finished": false,
       "stats": [
         {
@@ -979,7 +984,7 @@
       "a": 7,
       "hs": 1,
       "as": 0,
-      "min": 66,
+      "min": 76,
       "finished": false,
       "stats": [
         {
@@ -1000,22 +1005,10 @@
       "kickoff": "2026-09-05T14:00:00Z",
       "h": 18,
       "a": 19,
-      "hs": 1,
+      "hs": 0,
       "as": 0,
-      "min": 66,
-      "finished": false,
-      "stats": [
-        {
-          "k": "goals_scored",
-          "h": [
-            {
-              "value": 1,
-              "element": 469
-            }
-          ],
-          "a": []
-        }
-      ]
+      "min": 75,
+      "finished": false
     },
     {
       "id": 25,
