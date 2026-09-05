@@ -73,6 +73,8 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 @keyframes livepulse{50%{opacity:.45}}
 /* match-facts popup */
 .facts-card{background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--steel);border-radius:12px;padding:18px;width:min(340px,92vw);box-shadow:0 18px 50px rgba(0,0,0,.6)}
+.facts-title{font-family:"Oswald";font-size:13px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;text-align:center;color:var(--ink-dim);margin-bottom:10px}
+.facts-title.live{color:var(--green);animation:livepulse 1.6s ease-in-out infinite}
 .facts-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:10px;border-bottom:1px solid var(--line)}
 .facts-team{display:flex;flex-direction:column;align-items:center;gap:4px;font-family:"Oswald";font-size:14px;color:var(--steel);min-width:64px}
 .facts-score{font-family:"Oswald";font-size:30px;font-weight:700;text-align:center}
@@ -544,6 +546,7 @@ let FEED = null;                              // fixtures.json content
 let PREDS = {};                               // cache: gw -> {pid: picks doc}
 let predUnsub = null, codesUnsub = null, curTab = "predict", viewGw = null, adminGw = null;
 let predDirty = false; // true only after the user actually edits a score box
+let factsFid = null;   // fixture shown in the match-facts popup (kept live)
 let subsStarted = false, founding = false;
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -708,6 +711,9 @@ async function refreshFeed(force){
     if (txt !== FEED_RAW){
       FEED_RAW = txt; FEED = JSON.parse(txt);
       renderChrome(); renderAll();
+      // keep an open match-facts popup live too
+      const fo = $("facts-overlay");
+      if (factsFid && fo && !fo.classList.contains("hidden")) showFacts(factsFid);
     }
   } catch(e){}
 }
@@ -824,12 +830,14 @@ function showFacts(fid){
          <button class="btn" style="width:100%;margin-top:12px" onclick="document.getElementById('facts-overlay').classList.add('hidden')">Close</button></div>
        </div>`);
   }
+  factsFid = fid;
   const res = fixtureResult(viewGw, f), lv = res ? null : liveScore(f);
   const sc = res || lv || (f.hs !== null && f.hs !== undefined ? { h:f.hs, a:f.as } : null);
   const status = res ? "FT" : lv ? `<span class="livedot">● ${liveLabel(f)}</span>` : "";
   const facts = fixtureFacts(f);
   const side = k => facts[k].length ? facts[k].map(x => `<div class="fact">${esc(x)}</div>`).join("") : `<div class="fact faint">—</div>`;
   $("facts-body").innerHTML = `
+    <div class="facts-title ${lv?"live":""}">${res ? "Full time" : lv ? "● Live score" : "Match facts"}</div>
     <div class="facts-head">
       <div class="facts-team">${crestUrl(f.h) ? crestOrBadge(f.h) : ""}<b>${esc(teamShort(f.h))}</b></div>
       <div class="facts-score">${sc ? `${sc.h}–${sc.a}` : "v"}<small>${status}</small></div>
