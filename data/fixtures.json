@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-05T15:51:59Z",
+  "updated": "2026-09-05T15:53:16Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -164,6 +164,7 @@
     "464": "Wissa",
     "480": "Gibbs-White",
     "483": "Ndoye",
+    "542": "E.Le Fée",
     "551": "N.Angulo",
     "553": "Isidor"
   },
@@ -901,8 +902,8 @@
       "h": 4,
       "a": 20,
       "hs": 1,
-      "as": 0,
-      "min": 80,
+      "as": 1,
+      "min": 84,
       "finished": false,
       "stats": [
         {
@@ -913,7 +914,12 @@
               "element": 98
             }
           ],
-          "a": []
+          "a": [
+            {
+              "value": 1,
+              "element": 542
+            }
+          ]
         }
       ]
     },
@@ -925,7 +931,7 @@
       "a": 13,
       "hs": 1,
       "as": 1,
-      "min": 87,
+      "min": 90,
       "finished": false,
       "stats": [
         {
@@ -953,7 +959,7 @@
       "a": 8,
       "hs": 2,
       "as": 3,
-      "min": 83,
+      "min": 88,
       "finished": false,
       "stats": [
         {
@@ -989,7 +995,7 @@
       "a": 7,
       "hs": 1,
       "as": 0,
-      "min": 87,
+      "min": 90,
       "finished": false,
       "stats": [
         {
@@ -1012,7 +1018,7 @@
       "a": 19,
       "hs": 0,
       "as": 0,
-      "min": 88,
+      "min": 90,
       "finished": false
     },
     {
