@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-05T13:35:14Z",
+  "updated": "2026-09-05T13:37:16Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -154,7 +154,6 @@
     "445": "Thiaw",
     "453": "Barnes",
     "454": "Elanga",
-    "456": "J.Ramsey",
     "460": "Willock",
     "464": "Wissa",
     "480": "Gibbs-White",
@@ -853,10 +852,10 @@
       "kickoff": "2026-09-05T11:30:00Z",
       "h": 17,
       "a": 3,
-      "hs": 2,
+      "hs": 1,
       "as": 2,
-      "min": 90,
-      "finished": true,
+      "min": 86,
+      "finished": false,
       "stats": [
         {
           "k": "goals_scored",
@@ -864,10 +863,6 @@
             {
               "value": 1,
               "element": 453
-            },
-            {
-              "value": 1,
-              "element": 456
             }
           ],
           "a": [
