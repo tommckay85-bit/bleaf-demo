@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-05T14:11:43Z",
+  "updated": "2026-09-05T14:13:45Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -895,9 +895,9 @@
       "kickoff": "2026-09-05T14:00:00Z",
       "h": 4,
       "a": 20,
-      "hs": 0,
-      "as": 0,
-      "min": 4,
+      "hs": null,
+      "as": null,
+      "min": 0,
       "finished": false
     },
     {
@@ -906,9 +906,9 @@
       "kickoff": "2026-09-05T14:00:00Z",
       "h": 5,
       "a": 13,
-      "hs": 0,
-      "as": 0,
-      "min": 4,
+      "hs": null,
+      "as": null,
+      "min": 0,
       "finished": false
     },
     {
@@ -917,9 +917,9 @@
       "kickoff": "2026-09-05T14:00:00Z",
       "h": 10,
       "a": 8,
-      "hs": 0,
-      "as": 0,
-      "min": 5,
+      "hs": null,
+      "as": null,
+      "min": 0,
       "finished": false
     },
     {
@@ -928,9 +928,9 @@
       "kickoff": "2026-09-05T14:00:00Z",
       "h": 15,
       "a": 7,
-      "hs": 0,
-      "as": 0,
-      "min": 2,
+      "hs": null,
+      "as": null,
+      "min": 0,
       "finished": false
     },
     {
@@ -939,9 +939,9 @@
       "kickoff": "2026-09-05T14:00:00Z",
       "h": 18,
       "a": 19,
-      "hs": 0,
-      "as": 0,
-      "min": 4,
+      "hs": null,
+      "as": null,
+      "min": 0,
       "finished": false
     },
     {
