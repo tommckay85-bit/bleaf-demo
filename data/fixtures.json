@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-05T14:25:55Z",
+  "updated": "2026-09-05T14:27:57Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -125,7 +125,6 @@
     "156": "Neto",
     "161": "Lavia",
     "165": "João Pedro",
-    "214": "Kamada",
     "229": "Tarkowski",
     "236": "Dewsbury-Hall",
     "249": "Barry",
@@ -139,6 +138,7 @@
     "313": "Clarke",
     "316": "Emersonn",
     "320": "Akpom",
+    "330": "Bogle",
     "335": "Stach",
     "346": "Calvert-Lewin",
     "367": "Gakpo",
@@ -898,7 +898,7 @@
       "a": 20,
       "hs": 0,
       "as": 0,
-      "min": 13,
+      "min": 19,
       "finished": false
     },
     {
@@ -908,9 +908,21 @@
       "h": 5,
       "a": 13,
       "hs": 0,
-      "as": 0,
-      "min": 14,
-      "finished": false
+      "as": 1,
+      "min": 19,
+      "finished": false,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 330
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 24,
@@ -919,8 +931,8 @@
       "h": 10,
       "a": 8,
       "hs": 1,
-      "as": 1,
-      "min": 14,
+      "as": 0,
+      "min": 19,
       "finished": false,
       "stats": [
         {
@@ -931,12 +943,7 @@
               "element": 268
             }
           ],
-          "a": [
-            {
-              "value": 1,
-              "element": 214
-            }
-          ]
+          "a": []
         }
       ]
     },
@@ -948,7 +955,7 @@
       "a": 7,
       "hs": 0,
       "as": 0,
-      "min": 13,
+      "min": 18,
       "finished": false
     },
     {
@@ -959,7 +966,7 @@
       "a": 19,
       "hs": 0,
       "as": 0,
-      "min": 14,
+      "min": 20,
       "finished": false
     },
     {
