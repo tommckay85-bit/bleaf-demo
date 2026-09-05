@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-05T14:48:14Z",
+  "updated": "2026-09-05T14:50:16Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -131,6 +131,7 @@
     "249": "Barry",
     "268": "King",
     "569": "Gonzalo",
+    "570": "Palacios",
     "279": "Ajayi",
     "287": "Millar",
     "586": "Mendy",
@@ -899,7 +900,7 @@
       "a": 20,
       "hs": 0,
       "as": 0,
-      "min": 38,
+      "min": 43,
       "finished": false
     },
     {
@@ -910,7 +911,7 @@
       "a": 13,
       "hs": 0,
       "as": 1,
-      "min": 39,
+      "min": 43,
       "finished": false,
       "stats": [
         {
@@ -931,9 +932,9 @@
       "kickoff": "2026-09-05T14:00:00Z",
       "h": 10,
       "a": 8,
-      "hs": 1,
+      "hs": 2,
       "as": 1,
-      "min": 39,
+      "min": 45,
       "finished": false,
       "stats": [
         {
@@ -942,6 +943,10 @@
             {
               "value": 1,
               "element": 268
+            },
+            {
+              "value": 1,
+              "element": 570
             }
           ],
           "a": [
@@ -961,7 +966,7 @@
       "a": 7,
       "hs": 1,
       "as": 0,
-      "min": 39,
+      "min": 43,
       "finished": false,
       "stats": [
         {
@@ -984,7 +989,7 @@
       "a": 19,
       "hs": 0,
       "as": 0,
-      "min": 40,
+      "min": 44,
       "finished": false
     },
     {
