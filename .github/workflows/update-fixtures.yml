@@ -12,13 +12,17 @@ name: Update fixtures
 # sure a looper is (re)started around match windows; concurrency cancels the
 # old one when a new run begins.
 
+# Cron notes: GitHub heavily throttles schedules, and :00 is the most
+# congested (= most-skipped) minute, so these fire twice an hour on odd
+# minutes. Combined with the 75-minute pre-kickoff window in any_live,
+# missing several fires in a row still leaves a looper running.
 on:
   schedule:
-    - cron: '0 11-22 * * 6'         # Saturday: hourly, noon-11pm UK
-    - cron: '0 17-22 * * 5'         # Friday evening: hourly
-    - cron: '0 12-21 * * 0'         # Sunday: hourly, ~1pm-10pm UK
-    - cron: '30 17-20 * * 1-4'      # weekday evenings (midweek rounds): hourly
-    - cron: '15 6,12,22 * * *'      # daily housekeeping (postponements, new GWs)
+    - cron: '7,37 10-22 * * 6'      # Saturday: every 30 min, 11am-11pm UK
+    - cron: '7,37 16-22 * * 5'      # Friday evening: every 30 min
+    - cron: '7,37 11-21 * * 0'      # Sunday: every 30 min
+    - cron: '7,37 17-21 * * 1-4'    # weekday evenings (midweek rounds)
+    - cron: '23 6,12,22 * * *'      # daily housekeeping (postponements, new GWs)
   workflow_dispatch:
   push:
     branches: [gh-pages]
@@ -93,14 +97,16 @@ jobs:
             return 1
           }
 
-          # true while any game kicked off in the last 3h isn't finished,
-          # or kicks off within the next 15 minutes
+          # true while any game kicked off in the last 3h isn't finished, or
+          # kicks off within the next 75 minutes — wide enough that a cron
+          # fire well before kickoff stays alive into the match even when
+          # GitHub throttles away the fires closer to kickoff
           any_live() {
             jq -e --argjson now "$(date -u +%s)" '
               [ .fixtures[]
                 | select(.kickoff != null) | select(.finished | not)
                 | (.kickoff | fromdateiso8601) as $ko
-                | select($now >= ($ko - 900) and $now <= ($ko + 10800)) ]
+                | select($now >= ($ko - 4500) and $now <= ($ko + 10800)) ]
               | length > 0' data/fixtures.json > /dev/null
           }
 
