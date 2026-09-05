@@ -124,7 +124,7 @@ jobs:
 
           deadline=$(( $(date +%s) + 340 * 60 ))
           while [ "$(date +%s)" -lt "$deadline" ] && any_live; do
-            echo "Match in play — refreshing in 2 minutes..."
-            sleep 120
+            echo "Match in play — refreshing in 75 seconds..."
+            sleep 75
             fetch_feed && build_feed && publish || true
           done

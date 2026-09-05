@@ -848,14 +848,27 @@ function showFacts(fid){
       : `<p class="faint" style="text-align:center;margin-top:8px">No key events yet.</p>`}`;
   $("facts-overlay").classList.remove("hidden");
 }
-// In-play status label from the feed's minutes-played (45 = the interval).
-// Older feed snapshots may not carry minutes yet — fall back to plain "live".
+// In-play status label. FPL's minutes field lags the real clock by several
+// minutes, so the wall clock since kickoff drives the number: exact in the
+// first half, and after the interval offset by ~18 min (15' break plus
+// typical first-half stoppage). FPL minutes only disambiguate stoppage vs
+// half time, and act as a floor in case a game started late.
 function liveLabel(f){
-  const m = f.min;
-  if (m === null || m === undefined || m <= 0) return "live";
-  if (m >= 90) return "90′+";
-  if (m === 45) return "HT";
-  return m + "′";
+  const fm = f.min;
+  const ko = f.kickoff ? Date.parse(f.kickoff) : NaN;
+  if (isNaN(ko)){ // no kickoff time — fall back to the feed's own minutes
+    if (fm === null || fm === undefined || fm <= 0) return "live";
+    if (fm >= 90) return "90′+";
+    if (fm === 45) return "HT";
+    return fm + "′";
+  }
+  if (fm === null || fm === undefined) return "live"; // pre-minutes feed snapshot
+  const est = Math.floor((Date.now() - ko) / 60000);
+  if (est <= 0) return "live";
+  if (est <= 45) return Math.min(Math.max(est, fm, 1), 45) + "′";
+  if (fm <= 45 && est <= 63) return est <= 48 ? "45′+" : "HT";
+  const m2 = Math.min(Math.max(est - 18, 46, fm), 90);
+  return m2 >= 90 ? "90′+" : m2 + "′";
 }
 function fmtKo(iso){
   if (!iso) return "TBC";
