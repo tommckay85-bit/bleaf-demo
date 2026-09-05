@@ -157,7 +157,10 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 .predgrid th.colme .hstat{text-align:right}
 .tick-ok{color:var(--green);font-weight:700;font-size:15px}
 .tick-no{color:var(--ink-faint)}
-.predgrid .ptsbadge{padding:2px 6px}
+.predgrid .pickcell{display:inline-flex;flex-direction:column;align-items:center;gap:1px}
+.pstar{font-size:11px;line-height:11px;color:var(--gold);text-shadow:0 0 5px rgba(255,213,74,.7)}
+.pstar.ghost{visibility:hidden}
+.predgrid .ptsbadge{padding:2px 0;width:38px;display:inline-flex;justify-content:center}
 @media(max-width:640px){
   .predgrid th,.predgrid td{padding:6px 3px}
   .predgrid th{font-size:10px}
@@ -173,7 +176,8 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
   .subrow{font-size:10px;gap:3px}
   .subrow .ssc{width:34px}
   .subrow .sub-r{width:38px;font-size:10px}
-  .predgrid .ptsbadge{padding:2px 4px;font-size:10.5px}
+  .predgrid .ptsbadge{padding:2px 0;width:34px;font-size:10.5px}
+  .pstar{font-size:10px;line-height:10px}
 }
 
 /* ---------- tables ---------- */
@@ -1247,13 +1251,15 @@ function renderPredict(){
       for (const [pid] of others){
         const opk = preds[pid]?.picks?.[f.id];
         if (revealed){
-          let cls = "pts-none", txt = opk ? `${opk.h}–${opk.a}` : "—";
+          let cls = "pts-none", star = false, txt = opk ? `${opk.h}–${opk.a}` : "—";
           if (opk && eff){
-            if (+opk.h===eff.h && +opk.a===eff.a){ cls = "pts-exact"; txt = "★ " + txt; }
+            if (+opk.h===eff.h && +opk.a===eff.a){ cls = "pts-exact"; star = true; }
             else if (Math.sign(opk.h-opk.a)===Math.sign(eff.h-eff.a)) cls = "pts-result";
             else cls = "pts-wrong";
           }
-          html += `<td><span class="ptsbadge ${cls}">${txt}</span></td>`;
+          // fixed-width lozenge; the exact-score star sits above it (a ghost
+          // star reserves the space so all rows stay aligned)
+          html += `<td><span class="pickcell"><span class="pstar${star?"":" ghost"}">★</span><span class="ptsbadge ${cls}">${txt}</span></span></td>`;
         } else {
           html += `<td>${opk ? '<span class="tick-ok">✓</span>' : '<span class="tick-no">—</span>'}</td>`;
         }
