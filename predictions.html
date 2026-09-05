@@ -96,7 +96,7 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 .banner.ok{background:#12291c;border-color:var(--green);color:#8fd8ac}
 
 /* ---------- gameweek nav ---------- */
-.gwnav{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.gwnav{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:16px}
 .gwnav .gwlabel{font-family:"Oswald";font-size:19px;letter-spacing:.05em;text-transform:uppercase;min-width:170px;text-align:center}
 .gwnav .gwlabel small{display:block;font-family:"Inter";font-size:11px;letter-spacing:.04em;color:var(--ink-dim);text-transform:none;font-weight:400}
 .gwnav button{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font-size:16px}
@@ -157,18 +157,21 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 .tick-no{color:var(--ink-faint)}
 .predgrid .ptsbadge{padding:2px 6px}
 @media(max-width:640px){
-  .predgrid th,.predgrid td{padding:6px 5px}
-  .predgrid td:not(.colme){min-width:46px}
-  .predgrid .colme{width:210px;min-width:210px;max-width:210px}
-  .predgrid th.colme{max-width:210px}
-  .predgrid input[type=number]{width:38px;font-size:14px;padding:5px 1px}
-  .tcode{width:47px;font-size:12px;gap:3px}
-  .crest-sm{width:15px;height:15px}
+  .predgrid th,.predgrid td{padding:6px 3px}
+  .predgrid th{font-size:10px}
+  .predgrid td:not(.colme){min-width:34px}
+  .predgrid .colme{width:176px;min-width:176px;max-width:176px;padding-left:5px;padding-right:5px}
+  .predgrid th.colme{max-width:176px}
+  .predgrid input[type=number]{width:34px;font-size:14px;padding:5px 1px}
+  .myrow{gap:3px}
+  .tcode{width:38px;font-size:11px;gap:2px}
+  .crest-sm{width:13px;height:13px}
   .crest{width:22px;height:22px}
   .predgrid .ko{font-size:10px}
-  .subrow{font-size:10px}
-  .subrow .ssc{width:38px}
-  .subrow .sub-r{width:47px;font-size:10px}
+  .subrow{font-size:10px;gap:3px}
+  .subrow .ssc{width:34px}
+  .subrow .sub-r{width:38px;font-size:10px}
+  .predgrid .ptsbadge{padding:2px 4px;font-size:10.5px}
 }
 
 /* ---------- tables ---------- */
