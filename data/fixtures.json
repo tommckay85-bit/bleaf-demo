@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-05T14:46:12Z",
+  "updated": "2026-09-05T14:48:14Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -125,6 +125,7 @@
     "156": "Neto",
     "161": "Lavia",
     "165": "João Pedro",
+    "204": "Mitchell",
     "229": "Tarkowski",
     "236": "Dewsbury-Hall",
     "249": "Barry",
@@ -898,7 +899,7 @@
       "a": 20,
       "hs": 0,
       "as": 0,
-      "min": 33,
+      "min": 38,
       "finished": false
     },
     {
@@ -909,7 +910,7 @@
       "a": 13,
       "hs": 0,
       "as": 1,
-      "min": 33,
+      "min": 39,
       "finished": false,
       "stats": [
         {
@@ -931,8 +932,8 @@
       "h": 10,
       "a": 8,
       "hs": 1,
-      "as": 0,
-      "min": 34,
+      "as": 1,
+      "min": 39,
       "finished": false,
       "stats": [
         {
@@ -943,7 +944,12 @@
               "element": 268
             }
           ],
-          "a": []
+          "a": [
+            {
+              "value": 1,
+              "element": 204
+            }
+          ]
         }
       ]
     },
@@ -955,7 +961,7 @@
       "a": 7,
       "hs": 1,
       "as": 0,
-      "min": 32,
+      "min": 39,
       "finished": false,
       "stats": [
         {
@@ -978,7 +984,7 @@
       "a": 19,
       "hs": 0,
       "as": 0,
-      "min": 34,
+      "min": 40,
       "finished": false
     },
     {
