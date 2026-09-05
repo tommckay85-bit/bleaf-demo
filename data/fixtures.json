@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-05T14:13:45Z",
+  "updated": "2026-09-05T14:15:47Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -159,6 +159,7 @@
     "464": "Wissa",
     "480": "Gibbs-White",
     "483": "Ndoye",
+    "532": "Ballard",
     "551": "N.Angulo",
     "553": "Isidor"
   },
@@ -895,10 +896,22 @@
       "kickoff": "2026-09-05T14:00:00Z",
       "h": 4,
       "a": 20,
-      "hs": null,
-      "as": null,
-      "min": 0,
-      "finished": false
+      "hs": 0,
+      "as": 1,
+      "min": 7,
+      "finished": false,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 532
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 23,
@@ -906,9 +919,9 @@
       "kickoff": "2026-09-05T14:00:00Z",
       "h": 5,
       "a": 13,
-      "hs": null,
-      "as": null,
-      "min": 0,
+      "hs": 0,
+      "as": 0,
+      "min": 9,
       "finished": false
     },
     {
@@ -917,9 +930,9 @@
       "kickoff": "2026-09-05T14:00:00Z",
       "h": 10,
       "a": 8,
-      "hs": null,
-      "as": null,
-      "min": 0,
+      "hs": 0,
+      "as": 0,
+      "min": 10,
       "finished": false
     },
     {
@@ -928,9 +941,9 @@
       "kickoff": "2026-09-05T14:00:00Z",
       "h": 15,
       "a": 7,
-      "hs": null,
-      "as": null,
-      "min": 0,
+      "hs": 0,
+      "as": 0,
+      "min": 8,
       "finished": false
     },
     {
@@ -939,9 +952,9 @@
       "kickoff": "2026-09-05T14:00:00Z",
       "h": 18,
       "a": 19,
-      "hs": null,
-      "as": null,
-      "min": 0,
+      "hs": 0,
+      "as": 0,
+      "min": 9,
       "finished": false
     },
     {
