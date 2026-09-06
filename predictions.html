@@ -744,8 +744,14 @@ setInterval(() => { if (!document.hidden) refreshFeed(); }, 15 * 1000); // only 
 // merge scores/minutes/facts straight into the feed. The GitHub feed stays
 // the source of truth for everything else (teams, history, fallback).
 let lastProxyAt = 0;
+// tolerate a proxy URL pasted without its scheme ("x.workers.dev")
+function liveProxyUrl(){
+  let u = (CONFIG.liveProxy || "").trim();
+  if (u && !/^https?:\/\//i.test(u)) u = "https://" + u;
+  return u;
+}
 async function refreshLiveProxy(){
-  const url = CONFIG.liveProxy;
+  const url = liveProxyUrl();
   if (!url || !FEED || !ME || document.hidden || !feedIsLive()) return;
   try {
     const r = await fetch(url + (url.includes("?") ? "&" : "?") + "t=" + Date.now());
