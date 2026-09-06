@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-06T15:01:41Z",
+  "updated": "2026-09-06T15:02:36Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -132,6 +132,7 @@
     "236": "Dewsbury-Hall",
     "242": "George",
     "249": "Barry",
+    "649": "Maitland-Niles",
     "268": "King",
     "569": "Gonzalo",
     "570": "Palacios",
@@ -1040,10 +1041,10 @@
       "kickoff": "2026-09-06T13:00:00Z",
       "h": 9,
       "a": 16,
-      "hs": 1,
+      "hs": 2,
       "as": 2,
       "min": 90,
-      "finished": false,
+      "finished": true,
       "stats": [
         {
           "k": "goals_scored",
@@ -1051,6 +1052,10 @@
             {
               "value": 1,
               "element": 242
+            },
+            {
+              "value": 1,
+              "element": 649
             }
           ],
           "a": [
