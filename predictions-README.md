@@ -175,3 +175,41 @@ always beats the feed, and you can finalise a week even with a game outstanding 
   "sample fixtures" banner disappears once the workflow has run for real.
 - Firebase free tier limits (50k reads/20k writes a day) are far beyond what 15 players
   can generate.
+
+## Near-real-time live scores (optional, free — Cloudflare Worker)
+
+Out of the box, live scores flow through GitHub (fetch → commit → page poll),
+which adds up to a minute on top of FPL's own delay. A tiny Cloudflare Worker
+lets everyone's phones poll FPL almost directly, cutting the app's added lag
+to ~10-20 seconds:
+
+1. Create a free account at https://dash.cloudflare.com (no card needed).
+2. Workers & Pages → Create → Create Worker → name it (e.g. `lefuck-live`) → Deploy.
+3. Edit the code, replace everything with:
+
+   ```js
+   export default {
+     async fetch() {
+       const r = await fetch("https://fantasy.premierleague.com/api/fixtures/", {
+         headers: { "User-Agent": "prediction-league-live" },
+         cf: { cacheTtl: 10, cacheEverything: true },
+       });
+       return new Response(await r.text(), {
+         headers: {
+           "Content-Type": "application/json",
+           "Access-Control-Allow-Origin": "*",
+           "Cache-Control": "public, max-age=10",
+         },
+       });
+     },
+   };
+   ```
+
+4. Deploy, copy the worker URL (like `https://lefuck-live.<you>.workers.dev`).
+5. In the app: Admin → League settings → paste it into **Live score proxy URL** → Save.
+
+That's it — while games are live, the app polls the worker every 12 seconds
+(the worker's 10-second edge cache means Cloudflare, not FPL, absorbs everyone's
+polling). If the worker is ever down the app quietly falls back to the GitHub
+feed. Free-tier limits (100k requests/day) are ~10× more than a 15-player
+league can use.
