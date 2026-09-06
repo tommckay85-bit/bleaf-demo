@@ -18,11 +18,10 @@ name: Update fixtures
 # missing several fires in a row still leaves a looper running.
 on:
   schedule:
-    - cron: '7,37 10-22 * * 6'      # Saturday: every 30 min, 11am-11pm UK
-    - cron: '7,37 16-22 * * 5'      # Friday evening: every 30 min
-    - cron: '7,37 11-21 * * 0'      # Sunday: every 30 min
-    - cron: '7,37 17-21 * * 1-4'    # weekday evenings (midweek rounds)
-    - cron: '23 6,12,22 * * *'      # daily housekeeping (postponements, new GWs)
+    - cron: '7,22,37,52 10-21 * * 6,0'  # weekends: four chances an hour
+    - cron: '7,37 16-22 * * 5'          # Friday evening
+    - cron: '7,37 17-21 * * 1-4'        # weekday evenings (midweek rounds)
+    - cron: '23 6,12,22 * * *'          # daily housekeeping (postponements, new GWs)
   workflow_dispatch:
   push:
     branches: [gh-pages]
@@ -39,7 +38,7 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 350
+    timeout-minutes: 356
     steps:
       - uses: actions/checkout@v4
         with:
@@ -129,21 +128,22 @@ jobs:
           }
 
           # true while any game kicked off in the last 3h isn't finished, or
-          # kicks off within the next 75 minutes — wide enough that a cron
-          # fire well before kickoff stays alive into the match even when
-          # GitHub throttles away the fires closer to kickoff
+          # kicks off within the next 2.5 hours. GitHub throttles cron fires
+          # brutally (hours can pass with none landing) and a workflow cannot
+          # re-trigger itself, so any run that DOES land this close to a
+          # kickoff must stay alive and idle-loop into the match.
           any_live() {
             jq -e --argjson now "$(date -u +%s)" '
               [ .fixtures[]
                 | select(.kickoff != null) | select(.finished | not)
                 | (.kickoff | fromdateiso8601) as $ko
-                | select($now >= ($ko - 4500) and $now <= ($ko + 10800)) ]
+                | select($now >= ($ko - 9000) and $now <= ($ko + 10800)) ]
               | length > 0' data/fixtures.json > /dev/null
           }
 
           fetch_feed && build_feed && publish
 
-          deadline=$(( $(date +%s) + 340 * 60 ))
+          deadline=$(( $(date +%s) + 352 * 60 ))
           while [ "$(date +%s)" -lt "$deadline" ] && any_live; do
             echo "Match in play — refreshing in 75 seconds..."
             sleep 75
