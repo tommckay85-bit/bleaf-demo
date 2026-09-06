@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-06T14:46:24Z",
+  "updated": "2026-09-06T14:47:41Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -130,6 +130,7 @@
     "643": "Chilwell",
     "229": "Tarkowski",
     "236": "Dewsbury-Hall",
+    "242": "George",
     "249": "Barry",
     "268": "King",
     "569": "Gonzalo",
@@ -1038,14 +1039,19 @@
       "kickoff": "2026-09-06T13:00:00Z",
       "h": 9,
       "a": 16,
-      "hs": 0,
+      "hs": 1,
       "as": 1,
-      "min": 81,
+      "min": 86,
       "finished": false,
       "stats": [
         {
           "k": "goals_scored",
-          "h": [],
+          "h": [
+            {
+              "value": 1,
+              "element": 242
+            }
+          ],
           "a": [
             {
               "value": 1,
