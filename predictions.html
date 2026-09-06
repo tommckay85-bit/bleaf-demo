@@ -169,6 +169,11 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 .hstat{font-family:"Inter";font-size:11.5px;font-weight:700;color:var(--gold);margin-top:2px;letter-spacing:0;text-transform:none}
 .hstat.hdead{color:var(--red)}
 .predgrid input[type=number]{width:44px;font-size:15px;padding:6px 2px}
+/* own score boxes colour up like everyone else's lozenges once a game is
+   live or done (-webkit-text-fill-color + opacity beat iOS disabled dimming) */
+.predgrid input.pk-exact{background:linear-gradient(160deg,#ffe589 0%,#ffd24a 45%,#e8a825 100%);border-color:#ffe589;color:#241703;-webkit-text-fill-color:#241703;opacity:1;font-weight:800;box-shadow:0 0 9px rgba(255,213,74,.45)}
+.predgrid input.pk-ok{background:var(--green);border-color:var(--green);color:#07130c;-webkit-text-fill-color:#07130c;opacity:1;font-weight:700}
+.predgrid input.pk-bad{background:var(--red);border-color:var(--red);color:#1c060b;-webkit-text-fill-color:#1c060b;opacity:1;font-weight:700}
 .predgrid .ko{display:block;margin-top:2px}
 /* Sub-line under your pick, three zones mirroring the row above:
    status left (FT / ● live), score digits centred under their boxes,
@@ -1616,20 +1621,20 @@ function renderPredict(){
       const res = fixtureResult(gw, f);
       const lv = res ? null : liveScore(f);
       const eff = res || lv; // live scores colour picks/points provisionally
-      let marker = "";
+      let marker = "", myCls = "";
       if (eff){
         if (pk.h === undefined || pk.h === null) marker = `<span class="res-bad" title="no pick">✗ +0</span>`;
-        else if (+pk.h === eff.h && +pk.a === eff.a) marker = `<span class="res-exact">★ +${ptsCfg.exact}</span>`;
-        else if (Math.sign(pk.h - pk.a) === Math.sign(eff.h - eff.a)) marker = `<span class="res-ok">✓ +${ptsCfg.result}</span>`;
-        else marker = `<span class="res-bad">✗ +0</span>`;
+        else if (+pk.h === eff.h && +pk.a === eff.a){ marker = `<span class="res-exact">★ +${ptsCfg.exact}</span>`; myCls = "pk-exact"; }
+        else if (Math.sign(pk.h - pk.a) === Math.sign(eff.h - eff.a)){ marker = `<span class="res-ok">✓ +${ptsCfg.result}</span>`; myCls = "pk-ok"; }
+        else { marker = `<span class="res-bad">✗ +0</span>`; myCls = "pk-bad"; }
       }
       html += `<tr class="${res?"done":""}">
         <td class="colme" title="${esc(teamName(f.h))} v ${esc(teamName(f.a))}">
           <div class="myrow">
             <span class="tcode">${crestSm(f.h)}${esc(teamShort(f.h))}</span>
-            <input type="number" min="0" max="15" id="pk-${f.id}-h" value="${vH}" ${locked||out?"disabled":""}>
+            <input type="number" min="0" max="15" id="pk-${f.id}-h" class="${myCls}" value="${vH}" ${locked||out?"disabled":""}>
             <span class="dash">–</span>
-            <input type="number" min="0" max="15" id="pk-${f.id}-a" value="${vA}" ${locked||out?"disabled":""}>
+            <input type="number" min="0" max="15" id="pk-${f.id}-a" class="${myCls}" value="${vA}" ${locked||out?"disabled":""}>
             <span class="tcode ta">${esc(teamShort(f.a))}${crestSm(f.a)}</span>
           </div>
           ${res ? `<div class="subrow ft tapscore" onclick="showFacts(${f.id})"><span class="sub-l">FT</span><span class="ssc">${res.h}</span><span class="sdash">–</span><span class="ssc">${res.a}</span><span class="sub-r">${marker}</span></div>`
