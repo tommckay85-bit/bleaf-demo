@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-06T14:51:30Z",
+  "updated": "2026-09-06T14:52:47Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -157,6 +157,7 @@
     "411": "Haaland",
     "426": "B.Fernandes",
     "427": "Mbeumo",
+    "439": "Šeško",
     "445": "Thiaw",
     "453": "Barnes",
     "454": "Elanga",
@@ -1040,8 +1041,8 @@
       "h": 9,
       "a": 16,
       "hs": 1,
-      "as": 1,
-      "min": 86,
+      "as": 2,
+      "min": 90,
       "finished": false,
       "stats": [
         {
@@ -1056,6 +1057,10 @@
             {
               "value": 1,
               "element": 427
+            },
+            {
+              "value": 1,
+              "element": 439
             }
           ]
         }
