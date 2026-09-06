@@ -188,19 +188,67 @@ to ~10-20 seconds:
 3. Edit the code, replace everything with:
 
    ```js
+   // LEFUCK hybrid live-score worker: FPL is the source of truth, ESPN's
+   // public scoreboard accelerates it (ESPN registers goals faster). Scores
+   // only ever come forward — if ESPN is unavailable you get pure FPL.
+   const HDRS = {
+     "Content-Type": "application/json",
+     "Access-Control-Allow-Origin": "*",
+     "Cache-Control": "public, max-age=10",
+   };
+   const SYN = { spurs: "tottenham", man: "manchester", utd: "united", "nott'm": "nottingham", wolves: "wolverhampton" };
+   const toks = n => (n || "").toLowerCase().replace(/[^a-z' ]+/g, " ").split(/\s+/)
+     .filter(w => w && !["fc", "afc", "the", "club"].includes(w)).map(w => SYN[w] || w);
+   function subsetMatch(a, b){
+     const A = new Set(toks(a)), B = new Set(toks(b));
+     const [s, l] = A.size <= B.size ? [A, B] : [B, A];
+     if (!s.size) return false;
+     for (const t of s) if (!l.has(t)) return false;
+     return true;
+   }
    export default {
-     async fetch() {
-       const r = await fetch("https://fantasy.premierleague.com/api/fixtures/", {
-         headers: { "User-Agent": "prediction-league-live" },
-         cf: { cacheTtl: 10, cacheEverything: true },
-       });
-       return new Response(await r.text(), {
-         headers: {
-           "Content-Type": "application/json",
-           "Access-Control-Allow-Origin": "*",
-           "Cache-Control": "public, max-age=10",
-         },
-       });
+     async fetch(){
+       const ua = { "User-Agent": "prediction-league-live" };
+       const [fixR, bootR, espnR] = await Promise.allSettled([
+         fetch("https://fantasy.premierleague.com/api/fixtures/", { headers: ua, cf: { cacheTtl: 10, cacheEverything: true } }),
+         fetch("https://fantasy.premierleague.com/api/bootstrap-static/", { headers: ua, cf: { cacheTtl: 3600, cacheEverything: true } }),
+         fetch("https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard", { headers: ua, cf: { cacheTtl: 10, cacheEverything: true } }),
+       ]);
+       if (fixR.status !== "fulfilled" || !fixR.value.ok)
+         return new Response("[]", { status: 502, headers: HDRS });
+       const fixtures = await fixR.value.json();
+       try {
+         if (bootR.status === "fulfilled" && bootR.value.ok && espnR.status === "fulfilled" && espnR.value.ok){
+           const boot = await bootR.value.json();
+           const espn = await espnR.value.json();
+           const teamName = {};
+           for (const t of (boot.teams || [])) teamName[t.id] = t.name;
+           const events = (espn.events || []).map(e => {
+             const comp = (e.competitions || [])[0] || {};
+             const home = (comp.competitors || []).find(c => c.homeAway === "home");
+             const away = (comp.competitors || []).find(c => c.homeAway === "away");
+             if (!home || !away) return null;
+             return {
+               h: home.team?.displayName || home.team?.name,
+               a: away.team?.displayName || away.team?.name,
+               hs: parseInt(home.score, 10), as: parseInt(away.score, 10),
+               state: comp.status?.type?.state || e.status?.type?.state, // pre | in | post
+             };
+           }).filter(Boolean);
+           for (const f of fixtures){
+             if (f.finished || f.finished_provisional) continue;
+             const hn = teamName[f.team_h], an = teamName[f.team_a];
+             if (!hn || !an) continue;
+             const matches = events.filter(e => subsetMatch(e.h, hn) && subsetMatch(e.a, an));
+             const ev = matches.length === 1 ? matches[0] : null;
+             if (!ev || ev.state === "pre" || isNaN(ev.hs) || isNaN(ev.as)) continue;
+             const fplStarted = f.team_h_score !== null && f.team_h_score !== undefined;
+             const ahead = !fplStarted || (ev.hs + ev.as) > (f.team_h_score + f.team_a_score);
+             if (ahead){ f.team_h_score = ev.hs; f.team_a_score = ev.as; }
+           }
+         }
+       } catch (e) { /* any ESPN hiccup -> serve pure FPL */ }
+       return new Response(JSON.stringify(fixtures), { headers: HDRS });
      },
    };
    ```
