@@ -95,6 +95,8 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 .race-tick{fill:var(--ink-faint);font-size:10px;font-family:"Inter"}
 .race-name{fill:var(--ink-dim);font-size:11px;font-family:"Inter";font-weight:600}
 .race-me{fill:var(--ink);font-weight:700}
+.winline{font-size:13px;margin:7px 0;color:var(--ink-dim);line-height:1.45}
+.winline b{color:var(--ink)}
 .btn-danger{background:transparent;border-color:var(--red);color:var(--red)}
 .btn-sm{padding:4px 10px;font-size:12px}
 .btn:disabled{opacity:.45;cursor:not-allowed}
@@ -1350,6 +1352,78 @@ function stillInStatus(gw){
   };
 }
 
+/* ---------- endgame: who can still win, and what they need ---------- */
+// With <=2 games left the outcome space that matters is tiny: each distinct
+// predicted scoreline (an exact hit) plus the three plain results per game.
+// Enumerate every combination, score it, and describe the winning ones.
+function winPaths(gw){
+  const fx = gwFixtures(gw);
+  if (!fx.length || GAMEWEEKS["gw"+gw]?.finalized || !gwLocked(gw)) return null;
+  const remaining = fx.filter(f => !fixtureResult(gw, f));
+  const done = fx.length - remaining.length;
+  if (!remaining.length || remaining.length > 2 || done < 1) return null;
+  const rows = scoreWeek(gw);
+  if (rows.length < 2) return null;
+  const preds = PREDS[gw] || {};
+  const classesFor = f => {
+    const seen = new Set(), cls = [];
+    for (const r of rows){
+      const p = preds[r.pid]?.picks?.[f.id];
+      if (!p || p.h === null || p.h === undefined) continue;
+      const k = (+p.h) + "-" + (+p.a);
+      if (!seen.has(k)){ seen.add(k); cls.push({ type:"exact", h:+p.h, a:+p.a }); }
+    }
+    for (const s of [1,0,-1]) cls.push({ type:"dir", sign:s });
+    return cls;
+  };
+  const fxCls = remaining.map(classesFor);
+  const exSigns = fxCls.map(cls => new Set(cls.filter(c => c.type==="exact").map(c => Math.sign(c.h - c.a))));
+  const gain = (pk, c) => {
+    if (!pk || pk.h === null || pk.h === undefined) return 0;
+    if (c.type === "exact"){
+      if (+pk.h === c.h && +pk.a === c.a) return CONFIG.exact;
+      return Math.sign(pk.h - pk.a) === Math.sign(c.h - c.a) ? CONFIG.result : 0;
+    }
+    return Math.sign(pk.h - pk.a) === c.sign ? CONFIG.result : 0;
+  };
+  const combos = remaining.length === 1
+    ? fxCls[0].map(c => [c])
+    : fxCls[0].flatMap(c1 => fxCls[1].map(c2 => [c1, c2]));
+  const wins = {};
+  for (const combo of combos){
+    let best = -1, winners = [];
+    for (const r of rows){
+      let t = r.pts;
+      combo.forEach((c, i) => t += gain(preds[r.pid]?.picks?.[remaining[i].id], c));
+      if (t > best){ best = t; winners = [r.pid]; }
+      else if (t === best) winners.push(r.pid);
+    }
+    for (const w of winners) (wins[w] = wins[w] || []).push({ combo, shared: winners.length > 1 });
+  }
+  const desc = (i, c) => {
+    const f = remaining[i];
+    if (c.type === "exact"){
+      if (c.h === c.a) return `a ${c.h}–${c.a} draw exactly`;
+      return `${teamShort(c.h > c.a ? f.h : f.a)} to win exactly ${c.h}–${c.a}`;
+    }
+    const other = exSigns[i].has(c.sign) ? " (any other score)" : "";
+    return c.sign === 0 ? `a draw${other}` : `${teamShort(c.sign > 0 ? f.h : f.a)} to win${other}`;
+  };
+  const players = [];
+  for (const r of rows){
+    const w = wins[r.pid];
+    if (!w || !w.length) continue;
+    players.push({
+      pid: r.pid, name: r.name, pts: r.pts,
+      guaranteed: w.length === combos.length,
+      allShared: w.every(x => x.shared),
+      paths: w.slice(0, 2).map(x => x.combo.map((c, i) => desc(i, c)).join(" and ")),
+      more: Math.max(0, w.length - 2),
+    });
+  }
+  return { remaining, players };
+}
+
 const OUT_MSGS = [
   "It's over, {name}. Mathematically fucked with {left} game{s} still to play. Even a miracle can't save you.",
   "Dead and buried, {name}. You cannot win this week no matter what happens. Absolutely tragic stuff.",
@@ -1591,6 +1665,19 @@ function renderPredict(){
     html += `<div class="savebar"><span id="save-msg" class="faint"></span><button id="save-btn" class="btn ${savedState?"btn-saved":"btn-gold"}" onclick="savePicks(${gw})">${label}</button></div>`;
   }
   html += `</div>`;
+  // endgame: with 1-2 games left, spell out each contender's path to the pot
+  const wp = winPaths(gw);
+  if (wp){
+    html += `<div class="panel"><h2>🎯 Who can still win <span class="tag">${wp.remaining.length} game${wp.remaining.length > 1 ? "s" : ""} left</span></h2>`;
+    for (const p of wp.players){
+      const who = p.pid === MYPID ? "You" : esc(p.name.split(" ")[0]);
+      html += `<div class="winline"><b>${who}</b> — ${
+        p.guaranteed ? `win${p.pid===MYPID?"":"s"} the week whatever happens 🍾`
+        : `need${p.pid===MYPID?"":"s"} ${esc(p.paths.join(", or "))}${p.more ? `, or ${p.more} other way${p.more > 1 ? "s" : ""}` : ""}`
+      }${!p.guaranteed && p.allShared ? ` <span class="faint">(would share the pot)</span>` : ""}</div>`;
+    }
+    html += `<p class="faint" style="margin-top:6px">Anyone not listed can't win this week.</p></div>`;
+  }
   html += whoPredictedHtml(gw);
   el.innerHTML = html;
 }
