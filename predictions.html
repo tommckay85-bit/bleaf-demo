@@ -1221,6 +1221,10 @@ function pickMsg(cat, builtins, seed, subs, pid){
   for (const [k,v] of Object.entries(subs || {})) msg = msg.replaceAll("{"+k+"}", String(v));
   return msg;
 }
+// Overlays are funny once, annoying on every refresh: remember showings on
+// this device (survives reloads and home-screen app relaunches).
+function seenTimes(key){ try { return +localStorage.getItem(key) || 0; } catch(e){ return 0; } }
+function bumpSeen(key){ try { localStorage.setItem(key, seenTimes(key) + 1); } catch(e){} }
 // Show an overlay once the listed ones have been dismissed.
 function showAfter(blockers, id){
   const blocked = () => blockers.some(b => !$(b).classList.contains("hidden"));
@@ -1249,8 +1253,9 @@ function maybeShowWinner(){
   const g = done[0];
   const me = (g.winners || []).find(w => w.pid === MYPID);
   if (!me) return;
-  const key = "win_seen_gw" + g.gw;
-  try { if (sessionStorage.getItem(key)) return; sessionStorage.setItem(key, "1"); } catch(e){}
+  const key = "lefuck_seen_win_" + MYPID + "_gw" + g.gw;
+  if (seenTimes(key) >= 2) return; // twice is a lap of honour, three's showing off
+  bumpSeen(key);
   const amount = g.payouts?.[MYPID] != null ? fmtMoney(g.payouts[MYPID]) : "the pot";
   $("win-title").textContent = `GW ${g.gw} · you won the week`;
   $("win-msg").textContent = pickMsg("winner", WINNER_MSGS, g.gw, { name: ME.name, pts: me.pts, amount }, MYPID);
@@ -1271,8 +1276,9 @@ function maybeShowRoast(){
   const maxRank = Math.max(...g.table.map(r=>r.rank||1));
   if (maxRank <= 1) return; // everyone tied — nobody to roast
   const losers = g.table.filter(r=>r.rank===maxRank);
-  const key = "roast_seen_gw" + g.gw;
-  try { if (sessionStorage.getItem(key)) return; sessionStorage.setItem(key, "1"); } catch(e){}
+  const key = "lefuck_seen_roast_" + MYPID + "_gw" + g.gw;
+  if (seenTimes(key) >= 2) return;
+  bumpSeen(key);
   const names = losers.map(l=>l.name).join(" & ");
   const isMe = losers.some(l=>l.pid===MYPID);
   $("roast-title").textContent = isMe ? `GW ${g.gw}: it's you. It's actually you.` : `GW ${g.gw} loser of the week`;
@@ -1357,6 +1363,11 @@ function maybeShowStillIn(){
   stillInChecked = true;
   const st = stillInStatus(gw);
   if (!st) return;
+  // once per verdict per gameweek on this device — the STILL IN card can show
+  // once and the LOSER card once more if they later drop out, never on every refresh
+  const key = "lefuck_seen_stillin_" + MYPID + "_gw" + gw + "_" + (st.stillIn ? "in" : "out");
+  if (seenTimes(key) >= 1) return;
+  bumpSeen(key);
   const card = $("stillin-card");
   const subs = { name: ME.name, pts: st.myPts, best: st.myBest, leader: st.leader.name,
                  leaderpts: st.leader.pts, left: st.left, s: st.left === 1 ? "" : "s" };
@@ -1865,15 +1876,15 @@ function renderAdmin(){
         </select></div>
     </div>
     <p class="faint" style="margin-bottom:10px">${mpid
-      ? `Personal lines for <b>${esc(PLAYERS[mpid].name)}</b> — when any exist for a category they <b>replace</b> the standard rotation for them alone. Leave a box empty to fall back to the defaults.`
-      : `League-wide lines — one per line, they join the built-in rotation for everyone without personal ones.`}
+      ? `Personal lines for <b>${esc(PLAYERS[mpid].name)}</b> — <b>one message per line, up to 5</b>; they rotate week by week and <b>replace</b> the standard rotation for them alone. Leave a box empty to fall back to the defaults.`
+      : `League-wide lines — one message per line; they join the built-in rotation for everyone without personal ones.`}
       Placeholders: <code>{name}</code> <code>{pts}</code>; still-in/out also take <code>{best}</code> <code>{leader}</code> <code>{leaderpts}</code> <code>{left}</code>; winner also takes <code>{amount}</code>.
       ${customised.length ? `Personalised so far: <b>${esc(customised.join(", "))}</b>.` : ""}</p>
     <div class="grid2">
-      <div class="field"><label>🏆 Winner congrats</label><textarea id="msg-winner" rows="4">${esc((mscope.winner||[]).join("\n"))}</textarea></div>
-      <div class="field"><label>🥄 Weekly loser roast</label><textarea id="msg-loser" rows="4">${esc((mscope.loser||[]).join("\n"))}</textarea></div>
-      <div class="field"><label>⚽ Still in it</label><textarea id="msg-stillin" rows="4">${esc((mscope.stillin||[]).join("\n"))}</textarea></div>
-      <div class="field"><label>💀 Out mid-week (LOSER!)</label><textarea id="msg-out" rows="4">${esc((mscope.out||[]).join("\n"))}</textarea></div>
+      <div class="field"><label>🏆 Winner congrats</label><textarea id="msg-winner" rows="5" placeholder="One message per line — they rotate">${esc((mscope.winner||[]).join("\n"))}</textarea></div>
+      <div class="field"><label>🥄 Weekly loser roast</label><textarea id="msg-loser" rows="5" placeholder="One message per line — they rotate">${esc((mscope.loser||[]).join("\n"))}</textarea></div>
+      <div class="field"><label>⚽ Still in it</label><textarea id="msg-stillin" rows="5" placeholder="One message per line — they rotate">${esc((mscope.stillin||[]).join("\n"))}</textarea></div>
+      <div class="field"><label>💀 Out mid-week (LOSER!)</label><textarea id="msg-out" rows="5" placeholder="One message per line — they rotate">${esc((mscope.out||[]).join("\n"))}</textarea></div>
     </div>
     <button class="btn btn-primary" style="margin-top:10px" onclick="saveMsgs()">Save ${mpid?`${esc(PLAYERS[mpid].name)}'s`:"league"} messages</button></div>`;
 
@@ -2095,7 +2106,8 @@ function copyCode(pid, name){
 }
 let adminMsgPid = "";
 async function saveMsgs(){
-  const parse = id => $(id).value.split("\n").map(s=>s.trim()).filter(Boolean).slice(0,30).map(s=>s.slice(0,300));
+  const cap = adminMsgPid ? 5 : 30; // personal pools rotate up to 5 lines
+  const parse = id => $(id).value.split("\n").map(s=>s.trim()).filter(Boolean).slice(0,cap).map(s=>s.slice(0,300));
   const lines = { winner: parse("msg-winner"), loser: parse("msg-loser"),
                   stillin: parse("msg-stillin"), out: parse("msg-out") };
   if (adminMsgPid && PLAYERS[adminMsgPid]){
