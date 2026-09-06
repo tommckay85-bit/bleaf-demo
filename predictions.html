@@ -892,8 +892,14 @@ function fixtureResult(gw, f){
 // live provisional tables only — finalising, eliminations and the banter
 // verdicts always wait for full time (fixtureResult).
 function liveScore(f){
-  return (!f.finished && f.hs !== null && f.hs !== undefined && kickedOffLive(f))
-    ? { h:+f.hs, a:+f.as, live:true } : null;
+  if (f.finished || !kickedOffLive(f)) return null;
+  if (f.hs !== null && f.hs !== undefined) return { h:+f.hs, a:+f.as, live:true };
+  // FPL takes a few minutes after kickoff to mark a game started — until it
+  // does, a game past its kickoff time is live at 0-0 (3h cap so a postponed
+  // fixture with a stale kickoff never counts)
+  if (f.kickoff && Date.now() - Date.parse(f.kickoff) < 3 * 3600 * 1000)
+    return { h: 0, a: 0, live: true, presumed: true };
+  return null;
 }
 function fixtureResultLive(gw, f){ return fixtureResult(gw, f) || liveScore(f); }
 // ---- weekend race: score-change history + points timeline ----
