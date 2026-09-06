@@ -673,7 +673,7 @@ function startSubscriptions(){
   DB.collection("config").doc("settings").onSnapshot(d => {
     const c = d.exists ? d.data() : {};
     CONFIG = { result: c.result ?? DEFAULT_POINTS.result, exact: c.exact ?? DEFAULT_POINTS.exact,
-               stake: c.stake ?? DEFAULT_STAKE };
+               stake: c.stake ?? DEFAULT_STAKE, liveProxy: c.liveProxy || "" };
     if (ME) renderAll();
   });
   DB.collection("gameweeks").onSnapshot(snap => {
