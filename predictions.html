@@ -730,10 +730,51 @@ async function refreshFeed(force){
       const fo = $("facts-overlay");
       if (factsFid && fo && !fo.classList.contains("hidden")) showFacts(factsFid);
       if (curTab === "week" && viewGw !== null) loadHistory(viewGw, true);
+      // the GitHub feed can be behind the fast lane — re-overlay proxy data
+      if (CONFIG.liveProxy && Date.now() - lastProxyAt < 60 * 1000) refreshLiveProxy();
     }
   } catch(e){}
 }
-setInterval(() => { if (!document.hidden) refreshFeed(); }, 30 * 1000); // only fetches while a gameweek is live
+setInterval(() => { if (!document.hidden) refreshFeed(); }, 15 * 1000); // only fetches while a gameweek is live
+
+// Fast lane: when the admin has set a live-score proxy (a Cloudflare Worker
+// fronting the FPL fixtures API — see README), poll it directly every 12s and
+// merge scores/minutes/facts straight into the feed. The GitHub feed stays
+// the source of truth for everything else (teams, history, fallback).
+let lastProxyAt = 0;
+async function refreshLiveProxy(){
+  const url = CONFIG.liveProxy;
+  if (!url || !FEED || !ME || document.hidden || !feedIsLive()) return;
+  try {
+    const r = await fetch(url + (url.includes("?") ? "&" : "?") + "t=" + Date.now());
+    if (!r.ok) return;
+    const raw = await r.json();
+    if (!Array.isArray(raw)) return;
+    lastProxyAt = Date.now();
+    const keep = ["goals_scored","own_goals","red_cards","penalties_missed","penalties_saved"];
+    let changed = false;
+    for (const rf of raw){
+      const f = FEED.fixtures.find(x => x.id === rf.id);
+      if (!f) continue;
+      const fin = !!(rf.finished || rf.finished_provisional);
+      const stats = (rf.stats || []).filter(s => keep.includes(s.identifier))
+        .map(s => ({ k: s.identifier, h: s.h, a: s.a }))
+        .filter(s => (s.h||[]).length + (s.a||[]).length > 0);
+      if (f.hs !== rf.team_h_score || f.as !== rf.team_a_score || f.min !== rf.minutes ||
+          f.finished !== fin || JSON.stringify(f.stats||[]) !== JSON.stringify(stats)){
+        f.hs = rf.team_h_score; f.as = rf.team_a_score; f.min = rf.minutes; f.finished = fin;
+        if (stats.length) f.stats = stats; else delete f.stats;
+        changed = true;
+      }
+    }
+    if (changed){
+      renderChrome(); renderAll();
+      const fo = $("facts-overlay");
+      if (factsFid && fo && !fo.classList.contains("hidden")) showFacts(factsFid);
+    }
+  } catch(e){}
+}
+setInterval(refreshLiveProxy, 12 * 1000);
 
 // ---- manual refresh: header button + pull-to-refresh ----
 // The home-screen app runs standalone with no browser reload control, and an
@@ -1804,7 +1845,10 @@ function renderAdmin(){
       <div class="field"><label>Stake per player (£)</label><input type="number" id="cfg-stake" value="${CONFIG.stake}" min="0" step="0.5"></div>
       <button class="btn btn-primary" onclick="saveConfig()">Save</button>
     </div>
-    <p class="faint">Changes apply to any week not yet finalised. Finalised weeks keep the points and stake they were scored with. The stake can also be overridden for a single week in Gameweek control.</p></div>`;
+    <div class="field" style="margin-top:10px"><label>Live score proxy URL (optional)</label>
+      <input type="url" id="cfg-proxy" value="${esc(CONFIG.liveProxy||"")}" placeholder="https://your-worker.workers.dev — see the README">
+    </div>
+    <p class="faint">Changes apply to any week not yet finalised. Finalised weeks keep the points and stake they were scored with. The stake can also be overridden for a single week in Gameweek control. The proxy (a free Cloudflare Worker, setup in the README) makes live scores near-instant — leave blank to rely on the standard feed.</p></div>`;
 
   /* banter messages */
   const mpid = adminMsgPid && PLAYERS[adminMsgPid] ? adminMsgPid : "";
@@ -2000,8 +2044,9 @@ function adminMsg(text, cls="ok"){
 async function saveConfig(){
   const result = Math.max(0,+$("cfg-result").value||0), exact = Math.max(0,+$("cfg-exact").value||0);
   const stake = Math.max(0, round2(+$("cfg-stake").value||0));
-  await DB.collection("config").doc("settings").set({ result, exact, stake }, { merge:true });
-  adminMsg(`Settings saved — result ${result} pts, exact ${exact} pts, stake ${fmtMoney(stake)} per player.`);
+  const liveProxy = ($("cfg-proxy")?.value || "").trim();
+  await DB.collection("config").doc("settings").set({ result, exact, stake, liveProxy }, { merge:true });
+  adminMsg(`Settings saved — result ${result} pts, exact ${exact} pts, stake ${fmtMoney(stake)} per player${liveProxy?", live proxy on":""}.`);
 }
 async function setPlayer(pid, patch){
   await DB.collection("players").doc(pid).set(patch, { merge:true });
