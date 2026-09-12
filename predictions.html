@@ -185,11 +185,11 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 .subrow .sub-r{width:54px;flex-shrink:0;text-align:right;white-space:nowrap;font-size:10.5px}
 .subrow.ft .ssc{color:var(--ink-dim)}
 .subrow.live .sub-l{color:var(--green);animation:livepulse 1.6s ease-in-out infinite}
-/* prediction chips in the sub-line, coloured like the lozenges */
-.subrow .mypk{border-radius:7px;padding:1px 0;font-weight:700}
-.subrow .mypk.pk-exact{background:linear-gradient(160deg,#ffe589 0%,#ffd24a 45%,#e8a825 100%);color:#241703}
-.subrow .mypk.pk-ok{background:var(--green);color:#07130c}
-.subrow .mypk.pk-bad{background:var(--red);color:#1c060b}
+/* prediction digits in the sub-line, coloured like the lozenge scheme */
+.subrow .mypk{font-weight:700}
+.subrow .mypk.pk-exact{color:var(--gold);text-shadow:0 0 6px rgba(255,213,74,.5)}
+.subrow .mypk.pk-ok{color:var(--green)}
+.subrow .mypk.pk-bad{color:var(--red)}
 .subrow .mypk.pk-none{color:var(--ink-faint)}
 /* the big boxes carrying the real score: pulse while live, calm at FT */
 .predgrid input.pk-livebox{color:var(--green);-webkit-text-fill-color:var(--green);opacity:1;border-color:var(--steel-dim);animation:livepulse 1.6s ease-in-out infinite}
