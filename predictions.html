@@ -1920,7 +1920,26 @@ function renderBoard(){
   const months = [...new Set(Object.values(GAMEWEEKS).filter(g=>g.finalized&&g.monthKey).map(g=>g.monthKey))].sort();
   const sel = el.dataset.month || "";
   const rows = seasonAgg(sel || null);
-  let html = `<div class="panel"><h2>Leaderboard
+  let html = "";
+  // season-pulse strip: my standing in the race that actually pays out
+  const meIdx = rows.findIndex(r => r.pid === MYPID);
+  if (meIdx >= 0 && rows.length > 1 && !sel){
+    const me = rows[meIdx];
+    const lead = meIdx === 0;
+    const rival = lead ? rows[1] : rows[0];
+    const sign = lead ? "+" : "−";
+    const winGap = Math.abs(me.wins - rival.wins);
+    const gap = winGap ? `${sign}${winGap} <small>win${winGap === 1 ? "" : "s"}</small>`
+                       : `${sign}${Math.abs(me.pts - rival.pts)} <small>pts</small>`;
+    const net = moneyAgg().find(r => r.pid === MYPID)?.net ?? 0;
+    html += `<div class="panel pulsestrip">
+      <div class="pcell"><div class="pv" style="color:var(--gold)">${me.wins} 🏆</div><div class="pk">weekly wins</div></div>
+      <div class="pcell"><div class="pv">${ordinal(meIdx + 1)} <small>/ ${rows.length}</small></div><div class="pk">season position</div></div>
+      <div class="pcell"><div class="pv" style="color:${lead ? "var(--green)" : "var(--red)"}">${gap}</div><div class="pk">${lead ? "clear of" : "behind"} ${esc(rival.name.split(" ")[0])}</div></div>
+      <div class="pcell"><div class="pv" style="color:${net > 0 ? "var(--green)" : net < 0 ? "var(--red)" : "var(--ink)"}">${net > 0 ? "+" : net < 0 ? "−" : ""}${fmtMoney(Math.abs(net))}</div><div class="pk">net this period</div></div>
+    </div>`;
+  }
+  html += `<div class="panel"><h2>Leaderboard
       <select onchange="$('tab-board').dataset.month=this.value;renderBoard()" style="margin-left:auto">
         <option value="">Whole season</option>
         ${months.map(m=>`<option value="${m}" ${m===sel?"selected":""}>${monthLabel(m)}</option>`).join("")}
