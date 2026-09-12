@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-12T15:11:51Z",
+  "updated": "2026-09-12T15:12:28Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -169,6 +169,7 @@
     "456": "J.Ramsey",
     "460": "Willock",
     "464": "Wissa",
+    "167": "Delap",
     "480": "Gibbs-White",
     "483": "Ndoye",
     "542": "E.Le Fée",
@@ -1114,9 +1115,21 @@
       "h": 2,
       "a": 18,
       "hs": 0,
-      "as": 0,
-      "min": 45,
-      "finished": false
+      "as": 1,
+      "min": 47,
+      "finished": false,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 167
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 32,
@@ -1126,7 +1139,7 @@
       "a": 4,
       "hs": 1,
       "as": 1,
-      "min": 45,
+      "min": 48,
       "finished": false,
       "stats": [
         {
@@ -1154,7 +1167,7 @@
       "a": 11,
       "hs": 1,
       "as": 2,
-      "min": 45,
+      "min": 52,
       "finished": false,
       "stats": [
         {
@@ -1182,7 +1195,7 @@
       "a": 12,
       "hs": 1,
       "as": 2,
-      "min": 45,
+      "min": 47,
       "finished": false,
       "stats": [
         {
@@ -1224,7 +1237,7 @@
       "a": 10,
       "hs": 0,
       "as": 0,
-      "min": 49,
+      "min": 54,
       "finished": false
     },
     {
