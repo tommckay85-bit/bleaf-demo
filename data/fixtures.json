@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-12T15:36:53Z",
+  "updated": "2026-09-12T15:37:29Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -108,6 +108,7 @@
     "15": "Ødegaard",
     "26": "Havertz",
     "37": "Lindelöf",
+    "52": "Alysson",
     "54": "Gomes",
     "68": "Tavernier",
     "69": "Scott",
@@ -1114,14 +1115,19 @@
       "kickoff": "2026-09-12T14:00:00Z",
       "h": 2,
       "a": 18,
-      "hs": 0,
+      "hs": 1,
       "as": 1,
-      "min": 70,
+      "min": 75,
       "finished": false,
       "stats": [
         {
           "k": "goals_scored",
-          "h": [],
+          "h": [
+            {
+              "value": 1,
+              "element": 52
+            }
+          ],
           "a": [
             {
               "value": 1,
@@ -1139,7 +1145,7 @@
       "a": 4,
       "hs": 2,
       "as": 2,
-      "min": 68,
+      "min": 71,
       "finished": false,
       "stats": [
         {
@@ -1171,7 +1177,7 @@
       "a": 11,
       "hs": 2,
       "as": 2,
-      "min": 72,
+      "min": 76,
       "finished": false,
       "stats": [
         {
@@ -1203,7 +1209,7 @@
       "a": 12,
       "hs": 1,
       "as": 2,
-      "min": 67,
+      "min": 73,
       "finished": false,
       "stats": [
         {
@@ -1245,7 +1251,7 @@
       "a": 10,
       "hs": 0,
       "as": 0,
-      "min": 75,
+      "min": 79,
       "finished": false
     },
     {
