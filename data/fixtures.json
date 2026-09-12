@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-12T20:17:45Z",
+  "updated": "2026-09-12T20:18:22Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -104,9 +104,11 @@
     }
   },
   "players": {
+    "1": "Raya",
     "12": "Saka",
     "15": "Ødegaard",
     "26": "Havertz",
+    "452": "Bruno G.",
     "37": "Lindelöf",
     "52": "Alysson",
     "54": "Gomes",
@@ -1287,9 +1289,41 @@
       "h": 20,
       "a": 1,
       "hs": 0,
-      "as": 0,
-      "min": 54,
-      "finished": false
+      "as": 1,
+      "min": 59,
+      "finished": false,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 452
+            }
+          ]
+        },
+        {
+          "k": "penalties_saved",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 1
+            }
+          ]
+        },
+        {
+          "k": "penalties_missed",
+          "h": [
+            {
+              "value": 1,
+              "element": 542
+            }
+          ],
+          "a": []
+        }
+      ]
     },
     {
       "id": 38,
