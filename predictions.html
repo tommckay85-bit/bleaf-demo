@@ -179,7 +179,7 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
    status left (FT / ● live), score digits centred under their boxes,
    points marker flush right. Upcoming games just show the grey kickoff. */
 .subrow{display:flex;align-items:center;gap:5px;margin-top:2px;font-size:11px}
-.subrow .sub-l{flex:1;text-align:left;color:var(--ink-faint);white-space:nowrap}
+.subrow .sub-l{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;text-align:left;color:var(--ink-faint);white-space:nowrap}
 .subrow .ssc{width:44px;text-align:center;font-weight:700;flex-shrink:0}
 .subrow .sdash{color:var(--ink-faint)}
 .subrow .sub-r{width:54px;flex-shrink:0;text-align:right;white-space:nowrap;font-size:10.5px}
@@ -217,8 +217,10 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
   .crest-sm{width:13px;height:13px}
   .crest{width:22px;height:22px}
   .predgrid .ko{font-size:10px}
-  .subrow{font-size:10px;gap:3px}
+  .subrow{font-size:10px;gap:2px}
+  .subrow .sub-l{font-size:9.5px}
   .subrow .ssc{width:34px}
+  .subrow .sdash{font-size:8px}
   .subrow .sub-r{width:38px;font-size:10px}
   .strow{font-size:9px}
   .strow .stmid{width:82px}
