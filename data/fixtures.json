@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-12T14:31:35Z",
+  "updated": "2026-09-12T14:32:11Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -138,6 +138,7 @@
     "569": "Gonzalo",
     "570": "Palacios",
     "279": "Ajayi",
+    "286": "Belloumi",
     "287": "Millar",
     "586": "Mendy",
     "305": "Davis",
@@ -1112,7 +1113,7 @@
       "a": 18,
       "hs": 0,
       "as": 0,
-      "min": 23,
+      "min": 29,
       "finished": false
     },
     {
@@ -1123,7 +1124,7 @@
       "a": 4,
       "hs": 0,
       "as": 0,
-      "min": 25,
+      "min": 30,
       "finished": false
     },
     {
@@ -1133,8 +1134,8 @@
       "h": 6,
       "a": 11,
       "hs": 1,
-      "as": 0,
-      "min": 25,
+      "as": 1,
+      "min": 30,
       "finished": false,
       "stats": [
         {
@@ -1145,7 +1146,12 @@
               "element": 40
             }
           ],
-          "a": []
+          "a": [
+            {
+              "value": 1,
+              "element": 286
+            }
+          ]
         }
       ]
     },
@@ -1157,7 +1163,7 @@
       "a": 12,
       "hs": 1,
       "as": 1,
-      "min": 24,
+      "min": 30,
       "finished": false,
       "stats": [
         {
@@ -1185,7 +1191,7 @@
       "a": 10,
       "hs": 0,
       "as": 0,
-      "min": 26,
+      "min": 31,
       "finished": false
     },
     {
