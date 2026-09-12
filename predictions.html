@@ -74,12 +74,11 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 .btn-gold:hover{background:linear-gradient(180deg,#ffe289,#eda634)}
 .btn-saved{background:linear-gradient(180deg,#34d98a,#1c9e5d);border-color:#2fd184;color:#04160c;box-shadow:0 2px 8px rgba(49,232,140,.3),inset 0 1px 0 rgba(255,255,255,.3)}
 .btn-saved:hover{background:linear-gradient(180deg,#41e296,#23ad68)}
-.livedot{color:var(--green);font-weight:700;animation:livepulse 1.6s ease-in-out infinite}
-@keyframes livepulse{50%{opacity:.45}}
+.livedot{color:var(--green);font-weight:700}
 /* match-facts popup */
 .facts-card{background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--steel);border-radius:12px;padding:18px;width:min(340px,92vw);box-shadow:0 18px 50px rgba(0,0,0,.6)}
 .facts-title{font-family:"Oswald";font-size:13px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;text-align:center;color:var(--ink-dim);margin-bottom:10px}
-.facts-title.live{color:var(--green);animation:livepulse 1.6s ease-in-out infinite}
+.facts-title.live{color:var(--green)}
 .facts-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:10px;border-bottom:1px solid var(--line)}
 .facts-team{display:flex;flex-direction:column;align-items:center;gap:4px;font-family:"Oswald";font-size:14px;color:var(--steel);min-width:64px}
 .facts-score{font-family:"Oswald";font-size:30px;font-weight:700;text-align:center}
@@ -97,6 +96,11 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 .race-me{fill:var(--ink);font-weight:700}
 .winline{font-size:13px;margin:7px 0;color:var(--ink-dim);line-height:1.45}
 .winline b{color:var(--ink)}
+.pulsestrip{display:flex;justify-content:space-between;text-align:center;gap:4px;padding:10px 8px}
+.pulsestrip .pcell{flex:1;min-width:0}
+.pulsestrip .pv{font-family:"Oswald";font-size:19px;font-weight:700;color:var(--ink);white-space:nowrap}
+.pulsestrip .pv small{font-size:11px;color:var(--ink-faint);font-weight:600}
+.pulsestrip .pk{font-size:8.5px;letter-spacing:.06em;color:var(--ink-faint);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .btn-danger{background:transparent;border-color:var(--red);color:var(--red)}
 .btn-sm{padding:4px 10px;font-size:12px}
 .btn:disabled{opacity:.45;cursor:not-allowed}
@@ -153,14 +157,14 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 .lock{font-size:11px;color:var(--ink-faint)}
 
 /* ---------- predictions grid (sticky own column) ---------- */
-.predgrid-wrap{overflow-x:auto;position:relative}
+.predgrid-wrap{overflow:auto;position:relative;max-height:68vh}
 .predgrid{width:auto;border-collapse:separate;border-spacing:0}
 .predgrid th,.predgrid td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
-.predgrid th{font-family:"Oswald";font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-dim);border-bottom:2px solid var(--line);max-width:72px;overflow:hidden;text-overflow:ellipsis}
+.predgrid th{position:sticky;top:0;z-index:3;background:var(--panel);box-shadow:0 2px 6px rgba(0,0,0,.35);font-family:"Oswald";font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-dim);border-bottom:2px solid var(--line);max-width:72px;overflow:hidden;text-overflow:ellipsis}
 .predgrid tr:last-child td{border-bottom:none}
 .predgrid td:not(.colme){min-width:52px}
 .predgrid .colme{position:sticky;left:0;z-index:2;background:var(--panel);border-right:2px solid var(--steel);text-align:left;width:248px;min-width:248px;max-width:248px}
-.predgrid th.colme{text-align:right;max-width:248px}
+.predgrid th.colme{text-align:right;max-width:248px;z-index:4}
 .myrow{display:flex;align-items:center;gap:5px;justify-content:flex-end}
 .tcode{font-family:"Oswald";font-size:13px;font-weight:600;color:var(--steel);width:54px;flex-shrink:0;display:flex;align-items:center;gap:4px}
 .tcode.ta{justify-content:flex-end}
@@ -184,11 +188,12 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 .subrow .sdash{color:var(--ink-faint);width:9px;text-align:center;flex-shrink:0}
 .myrow .dash{width:9px;text-align:center;flex-shrink:0}
 .subrow .sub-r{width:54px;flex-shrink:0;text-align:right;white-space:nowrap;font-size:10.5px}
+.res-zero{opacity:.45;font-weight:600}
 .subrow.ft .ssc{color:var(--ink-dim)}
 /* status line above the score boxes: FT muted, live clock pulsing */
 .strow{margin:0 0 1px;font-size:10px}
 .strow .stmid{width:107px;text-align:center;flex-shrink:0;color:var(--ink-faint);font-weight:700}
-.strow .stmid.live{color:var(--green);animation:livepulse 1.6s ease-in-out infinite}
+.strow .stmid.live{color:var(--green)}
 /* prediction digits in the sub-line, coloured like the lozenge scheme */
 .subrow .mypk{font-weight:700}
 .subrow .mypk.pk-exact{color:var(--gold);text-shadow:0 0 6px rgba(255,213,74,.5)}
@@ -196,7 +201,7 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 .subrow .mypk.pk-bad{color:var(--red)}
 .subrow .mypk.pk-none{color:var(--ink-faint)}
 /* the big boxes carrying the real score: pulse while live, calm at FT */
-.predgrid input.pk-livebox{color:var(--green);-webkit-text-fill-color:var(--green);opacity:1;border-color:var(--steel-dim);animation:livepulse 1.6s ease-in-out infinite}
+.predgrid input.pk-livebox{color:var(--green);-webkit-text-fill-color:var(--green);opacity:1;border-color:rgba(49,232,140,.55);box-shadow:0 0 6px rgba(49,232,140,.18)}
 .predgrid input.pk-ftbox{color:var(--ink);-webkit-text-fill-color:var(--ink);opacity:1}
 .predgrid th.colme .hstat{text-align:right}
 .tick-ok{color:var(--green);font-weight:700;font-size:15px}
@@ -1179,6 +1184,7 @@ function scoreWeek(gw, opts){
 
 /* ---------- money ---------- */
 const round2 = n => Math.round(n * 100) / 100;
+function ordinal(n){ const s = ["th","st","nd","rd"], v = n % 100; return n + (s[(v-20)%10] || s[v] || s[0]); }
 function fmtMoney(n){
   const v = round2(n);
   return "£" + (Number.isInteger(v) ? v : v.toFixed(2));
@@ -1596,6 +1602,24 @@ function renderPredict(){
     const pot = gwDoc?.finalized && gwDoc.pot !== undefined ? gwDoc.pot : gwMoney(gw, scoreWeek(gw)).pot;
     potChip = `<span class="potchip" title="winner takes the lot — joint first splits it">💰 ${fmtMoney(pot)} pot</span>`;
   }
+  // week-pulse strip: how am I doing, at a glance
+  if (fx.length && locked && !out){
+    const sRows = scoreWeek(gw, { live: true });
+    const meRow = sRows.find(r => r.pid === MYPID);
+    if (meRow && sRows.length > 1){
+      const leader = sRows[0];
+      const lead = meRow.rank === 1;
+      const rival = lead ? sRows.find(r => r.pid !== MYPID) : leader;
+      const diff = lead ? meRow.pts - (rival?.pts ?? 0) : leader.pts - meRow.pts;
+      const left = fx.filter(f => !fixtureResult(gw, f)).length;
+      html += `<div class="panel pulsestrip">
+        <div class="pcell"><div class="pv" style="color:var(--gold)">${meRow.pts}</div><div class="pk">your pts</div></div>
+        <div class="pcell"><div class="pv">${ordinal(meRow.rank)} <small>/ ${sRows.length}</small></div><div class="pk">position</div></div>
+        <div class="pcell"><div class="pv" style="color:${lead ? "var(--green)" : "var(--red)"}">${lead ? "+" + diff : "−" + diff}</div><div class="pk">${lead ? "clear of " + esc((rival?.name || "").split(" ")[0]) : "behind " + esc(leader.name.split(" ")[0])}</div></div>
+        <div class="pcell"><div class="pv">${left} <small>· ${left * CONFIG.exact} pts</small></div><div class="pk">${left === 1 ? "game" : "games"} left · up for grabs</div></div>
+      </div>`;
+    }
+  }
   html += `<div class="panel"><div class="panelhead"><h2>Your predictions <span class="tag">${CONFIG.result} pts result · ${CONFIG.exact} pts exact score</span></h2>${potChip}</div>`;
   if (!fx.length) html += `<p class="muted">No fixtures in this gameweek.</p>`;
   else {
@@ -1641,10 +1665,10 @@ function renderPredict(){
       const eff = res || lv; // live scores colour picks/points provisionally
       let marker = "", myCls = "";
       if (eff){
-        if (pk.h === undefined || pk.h === null) marker = `<span class="res-bad" title="no pick">✗ +0</span>`;
+        if (pk.h === undefined || pk.h === null) marker = `<span class="res-bad res-zero" title="no pick">✗</span>`;
         else if (+pk.h === eff.h && +pk.a === eff.a){ marker = `<span class="res-exact">★ +${ptsCfg.exact}</span>`; myCls = "pk-exact"; }
         else if (Math.sign(pk.h - pk.a) === Math.sign(eff.h - eff.a)){ marker = `<span class="res-ok">✓ +${ptsCfg.result}</span>`; myCls = "pk-ok"; }
-        else { marker = `<span class="res-bad">✗ +0</span>`; myCls = "pk-bad"; }
+        else { marker = `<span class="res-bad res-zero">✗</span>`; myCls = "pk-bad"; }
       }
       // once a game kicks off the big boxes carry the REAL score (live or FT)
       // and the prediction drops to the sub-line as a coloured chip
