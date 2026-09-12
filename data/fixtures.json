@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-12T15:57:38Z",
+  "updated": "2026-09-12T15:58:14Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -150,6 +150,7 @@
     "313": "Clarke",
     "316": "Emersonn",
     "320": "Akpom",
+    "640": "Flemming",
     "330": "Bogle",
     "335": "Stach",
     "346": "Calvert-Lewin",
@@ -1151,7 +1152,7 @@
       "a": 4,
       "hs": 2,
       "as": 2,
-      "min": 88,
+      "min": 90,
       "finished": false,
       "stats": [
         {
@@ -1214,8 +1215,8 @@
       "h": 8,
       "a": 12,
       "hs": 2,
-      "as": 2,
-      "min": 88,
+      "as": 3,
+      "min": 90,
       "finished": false,
       "stats": [
         {
@@ -1238,6 +1239,10 @@
             {
               "value": 1,
               "element": 316
+            },
+            {
+              "value": 1,
+              "element": 640
             }
           ]
         },
@@ -1262,7 +1267,7 @@
       "hs": 0,
       "as": 0,
       "min": 90,
-      "finished": false
+      "finished": true
     },
     {
       "id": 37,
