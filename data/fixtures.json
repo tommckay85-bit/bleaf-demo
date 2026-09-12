@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-12T14:16:56Z",
+  "updated": "2026-09-12T14:17:33Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -127,6 +127,7 @@
     "161": "Lavia",
     "165": "João Pedro",
     "204": "Mitchell",
+    "588": "Khalaili",
     "643": "Chilwell",
     "229": "Tarkowski",
     "236": "Dewsbury-Hall",
@@ -1111,7 +1112,7 @@
       "a": 18,
       "hs": 0,
       "as": 0,
-      "min": 8,
+      "min": 15,
       "finished": false
     },
     {
@@ -1122,7 +1123,7 @@
       "a": 4,
       "hs": 0,
       "as": 0,
-      "min": 9,
+      "min": 13,
       "finished": false
     },
     {
@@ -1133,7 +1134,7 @@
       "a": 11,
       "hs": 1,
       "as": 0,
-      "min": 9,
+      "min": 14,
       "finished": false,
       "stats": [
         {
@@ -1154,10 +1155,22 @@
       "kickoff": "2026-09-12T14:00:00Z",
       "h": 8,
       "a": 12,
-      "hs": 0,
+      "hs": 1,
       "as": 0,
-      "min": 9,
-      "finished": false
+      "min": 15,
+      "finished": false,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [
+            {
+              "value": 1,
+              "element": 588
+            }
+          ],
+          "a": []
+        }
+      ]
     },
     {
       "id": 35,
@@ -1167,7 +1180,7 @@
       "a": 10,
       "hs": 0,
       "as": 0,
-      "min": 10,
+      "min": 13,
       "finished": false
     },
     {
