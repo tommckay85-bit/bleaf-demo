@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-12T14:37:04Z",
+  "updated": "2026-09-12T14:37:41Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -126,6 +126,7 @@
     "156": "Neto",
     "161": "Lavia",
     "165": "João Pedro",
+    "153": "Disasi",
     "204": "Mitchell",
     "588": "Khalaili",
     "643": "Chilwell",
@@ -1113,7 +1114,7 @@
       "a": 18,
       "hs": 0,
       "as": 0,
-      "min": 29,
+      "min": 34,
       "finished": false
     },
     {
@@ -1123,9 +1124,21 @@
       "h": 3,
       "a": 4,
       "hs": 0,
-      "as": 0,
-      "min": 30,
-      "finished": false
+      "as": 1,
+      "min": 34,
+      "finished": false,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 94
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 33,
@@ -1134,8 +1147,8 @@
       "h": 6,
       "a": 11,
       "hs": 1,
-      "as": 1,
-      "min": 30,
+      "as": 2,
+      "min": 35,
       "finished": false,
       "stats": [
         {
@@ -1148,7 +1161,7 @@
           ],
           "a": [
             {
-              "value": 1,
+              "value": 2,
               "element": 286
             }
           ]
@@ -1163,7 +1176,7 @@
       "a": 12,
       "hs": 1,
       "as": 1,
-      "min": 30,
+      "min": 33,
       "finished": false,
       "stats": [
         {
@@ -1180,6 +1193,16 @@
               "element": 316
             }
           ]
+        },
+        {
+          "k": "red_cards",
+          "h": [
+            {
+              "value": 1,
+              "element": 153
+            }
+          ],
+          "a": []
         }
       ]
     },
@@ -1191,7 +1214,7 @@
       "a": 10,
       "hs": 0,
       "as": 0,
-      "min": 31,
+      "min": 34,
       "finished": false
     },
     {
