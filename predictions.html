@@ -184,7 +184,10 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 .subrow .sdash{color:var(--ink-faint)}
 .subrow .sub-r{width:54px;flex-shrink:0;text-align:right;white-space:nowrap;font-size:10.5px}
 .subrow.ft .ssc{color:var(--ink-dim)}
-.subrow.live .sub-l{color:var(--green);animation:livepulse 1.6s ease-in-out infinite}
+/* status line above the score boxes: FT muted, live clock pulsing */
+.strow{margin:0 0 1px;font-size:10px}
+.strow .stmid{width:107px;text-align:center;flex-shrink:0;color:var(--ink-faint);font-weight:700}
+.strow .stmid.live{color:var(--green);animation:livepulse 1.6s ease-in-out infinite}
 /* prediction digits in the sub-line, coloured like the lozenge scheme */
 .subrow .mypk{font-weight:700}
 .subrow .mypk.pk-exact{color:var(--gold);text-shadow:0 0 6px rgba(255,213,74,.5)}
@@ -217,6 +220,8 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
   .subrow{font-size:10px;gap:3px}
   .subrow .ssc{width:34px}
   .subrow .sub-r{width:38px;font-size:10px}
+  .strow{font-size:9px}
+  .strow .stmid{width:82px}
   .predgrid .ptsbadge{padding:2px 0;width:34px;font-size:10.5px}
   .pstar{font-size:10px;line-height:10px;top:-9px}
 }
@@ -1643,17 +1648,21 @@ function renderPredict(){
       const bH = swap ? eff.h : vH, bA = swap ? eff.a : vA;
       const boxCls = swap ? (res ? "pk-ftbox" : "pk-livebox") : myCls;
       const chip = v => `<span class="ssc mypk ${myCls || "pk-none"}">${v ?? "–"}</span>`;
+      // status (FT / live clock) sits centred ABOVE the score boxes
+      const statusRow = swap
+        ? `<div class="subrow strow"><span class="sub-l"></span><span class="stmid ${res?"":"live"}">${res ? "FT" : "● " + liveLabel(f)}</span><span class="sub-r"></span></div>`
+        : "";
       html += `<tr class="${res?"done":""}">
         <td class="colme" title="${esc(teamName(f.h))} v ${esc(teamName(f.a))}">
-          <div class="myrow">
+          ${statusRow}<div class="myrow">
             <span class="tcode">${crestSm(f.h)}${esc(teamShort(f.h))}</span>
             <input type="number" min="0" max="15" id="pk-${f.id}-h" class="${boxCls}" value="${bH}" ${locked||out?"disabled":""}>
             <span class="dash">–</span>
             <input type="number" min="0" max="15" id="pk-${f.id}-a" class="${boxCls}" value="${bA}" ${locked||out?"disabled":""}>
             <span class="tcode ta">${esc(teamShort(f.a))}${crestSm(f.a)}</span>
           </div>
-          ${res ? `<div class="subrow ft tapscore" onclick="showFacts(${f.id})"><span class="sub-l">FT</span>${chip(pk.h)}<span class="sdash">–</span>${chip(pk.a)}<span class="sub-r">${marker}</span></div>`
-            : lv ? `<div class="subrow live tapscore" onclick="showFacts(${f.id})"><span class="sub-l">● ${liveLabel(f)}</span>${chip(pk.h)}<span class="sdash">–</span>${chip(pk.a)}<span class="sub-r">${marker}</span></div>`
+          ${res ? `<div class="subrow ft tapscore" onclick="showFacts(${f.id})"><span class="sub-l">Prediction</span>${chip(pk.h)}<span class="sdash">–</span>${chip(pk.a)}<span class="sub-r">${marker}</span></div>`
+            : lv ? `<div class="subrow live tapscore" onclick="showFacts(${f.id})"><span class="sub-l">Prediction</span>${chip(pk.h)}<span class="sdash">–</span>${chip(pk.a)}<span class="sub-r">${marker}</span></div>`
             : `<span class="ko">${fmtKo(f.kickoff)}</span>`}
         </td>`;
       for (const [pid] of others){
