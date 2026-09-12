@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-12T15:41:48Z",
+  "updated": "2026-09-12T15:42:25Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -130,6 +130,7 @@
     "165": "João Pedro",
     "153": "Disasi",
     "204": "Mitchell",
+    "222": "Strand Larsen",
     "588": "Khalaili",
     "643": "Chilwell",
     "229": "Tarkowski",
@@ -1117,7 +1118,7 @@
       "a": 18,
       "hs": 1,
       "as": 1,
-      "min": 75,
+      "min": 80,
       "finished": false,
       "stats": [
         {
@@ -1145,7 +1146,7 @@
       "a": 4,
       "hs": 2,
       "as": 2,
-      "min": 71,
+      "min": 78,
       "finished": false,
       "stats": [
         {
@@ -1177,7 +1178,7 @@
       "a": 11,
       "hs": 2,
       "as": 2,
-      "min": 76,
+      "min": 82,
       "finished": false,
       "stats": [
         {
@@ -1207,14 +1208,18 @@
       "kickoff": "2026-09-12T14:00:00Z",
       "h": 8,
       "a": 12,
-      "hs": 1,
+      "hs": 2,
       "as": 2,
-      "min": 73,
+      "min": 78,
       "finished": false,
       "stats": [
         {
           "k": "goals_scored",
           "h": [
+            {
+              "value": 1,
+              "element": 222
+            },
             {
               "value": 1,
               "element": 588
@@ -1251,7 +1256,7 @@
       "a": 10,
       "hs": 0,
       "as": 0,
-      "min": 79,
+      "min": 84,
       "finished": false
     },
     {
