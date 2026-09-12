@@ -181,7 +181,8 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 .subrow{display:flex;align-items:center;gap:5px;margin-top:2px;font-size:11px}
 .subrow .sub-l{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;text-align:left;color:var(--ink-faint);white-space:nowrap}
 .subrow .ssc{width:44px;text-align:center;font-weight:700;flex-shrink:0}
-.subrow .sdash{color:var(--ink-faint)}
+.subrow .sdash{color:var(--ink-faint);width:9px;text-align:center;flex-shrink:0}
+.myrow .dash{width:9px;text-align:center;flex-shrink:0}
 .subrow .sub-r{width:54px;flex-shrink:0;text-align:right;white-space:nowrap;font-size:10.5px}
 .subrow.ft .ssc{color:var(--ink-dim)}
 /* status line above the score boxes: FT muted, live clock pulsing */
@@ -217,10 +218,11 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
   .crest-sm{width:13px;height:13px}
   .crest{width:22px;height:22px}
   .predgrid .ko{font-size:10px}
-  .subrow{font-size:10px;gap:2px}
-  .subrow .sub-l{font-size:9.5px}
+  .subrow{font-size:10px;gap:3px}
   .subrow .ssc{width:34px}
-  .subrow .sdash{font-size:8px}
+  .subrow .sdash{width:8px}
+  .myrow .dash{width:8px}
+  .lbl-x{display:none}
   .subrow .sub-r{width:38px;font-size:10px}
   .strow{font-size:9px}
   .strow .stmid{width:82px}
@@ -1663,8 +1665,8 @@ function renderPredict(){
             <input type="number" min="0" max="15" id="pk-${f.id}-a" class="${boxCls}" value="${bA}" ${locked||out?"disabled":""}>
             <span class="tcode ta">${esc(teamShort(f.a))}${crestSm(f.a)}</span>
           </div>
-          ${res ? `<div class="subrow ft tapscore" onclick="showFacts(${f.id})"><span class="sub-l">Prediction</span>${chip(pk.h)}<span class="sdash">–</span>${chip(pk.a)}<span class="sub-r">${marker}</span></div>`
-            : lv ? `<div class="subrow live tapscore" onclick="showFacts(${f.id})"><span class="sub-l">Prediction</span>${chip(pk.h)}<span class="sdash">–</span>${chip(pk.a)}<span class="sub-r">${marker}</span></div>`
+          ${res ? `<div class="subrow ft tapscore" onclick="showFacts(${f.id})"><span class="sub-l">Pred<span class="lbl-x">iction</span></span>${chip(pk.h)}<span class="sdash">–</span>${chip(pk.a)}<span class="sub-r">${marker}</span></div>`
+            : lv ? `<div class="subrow live tapscore" onclick="showFacts(${f.id})"><span class="sub-l">Pred<span class="lbl-x">iction</span></span>${chip(pk.h)}<span class="sdash">–</span>${chip(pk.a)}<span class="sub-r">${marker}</span></div>`
             : `<span class="ko">${fmtKo(f.kickoff)}</span>`}
         </td>`;
       for (const [pid] of others){
