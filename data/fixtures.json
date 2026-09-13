@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-13T14:14:07Z",
+  "updated": "2026-09-13T14:14:44Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -131,6 +131,7 @@
     "156": "Neto",
     "161": "Lavia",
     "165": "João Pedro",
+    "492": "Awoniyi",
     "153": "Disasi",
     "204": "Mitchell",
     "222": "Strand Larsen",
@@ -1348,8 +1349,8 @@
       "h": 7,
       "a": 5,
       "hs": 0,
-      "as": 1,
-      "min": 49,
+      "as": 2,
+      "min": 53,
       "finished": false,
       "stats": [
         {
@@ -1359,8 +1360,22 @@
             {
               "value": 1,
               "element": 138
+            },
+            {
+              "value": 1,
+              "element": 605
             }
           ]
+        },
+        {
+          "k": "red_cards",
+          "h": [
+            {
+              "value": 1,
+              "element": 492
+            }
+          ],
+          "a": []
         }
       ]
     },
