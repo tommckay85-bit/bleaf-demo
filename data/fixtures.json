@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-13T15:59:05Z",
+  "updated": "2026-09-13T15:59:42Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -167,6 +167,7 @@
     "384": "Donnarumma",
     "388": "Guéhi",
     "391": "Gvardiol",
+    "398": "Foden",
     "399": "Cherki",
     "411": "Haaland",
     "426": "B.Fernandes",
@@ -1401,8 +1402,20 @@
       "a": 15,
       "hs": 0,
       "as": 0,
-      "min": 23,
-      "finished": false
+      "min": 28,
+      "finished": false,
+      "stats": [
+        {
+          "k": "red_cards",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 398
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 40,
