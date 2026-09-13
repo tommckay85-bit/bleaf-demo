@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-13T14:53:39Z",
+  "updated": "2026-09-13T14:54:16Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -124,6 +124,7 @@
     "116": "Dunk",
     "123": "Hinshelwood",
     "124": "Groß",
+    "129": "Ayari",
     "138": "Kostoulas",
     "504": "Vuskovic",
     "605": "Yalcouyé",
@@ -1350,8 +1351,8 @@
       "h": 7,
       "a": 5,
       "hs": 0,
-      "as": 4,
-      "min": 88,
+      "as": 5,
+      "min": 90,
       "finished": false,
       "stats": [
         {
@@ -1365,6 +1366,10 @@
             {
               "value": 1,
               "element": 124
+            },
+            {
+              "value": 1,
+              "element": 129
             },
             {
               "value": 1,
