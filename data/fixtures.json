@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-13T14:43:58Z",
+  "updated": "2026-09-13T14:44:34Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -121,6 +121,7 @@
     "98": "Janelt",
     "106": "Thiago",
     "115": "De Cuyper",
+    "116": "Dunk",
     "123": "Hinshelwood",
     "124": "Groß",
     "138": "Kostoulas",
@@ -1349,14 +1350,18 @@
       "h": 7,
       "a": 5,
       "hs": 0,
-      "as": 3,
-      "min": 79,
+      "as": 4,
+      "min": 85,
       "finished": false,
       "stats": [
         {
           "k": "goals_scored",
           "h": [],
           "a": [
+            {
+              "value": 1,
+              "element": 116
+            },
             {
               "value": 1,
               "element": 124
