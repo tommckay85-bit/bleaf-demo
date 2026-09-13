@@ -447,6 +447,18 @@
           "finished": false
         }
       ]
+    },
+    {
+      "t": 1789320638,
+      "changes": [
+        {
+          "id": 39,
+          "hs": 0,
+          "as": 1,
+          "min": 90,
+          "finished": true
+        }
+      ]
     }
   ]
 }
