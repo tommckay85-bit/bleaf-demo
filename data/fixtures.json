@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-14T13:02:15Z",
+  "updated": "2026-09-14T20:51:58Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -159,6 +159,7 @@
     "640": "Flemming",
     "330": "Bogle",
     "335": "Stach",
+    "336": "Okafor",
     "346": "Calvert-Lewin",
     "367": "Gakpo",
     "368": "Szoboszlai",
@@ -177,7 +178,9 @@
     "453": "Barnes",
     "454": "Elanga",
     "456": "J.Ramsey",
+    "459": "L.Miley",
     "460": "Willock",
+    "461": "Touré",
     "464": "Wissa",
     "167": "Delap",
     "480": "Gibbs-White",
@@ -1433,10 +1436,45 @@
       "kickoff": "2026-09-14T19:00:00Z",
       "h": 13,
       "a": 17,
-      "hs": null,
-      "as": null,
-      "min": 0,
-      "finished": false
+      "hs": 4,
+      "as": 1,
+      "min": 90,
+      "finished": false,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [
+            {
+              "value": 1,
+              "element": 330
+            },
+            {
+              "value": 1,
+              "element": 336
+            },
+            {
+              "value": 1,
+              "element": 346
+            }
+          ],
+          "a": [
+            {
+              "value": 1,
+              "element": 461
+            }
+          ]
+        },
+        {
+          "k": "own_goals",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 459
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 41,
