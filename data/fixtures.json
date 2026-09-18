@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-18T20:23:48Z",
+  "updated": "2026-09-18T20:24:25Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -119,7 +119,6 @@
     "88": "Kayode",
     "94": "Schade",
     "98": "Janelt",
-    "105": "Anthony",
     "106": "Thiago",
     "115": "De Cuyper",
     "116": "Dunk",
@@ -1483,22 +1482,10 @@
       "kickoff": "2026-09-18T19:00:00Z",
       "h": 4,
       "a": 6,
-      "hs": 1,
+      "hs": 0,
       "as": 0,
-      "min": 64,
-      "finished": false,
-      "stats": [
-        {
-          "k": "goals_scored",
-          "h": [
-            {
-              "value": 1,
-              "element": 105
-            }
-          ],
-          "a": []
-        }
-      ]
+      "min": 59,
+      "finished": false
     },
     {
       "id": 48,
