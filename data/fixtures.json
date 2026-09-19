@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-19T15:28:27Z",
+  "updated": "2026-09-19T15:29:04Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -161,6 +161,7 @@
     "305": "Davis",
     "306": "Greaves",
     "313": "Clarke",
+    "315": "Fatawu",
     "316": "Emersonn",
     "320": "Akpom",
     "640": "Flemming",
@@ -1565,7 +1566,7 @@
       "a": 1,
       "hs": 3,
       "as": 0,
-      "min": 63,
+      "min": 69,
       "finished": false,
       "stats": [
         {
@@ -1596,7 +1597,7 @@
       "a": 12,
       "hs": 1,
       "as": 0,
-      "min": 64,
+      "min": 68,
       "finished": false,
       "stats": [
         {
@@ -1608,6 +1609,16 @@
             }
           ],
           "a": []
+        },
+        {
+          "k": "red_cards",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 315
+            }
+          ]
         }
       ]
     },
@@ -1619,7 +1630,7 @@
       "a": 11,
       "hs": 2,
       "as": 0,
-      "min": 61,
+      "min": 66,
       "finished": false,
       "stats": [
         {
