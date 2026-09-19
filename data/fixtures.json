@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-19T15:36:23Z",
+  "updated": "2026-09-19T15:37:00Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -158,6 +158,7 @@
     "287": "Millar",
     "572": "Tzolakis",
     "586": "Mendy",
+    "617": "Cho",
     "305": "Davis",
     "306": "Greaves",
     "313": "Clarke",
@@ -1566,7 +1567,7 @@
       "a": 1,
       "hs": 3,
       "as": 0,
-      "min": 69,
+      "min": 74,
       "finished": false,
       "stats": [
         {
@@ -1597,7 +1598,7 @@
       "a": 12,
       "hs": 1,
       "as": 0,
-      "min": 68,
+      "min": 75,
       "finished": false,
       "stats": [
         {
@@ -1629,8 +1630,8 @@
       "h": 17,
       "a": 11,
       "hs": 2,
-      "as": 0,
-      "min": 66,
+      "as": 1,
+      "min": 70,
       "finished": false,
       "stats": [
         {
@@ -1645,7 +1646,12 @@
               "element": 460
             }
           ],
-          "a": []
+          "a": [
+            {
+              "value": 1,
+              "element": 617
+            }
+          ]
         },
         {
           "k": "penalties_saved",
