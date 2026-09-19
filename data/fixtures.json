@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-19T13:27:02Z",
+  "updated": "2026-09-19T13:27:38Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -191,6 +191,7 @@
     "480": "Gibbs-White",
     "483": "Ndoye",
     "491": "Igor Jesus",
+    "519": "Gallagher",
     "536": "Reinildo",
     "542": "E.Le Fée",
     "551": "N.Angulo",
@@ -1518,14 +1519,19 @@
       "kickoff": "2026-09-19T11:30:00Z",
       "h": 19,
       "a": 2,
-      "hs": 0,
+      "hs": 1,
       "as": 3,
-      "min": 81,
+      "min": 87,
       "finished": false,
       "stats": [
         {
           "k": "goals_scored",
-          "h": [],
+          "h": [
+            {
+              "value": 1,
+              "element": 519
+            }
+          ],
           "a": [
             {
               "value": 1,
