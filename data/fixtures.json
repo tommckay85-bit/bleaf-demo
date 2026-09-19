@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-19T13:14:14Z",
+  "updated": "2026-09-19T13:14:50Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -113,7 +113,6 @@
     "52": "Alysson",
     "53": "Manzambi",
     "54": "Gomes",
-    "166": "N.Jackson",
     "68": "Tavernier",
     "69": "Scott",
     "70": "Kluivert",
@@ -1518,8 +1517,8 @@
       "h": 19,
       "a": 2,
       "hs": 0,
-      "as": 2,
-      "min": 76,
+      "as": 1,
+      "min": 61,
       "finished": false,
       "stats": [
         {
@@ -1529,10 +1528,6 @@
             {
               "value": 1,
               "element": 53
-            },
-            {
-              "value": 1,
-              "element": 166
             }
           ]
         }
