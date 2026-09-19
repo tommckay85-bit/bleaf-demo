@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-19T12:23:37Z",
+  "updated": "2026-09-19T12:24:13Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -111,6 +111,7 @@
     "452": "Bruno G.",
     "37": "Lindelöf",
     "52": "Alysson",
+    "53": "Manzambi",
     "54": "Gomes",
     "68": "Tavernier",
     "69": "Scott",
@@ -1516,9 +1517,21 @@
       "h": 19,
       "a": 2,
       "hs": 0,
-      "as": 0,
-      "min": 39,
-      "finished": false
+      "as": 1,
+      "min": 45,
+      "finished": false,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 53
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 42,
