@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-19T17:43:27Z",
+  "updated": "2026-09-19T17:44:03Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -139,6 +139,7 @@
     "156": "Neto",
     "161": "Lavia",
     "165": "João Pedro",
+    "176": "Dasilva",
     "492": "Awoniyi",
     "153": "Disasi",
     "204": "Mitchell",
@@ -1682,9 +1683,21 @@
       "h": 18,
       "a": 7,
       "hs": 0,
-      "as": 0,
-      "min": 50,
-      "finished": false
+      "as": 1,
+      "min": 55,
+      "finished": false,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 176
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 49,
