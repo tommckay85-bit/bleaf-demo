@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-19T15:18:41Z",
+  "updated": "2026-09-19T15:19:18Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -133,6 +133,7 @@
     "138": "Kostoulas",
     "504": "Vuskovic",
     "605": "Yalcouyé",
+    "639": "Andrés",
     "40": "Rogers",
     "154": "Palmer",
     "156": "Neto",
@@ -1562,9 +1563,9 @@
       "kickoff": "2026-09-19T14:00:00Z",
       "h": 5,
       "a": 1,
-      "hs": 2,
+      "hs": 3,
       "as": 0,
-      "min": 53,
+      "min": 58,
       "finished": false,
       "stats": [
         {
@@ -1577,6 +1578,10 @@
             {
               "value": 1,
               "element": 138
+            },
+            {
+              "value": 1,
+              "element": 639
             }
           ],
           "a": []
@@ -1589,16 +1594,16 @@
       "kickoff": "2026-09-19T14:00:00Z",
       "h": 9,
       "a": 12,
-      "hs": 1,
+      "hs": 2,
       "as": 0,
-      "min": 51,
+      "min": 58,
       "finished": false,
       "stats": [
         {
           "k": "goals_scored",
           "h": [
             {
-              "value": 1,
+              "value": 2,
               "element": 249
             }
           ],
@@ -1614,7 +1619,7 @@
       "a": 11,
       "hs": 2,
       "as": 0,
-      "min": 51,
+      "min": 55,
       "finished": false,
       "stats": [
         {
