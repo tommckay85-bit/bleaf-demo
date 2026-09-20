@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-20T16:50:15Z",
+  "updated": "2026-09-20T16:50:52Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -183,6 +183,7 @@
     "398": "Foden",
     "399": "Cherki",
     "411": "Haaland",
+    "419": "Martinez",
     "426": "B.Fernandes",
     "427": "Mbeumo",
     "439": "Šeško",
@@ -1784,8 +1785,20 @@
       "a": 16,
       "hs": 0,
       "as": 0,
-      "min": 55,
-      "finished": false
+      "min": 63,
+      "finished": false,
+      "stats": [
+        {
+          "k": "own_goals",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 419
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 51,
