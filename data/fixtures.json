@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-20T17:19:59Z",
+  "updated": "2026-09-20T17:20:35Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -186,6 +186,7 @@
     "419": "Martinez",
     "426": "B.Fernandes",
     "427": "Mbeumo",
+    "428": "Cunha",
     "439": "Šeško",
     "445": "Thiaw",
     "449": "Hall",
@@ -1784,10 +1785,20 @@
       "h": 10,
       "a": 16,
       "hs": 1,
-      "as": 0,
-      "min": 87,
+      "as": 1,
+      "min": 90,
       "finished": false,
       "stats": [
+        {
+          "k": "goals_scored",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 428
+            }
+          ]
+        },
         {
           "k": "own_goals",
           "h": [],
