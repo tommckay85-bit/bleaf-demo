@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-20T13:13:43Z",
+  "updated": "2026-09-20T13:14:20Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -175,6 +175,7 @@
     "368": "Szoboszlai",
     "377": "Munoz",
     "379": "Isak",
+    "155": "Enzo",
     "384": "Donnarumma",
     "388": "Guéhi",
     "391": "Gvardiol",
@@ -202,6 +203,7 @@
     "536": "Reinildo",
     "542": "E.Le Fée",
     "551": "N.Angulo",
+    "552": "Brobbey",
     "553": "Isidor"
   },
   "fixtures": [
@@ -1707,7 +1709,7 @@
       "a": 14,
       "hs": 0,
       "as": 0,
-      "min": 6,
+      "min": 11,
       "finished": false
     },
     {
@@ -1718,7 +1720,7 @@
       "a": 8,
       "hs": 0,
       "as": 0,
-      "min": 6,
+      "min": 12,
       "finished": false
     },
     {
@@ -1727,10 +1729,27 @@
       "kickoff": "2026-09-20T13:00:00Z",
       "h": 15,
       "a": 20,
-      "hs": 0,
+      "hs": 1,
       "as": 0,
-      "min": 6,
-      "finished": false
+      "min": 11,
+      "finished": false,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [
+            {
+              "value": 1,
+              "element": 155
+            }
+          ],
+          "a": [
+            {
+              "value": 1,
+              "element": 552
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 50,
