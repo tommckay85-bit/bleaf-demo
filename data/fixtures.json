@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-10T15:40:14Z",
+  "updated": "2026-10-10T15:40:51Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -112,6 +112,7 @@
     "452": "Bruno G.",
     "37": "Lindelöf",
     "41": "Buendía",
+    "45": "McGinn",
     "52": "Alysson",
     "53": "Manzambi",
     "54": "Gomes",
@@ -1856,14 +1857,18 @@
       "kickoff": "2026-10-10T14:00:00Z",
       "h": 2,
       "a": 4,
-      "hs": 1,
+      "hs": 2,
       "as": 1,
-      "min": 72,
+      "min": 77,
       "finished": false,
       "stats": [
         {
           "k": "goals_scored",
           "h": [
+            {
+              "value": 1,
+              "element": 45
+            },
             {
               "value": 1,
               "element": 166
@@ -1886,7 +1891,7 @@
       "a": 3,
       "hs": 5,
       "as": 1,
-      "min": 75,
+      "min": 80,
       "finished": false,
       "stats": [
         {
@@ -1922,7 +1927,7 @@
       "a": 10,
       "hs": 0,
       "as": 1,
-      "min": 76,
+      "min": 80,
       "finished": false,
       "stats": [
         {
@@ -1945,7 +1950,7 @@
       "a": 5,
       "hs": 0,
       "as": 1,
-      "min": 75,
+      "min": 79,
       "finished": false,
       "stats": [
         {
