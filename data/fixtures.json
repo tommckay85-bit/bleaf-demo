@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-10T15:54:52Z",
+  "updated": "2026-10-10T15:55:29Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -139,6 +139,7 @@
     "328": "Struijk",
     "504": "Vuskovic",
     "605": "Yalcouyé",
+    "614": "Hadjam",
     "639": "Andrés",
     "40": "Rogers",
     "101": "Henderson",
@@ -168,6 +169,7 @@
     "572": "Tzolakis",
     "586": "Mendy",
     "617": "Cho",
+    "304": "O'Shea",
     "305": "Davis",
     "306": "Greaves",
     "313": "Clarke",
@@ -1861,7 +1863,7 @@
       "a": 4,
       "hs": 2,
       "as": 2,
-      "min": 86,
+      "min": 90,
       "finished": false,
       "stats": [
         {
@@ -1931,7 +1933,7 @@
       "kickoff": "2026-10-10T14:00:00Z",
       "h": 12,
       "a": 10,
-      "hs": 1,
+      "hs": 2,
       "as": 1,
       "min": 90,
       "finished": false,
@@ -1939,6 +1941,10 @@
         {
           "k": "goals_scored",
           "h": [
+            {
+              "value": 1,
+              "element": 304
+            },
             {
               "value": 1,
               "element": 592
@@ -1960,8 +1966,8 @@
       "h": 20,
       "a": 5,
       "hs": 0,
-      "as": 1,
-      "min": 89,
+      "as": 2,
+      "min": 90,
       "finished": false,
       "stats": [
         {
@@ -1971,6 +1977,10 @@
             {
               "value": 1,
               "element": 115
+            },
+            {
+              "value": 1,
+              "element": 614
             }
           ]
         },
