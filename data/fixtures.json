@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-10T15:15:16Z",
+  "updated": "2026-10-10T15:15:52Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -119,6 +119,7 @@
     "68": "Tavernier",
     "69": "Scott",
     "70": "Kluivert",
+    "79": "Evanilson",
     "86": "Lewis-Potter",
     "88": "Kayode",
     "94": "Schade",
@@ -155,6 +156,7 @@
     "249": "Barry",
     "649": "Maitland-Niles",
     "268": "King",
+    "269": "Sessegnon",
     "569": "Gonzalo",
     "570": "Palacios",
     "279": "Ajayi",
@@ -1855,7 +1857,7 @@
       "a": 4,
       "hs": 1,
       "as": 1,
-      "min": 47,
+      "min": 50,
       "finished": false,
       "stats": [
         {
@@ -1882,8 +1884,8 @@
       "h": 6,
       "a": 3,
       "hs": 3,
-      "as": 0,
-      "min": 47,
+      "as": 1,
+      "min": 53,
       "finished": false,
       "stats": [
         {
@@ -1902,7 +1904,12 @@
               "element": 165
             }
           ],
-          "a": []
+          "a": [
+            {
+              "value": 1,
+              "element": 79
+            }
+          ]
         }
       ]
     },
@@ -1913,9 +1920,21 @@
       "h": 12,
       "a": 10,
       "hs": 0,
-      "as": 0,
-      "min": 51,
-      "finished": false
+      "as": 1,
+      "min": 55,
+      "finished": false,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 269
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 60,
@@ -1924,9 +1943,21 @@
       "h": 20,
       "a": 5,
       "hs": 0,
-      "as": 0,
-      "min": 49,
-      "finished": false
+      "as": 1,
+      "min": 55,
+      "finished": false,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 115
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 59,
