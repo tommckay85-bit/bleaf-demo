@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-10T14:15:02Z",
+  "updated": "2026-10-10T14:15:39Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -119,12 +119,12 @@
     "68": "Tavernier",
     "69": "Scott",
     "70": "Kluivert",
-    "566": "Silva",
     "86": "Lewis-Potter",
     "88": "Kayode",
     "94": "Schade",
     "98": "Janelt",
     "100": "Carvalho",
+    "102": "Yarmoliuk",
     "105": "Anthony",
     "106": "Thiago",
     "115": "De Cuyper",
@@ -1853,10 +1853,27 @@
       "kickoff": "2026-10-10T14:00:00Z",
       "h": 2,
       "a": 4,
-      "hs": 0,
-      "as": 0,
-      "min": 8,
-      "finished": false
+      "hs": 1,
+      "as": 1,
+      "min": 13,
+      "finished": false,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [
+            {
+              "value": 1,
+              "element": 166
+            }
+          ],
+          "a": [
+            {
+              "value": 1,
+              "element": 102
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 53,
@@ -1866,7 +1883,7 @@
       "a": 3,
       "hs": 2,
       "as": 0,
-      "min": 8,
+      "min": 13,
       "finished": false,
       "stats": [
         {
@@ -1874,20 +1891,14 @@
           "h": [
             {
               "value": 1,
+              "element": 40
+            },
+            {
+              "value": 1,
               "element": 101
             }
           ],
           "a": []
-        },
-        {
-          "k": "own_goals",
-          "h": [],
-          "a": [
-            {
-              "value": 1,
-              "element": 566
-            }
-          ]
         }
       ]
     },
@@ -1899,7 +1910,7 @@
       "a": 10,
       "hs": 0,
       "as": 0,
-      "min": 8,
+      "min": 13,
       "finished": false
     },
     {
@@ -1910,7 +1921,7 @@
       "a": 5,
       "hs": 0,
       "as": 0,
-      "min": 8,
+      "min": 13,
       "finished": false
     },
     {
