@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-10T12:49:15Z",
+  "updated": "2026-10-10T12:49:52Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -168,6 +168,7 @@
     "320": "Akpom",
     "640": "Flemming",
     "330": "Bogle",
+    "332": "Justin",
     "335": "Stach",
     "336": "Okafor",
     "346": "Calvert-Lewin",
@@ -1818,9 +1819,21 @@
       "h": 1,
       "a": 13,
       "hs": 0,
-      "as": 0,
-      "min": 54,
-      "finished": false
+      "as": 1,
+      "min": 59,
+      "finished": false,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 332
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 52,
