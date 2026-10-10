@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-10T14:04:43Z",
+  "updated": "2026-10-10T14:05:19Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -119,6 +119,7 @@
     "68": "Tavernier",
     "69": "Scott",
     "70": "Kluivert",
+    "566": "Silva",
     "86": "Lewis-Potter",
     "88": "Kayode",
     "94": "Schade",
@@ -136,6 +137,7 @@
     "605": "Yalcouyé",
     "639": "Andrés",
     "40": "Rogers",
+    "101": "Henderson",
     "154": "Palmer",
     "156": "Neto",
     "161": "Lavia",
@@ -1851,9 +1853,9 @@
       "kickoff": "2026-10-10T14:00:00Z",
       "h": 2,
       "a": 4,
-      "hs": null,
-      "as": null,
-      "min": 0,
+      "hs": 0,
+      "as": 0,
+      "min": 3,
       "finished": false
     },
     {
@@ -1862,10 +1864,32 @@
       "kickoff": "2026-10-10T14:00:00Z",
       "h": 6,
       "a": 3,
-      "hs": null,
-      "as": null,
-      "min": 0,
-      "finished": false
+      "hs": 1,
+      "as": 0,
+      "min": 3,
+      "finished": false,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [
+            {
+              "value": 1,
+              "element": 101
+            }
+          ],
+          "a": []
+        },
+        {
+          "k": "own_goals",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 566
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 57,
