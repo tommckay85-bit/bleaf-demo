@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-10T15:44:30Z",
+  "updated": "2026-10-10T15:45:07Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -122,6 +122,7 @@
     "70": "Kluivert",
     "79": "Evanilson",
     "86": "Lewis-Potter",
+    "87": "Ajer",
     "88": "Kayode",
     "94": "Schade",
     "98": "Janelt",
@@ -1858,8 +1859,8 @@
       "h": 2,
       "a": 4,
       "hs": 2,
-      "as": 1,
-      "min": 77,
+      "as": 2,
+      "min": 81,
       "finished": false,
       "stats": [
         {
@@ -1877,6 +1878,10 @@
           "a": [
             {
               "value": 1,
+              "element": 87
+            },
+            {
+              "value": 1,
               "element": 102
             }
           ]
@@ -1891,7 +1896,7 @@
       "a": 3,
       "hs": 5,
       "as": 1,
-      "min": 80,
+      "min": 83,
       "finished": false,
       "stats": [
         {
@@ -1927,7 +1932,7 @@
       "a": 10,
       "hs": 0,
       "as": 1,
-      "min": 80,
+      "min": 86,
       "finished": false,
       "stats": [
         {
@@ -1950,7 +1955,7 @@
       "a": 5,
       "hs": 0,
       "as": 1,
-      "min": 79,
+      "min": 84,
       "finished": false,
       "stats": [
         {
