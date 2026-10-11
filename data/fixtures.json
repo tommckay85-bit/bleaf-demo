@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-11T14:03:49Z",
+  "updated": "2026-10-11T14:04:25Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -151,7 +151,6 @@
     "492": "Awoniyi",
     "153": "Disasi",
     "204": "Mitchell",
-    "213": "Lerma",
     "214": "Kamada",
     "222": "Strand Larsen",
     "588": "Khalaili",
@@ -2054,11 +2053,11 @@
           "h": [
             {
               "value": 1,
-              "element": 213
+              "element": 214
             },
             {
               "value": 1,
-              "element": 214
+              "element": 588
             }
           ],
           "a": [
