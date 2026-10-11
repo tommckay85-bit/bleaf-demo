@@ -340,12 +340,40 @@ tr.pos2 td{background:linear-gradient(90deg,rgba(154,167,181,.10),transparent 70
 .bigface.ring-gold{filter:drop-shadow(0 0 2px rgba(255,255,255,.4)) drop-shadow(0 0 20px rgba(255,215,94,.7)) drop-shadow(0 10px 16px rgba(0,0,0,.6))}
 .facebadge{position:absolute;right:-14px;bottom:-2px;font-size:40px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,.6))}
 .ava{object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6));cursor:zoom-in}
+.predgrid td.tapcell{cursor:pointer}
+.predgrid td.tapcell input:disabled{pointer-events:none}
 .deadwrap{position:relative;display:block;width:fit-content;margin:0 auto 2px}
 .deadwrap .ava{margin:0;filter:grayscale(.6) brightness(.85) drop-shadow(0 1px 2px rgba(0,0,0,.6))}
 th.colme .deadwrap{margin:0 0 2px auto}
 .deadwrap.inl{display:inline-block;vertical-align:middle;margin:0 7px 0 0}
 .deadwrap::before,.deadwrap::after{content:"";position:absolute;left:50%;top:50%;width:120%;height:4px;background:var(--red);border-radius:2px;box-shadow:0 0 2px rgba(0,0,0,.9);transform:translate(-50%,-50%) rotate(45deg);pointer-events:none;z-index:2}
 .deadwrap::after{transform:translate(-50%,-50%) rotate(-45deg)}
+/* last man standing */
+.lmstoggle{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600;margin-right:auto}
+.lmsgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px}
+.lmsfix{display:flex;gap:6px}
+.lmsteam{flex:1;display:flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:8px 10px;color:var(--ink);font:inherit;font-size:13px;cursor:pointer;text-align:left;min-width:0}
+.lmsteam b{font-family:"Oswald";letter-spacing:.04em}
+.lmsteam small{color:var(--ink-dim);margin-left:auto;white-space:nowrap}
+.lmsteam.on{border-color:var(--gold);background:#2b2110;box-shadow:0 0 0 1px var(--gold) inset}
+.lmsteam.on b{color:var(--gold)}
+.lmsteam:disabled{opacity:.35;cursor:not-allowed;text-decoration:line-through}
+.lmsrow{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.lmsrow:last-of-type{border-bottom:0}
+.lmsrow.me .lmsname b{color:var(--gold)}
+.lmsrow.lmsout .lmsname b{color:var(--ink-dim);text-decoration:line-through}
+.lmsname{display:flex;align-items:center;gap:6px}
+.lmsname .ptsbadge{font-size:11px}
+.lmschips{display:flex;flex-wrap:wrap;gap:4px}
+.lmschip{font-size:11.5px;font-weight:600;border-radius:6px;padding:3px 7px;border:1px solid var(--line);color:var(--ink-dim)}
+.lmschip.lms-win{background:#12291c;border-color:var(--green);color:#8fd8ac}
+.lmschip.lms-dead{background:#331a17;border-color:var(--red);color:#eba49c}
+.lmschip.lms-pend{background:#0c1a2e;border-color:var(--steel-dim);color:#8fe3ff}
+.lmswin{text-align:center;border-color:var(--gold)}
+.lmswin .lbl{color:var(--gold);font-weight:700;letter-spacing:.12em;font-size:12px;margin-top:6px}
+.lmswin .name{font-family:"Oswald";font-size:34px;font-weight:700;text-transform:uppercase;margin:2px 0 6px}
+.lmswinface{font-size:60px;line-height:1}
+.lmswinface .ava-h2h{height:110px;max-width:120px}
 .headzoom{position:fixed;inset:0;z-index:90;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer}
 .hzwrap{display:block;will-change:transform}
 .hzwrap.deadwrap{margin:0}
@@ -405,7 +433,9 @@ input,select{box-shadow:inset 0 2px 5px rgba(0,0,0,.3)}
   .topbar{padding:12px 10px}
   .whoami{font-size:11.5px}
   .tabs{padding:0 4px}
-  .tabs button{padding:11px 3px;font-size:12px;letter-spacing:.04em}
+  .tabs{padding:0 4px}
+  .tabs button{padding:11px 2px;font-size:12px;letter-spacing:.02em}
+  .tabs:has(button[data-tab=lms]:not(.hidden)):has(button[data-tab=admin]:not(.hidden)) button{font-size:11px;letter-spacing:0}
   .banner{padding:9px 11px;font-size:12.5px}
   th,td{padding:7px 6px;font-size:12.5px}
   .gwnav .gwlabel{font-size:16px;min-width:140px}
@@ -525,6 +555,7 @@ code{background:var(--bg2);border:1px solid var(--line);border-radius:4px;paddin
     <button data-tab="predict" class="on" onclick="setTab('predict')">Predictions</button>
     <button data-tab="week" onclick="setTab('week')">This Week</button>
     <button data-tab="board" onclick="setTab('board')">Leaderboard</button>
+    <button data-tab="lms" class="hidden" onclick="setTab('lms')">Last Man</button>
     <button data-tab="admin" class="hidden" onclick="setTab('admin')">Admin</button>
   </div>
   <div class="wrap">
@@ -532,6 +563,7 @@ code{background:var(--bg2);border:1px solid var(--line);border-radius:4px;paddin
     <div id="tab-predict"></div>
     <div id="tab-week" class="hidden"></div>
     <div id="tab-board" class="hidden"></div>
+    <div id="tab-lms" class="hidden"></div>
     <div id="tab-admin" class="hidden"></div>
   </div>
 </div>
@@ -804,6 +836,12 @@ function startSubscriptions(){
     const m = d.exists ? d.data() : {};
     MSGS = { winner: m.winner||[], loser: m.loser||[], stillin: m.stillin||[], out: m.out||[],
              perPlayer: m.perPlayer||{} };
+  });
+  DB.collection("config").doc("lms").onSnapshot(d => {
+    const x = d.exists ? d.data() : {};
+    LMS = { enabled: !!x.enabled, buyIn: x.buyIn ?? 5, round: x.round || null, history: x.history || [] };
+    watchLmsPicks();
+    if (ME){ renderChrome(); renderAll(); }
   });
   DB.collection("avatars").onSnapshot(snap => {
     AVATARS = {};
@@ -2446,11 +2484,282 @@ function showCardPreview(gw, card){
   $("card-overlay").classList.remove("hidden");
 }
 
+/* ---------- Last Man Standing side pot ---------- */
+// Admin-run, off by default (config/lms). Each week every survivor picks one
+// team to WIN; a team can only be used once per round. Draw, defeat or no pick
+// by the gameweek deadline = out. If everyone left goes out in the same week,
+// they all survive it. Last one standing takes the pot; the admin then starts
+// a fresh round. Picks live in lmsPicks/{round}_gw{N}_{pid}.
+let LMS = { enabled: false, buyIn: 5, round: null, history: [] };
+let LMS_PICKS = {};       // docId -> { round, gw, pid, team }
+let lmsUnsub = null, lmsWatching = null, lmsAdminStartGw = null;
+function watchLmsPicks(){
+  const rid = LMS.round?.id || null;
+  if (rid === lmsWatching) return;
+  if (lmsUnsub){ lmsUnsub(); lmsUnsub = null; }
+  lmsWatching = rid; LMS_PICKS = {};
+  if (!rid || !DB) return;
+  lmsUnsub = DB.collection("lmsPicks").where("round", "==", rid).onSnapshot(snap => {
+    LMS_PICKS = {}; snap.forEach(d => LMS_PICKS[d.id] = d.data());
+    if (ME) renderAll();
+  }, err => console.warn("lmsPicks not readable (add the lmsPicks rules block)", err));
+}
+function lmsPickOf(pid, gw){
+  const p = LMS_PICKS[`${LMS.round?.id}_gw${gw}_${pid}`];
+  return p && p.team != null ? +p.team : null;
+}
+function lmsTeamFixture(gw, team){
+  return gwFixtures(gw).filter(f => f.h === team || f.a === team)
+    .sort((a,b) => String(a.kickoff).localeCompare(String(b.kickoff)))[0] || null;
+}
+// win | draw | lose | pending | void (team's game moved out of the week: survives)
+function lmsOutcome(gw, team){
+  const f = lmsTeamFixture(gw, team);
+  if (!f) return "void";
+  const res = fixtureResult(gw, f);
+  if (!res) return "pending";
+  const mine = f.h === team ? res.h : res.a, theirs = f.h === team ? res.a : res.h;
+  return mine > theirs ? "win" : mine === theirs ? "draw" : "lose";
+}
+const LMS_DEAD = ["draw", "lose", "nopick"];
+function lmsEntrants(){
+  return (LMS.round?.entrants || []).filter(pid => PLAYERS[pid]);
+}
+function lmsPot(){
+  return round2(lmsEntrants().length * (+LMS.buyIn || 0));
+}
+// Replay the round week by week from its start gameweek.
+function lmsState(){
+  const r = LMS.round;
+  if (!r) return null;
+  const entrants = lmsEntrants();
+  const gws = allGws().filter(g => g >= r.startGw);
+  let alive = [...entrants];
+  const out = {};     // pid -> { gw, team, outcome }
+  const weeks = [];   // { gw, res: {pid: {team, outcome}}, done, reprieve }
+  let winners = null, endGw = null;
+  if (entrants.length >= 2){
+    for (const gw of gws){
+      if (!gwLocked(gw)) break;
+      const res = {};
+      let known = true;
+      for (const pid of alive){
+        const team = lmsPickOf(pid, gw);
+        const outcome = team === null ? "nopick" : lmsOutcome(gw, team);
+        res[pid] = { team, outcome };
+        if (outcome === "pending") known = false;
+      }
+      const wk = { gw, res, done: known, reprieve: false };
+      weeks.push(wk);
+      if (!known) break; // in play — later weeks wait for this one
+      const dead = alive.filter(p => LMS_DEAD.includes(res[p].outcome));
+      if (dead.length && dead.length === alive.length){ wk.reprieve = true; continue; }
+      dead.forEach(p => out[p] = { gw, ...res[p] });
+      alive = alive.filter(p => !dead.includes(p));
+      if (alive.length <= 1){ winners = alive; endGw = gw; break; }
+    }
+  }
+  const pickGw = winners ? null : (gws.find(g => !gwLocked(g)) ?? null);
+  return { entrants, alive, out, weeks, winners, endGw, pickGw, pot: lmsPot() };
+}
+function lmsUsedTeams(pid, exceptGw){
+  const used = {};
+  for (const p of Object.values(LMS_PICKS))
+    if (p.round === LMS.round?.id && p.pid === pid && p.gw !== exceptGw && p.team != null) used[+p.team] = p.gw;
+  return used;
+}
+async function saveLmsPick(gw, team){
+  const st = lmsState();
+  const msg = t => { const m = $("lms-msg"); if (m) m.textContent = t; };
+  if (!st || st.pickGw !== gw || gwLocked(gw)) return msg("Too late — that gameweek has locked.");
+  if (!st.entrants.includes(MYPID) || st.out[MYPID]) return msg("You're not in this round.");
+  if (lmsUsedTeams(MYPID, gw)[team] !== undefined) return msg("You've already used them this round.");
+  if (!lmsTeamFixture(gw, team)) return msg("They don't play this week.");
+  try {
+    await DB.collection("lmsPicks").doc(`${LMS.round.id}_gw${gw}_${MYPID}`).set({
+      round: LMS.round.id, gw, pid: MYPID, name: ME.name, team,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    LMS_PICKS[`${LMS.round.id}_gw${gw}_${MYPID}`] = { round: LMS.round.id, gw, pid: MYPID, team };
+    renderAll();
+  } catch(e){ msg("Couldn't save: " + e.message); }
+}
+const LMS_WORD = { win:"won", draw:"drew", lose:"lost", nopick:"no pick", pending:"playing", void:"postponed — survives" };
+function lmsChip(gw, pick, revealed){
+  if (!revealed) return `<span class="lmschip lms-hidden" title="GW ${gw}">GW${gw} ${pick.team === null ? "—" : "✓"}</span>`;
+  const cls = pick.outcome === "win" || pick.outcome === "void" ? "lms-win" : pick.outcome === "pending" ? "lms-pend" : "lms-dead";
+  return `<span class="lmschip ${cls}" title="GW ${gw}: ${pick.team === null ? "no pick" : esc(teamName(pick.team))} — ${LMS_WORD[pick.outcome]}">GW${gw} ${pick.team === null ? "✗" : esc(teamShort(pick.team))}</span>`;
+}
+// small nudge on the Predictions tab for a survivor who hasn't picked yet
+function lmsNudgeHtml(){
+  if (!LMS.enabled) return "";
+  const st = lmsState();
+  if (!st || st.pickGw === null || !st.entrants.includes(MYPID) || st.out[MYPID]) return "";
+  if (lmsPickOf(MYPID, st.pickGw) !== null) return "";
+  return `<div class="banner warn" style="cursor:pointer" onclick="setTab('lms')">🪓 Last Man Standing: you haven't picked a team for GW ${st.pickGw} yet — <b>pick now ›</b></div>`;
+}
+function renderLms(){
+  const el = $("tab-lms");
+  if (!LMS.enabled){ el.innerHTML = `<div class="panel"><p class="muted">Last Man Standing is switched off.</p></div>`; return; }
+  const r = LMS.round;
+  let html = "";
+  if (!r){
+    el.innerHTML = `<div class="panel"><h2>🪓 Last Man Standing</h2><p class="muted">No round running yet — the admin starts one from the Admin tab.</p></div>${lmsHistoryHtml()}`;
+    return;
+  }
+  const st = lmsState();
+  const n = st.entrants.length;
+  html += `<div class="panel pulsestrip">
+    <div class="pcell"><div class="pv" style="color:var(--gold)">${fmtMoney(st.pot)}</div><div class="pk">side pot</div></div>
+    <div class="pcell"><div class="pv">${st.winners ? st.winners.length : st.alive.length} <small>/ ${n}</small></div><div class="pk">${st.winners ? "winner" : "still standing"}</div></div>
+    <div class="pcell"><div class="pv">${r.no || 1} <small>· GW${r.startGw}+</small></div><div class="pk">round</div></div>
+    <div class="pcell"><div class="pv">${fmtMoney(+LMS.buyIn || 0)}</div><div class="pk">buy-in</div></div>
+  </div>`;
+  if (n < 2) html += `<div class="banner info">Waiting for the admin to add at least two players to this round.</div>`;
+  if (st.winners && st.winners.length){
+    const w = st.winners[0];
+    html += `<div class="panel lmswin"><div class="lmswinface">${avatarImg(w, "ava-h2h") || "👑"}</div>
+      <div class="lbl">🪓 LAST MAN STANDING · GW ${st.endGw}</div>
+      <div class="name">${esc(PLAYERS[w]?.name || "")}</div>
+      <div class="muted">takes the side pot — <b style="color:var(--gold)">${fmtMoney(st.pot)}</b>. Everyone else: get your wallets out for round ${(r.no || 1) + 1}.</div></div>`;
+  }
+  // my pick
+  const meIn = st.entrants.includes(MYPID), meOut = st.out[MYPID];
+  if (meIn && meOut){
+    html += `<div class="banner err">💀 You're out — GW ${meOut.gw}: ${meOut.team === null ? "no pick in time" : `${esc(teamName(meOut.team))} ${LMS_WORD[meOut.outcome]}`}. Spectator mode.</div>`;
+  } else if (meIn && st.pickGw !== null && !st.winners){
+    const gw = st.pickGw, mine = lmsPickOf(MYPID, gw), used = lmsUsedTeams(MYPID, gw);
+    const dl = gwDeadline(gw);
+    html += `<div class="panel"><h2>Your pick · GW ${gw}${dl ? ` <span class="tag">locks ${fmtKo(dl.toISOString())}</span>` : ""}</h2>
+      <p class="faint" style="margin-bottom:10px">Pick one team to <b>win</b>. Draw or defeat and you're out. Each team once per round.${mine !== null ? ` You're on <b style="color:var(--gold)">${esc(teamName(mine))}</b> — tap another to switch.` : ""}</p>
+      <div class="lmsgrid">`;
+    for (const f of gwFixtures(gw)){
+      const btn = (team, other, home) => {
+        const u = used[team];
+        const on = mine === team;
+        return `<button class="lmsteam ${on ? "on" : ""}" ${u !== undefined ? "disabled" : ""} onclick="saveLmsPick(${gw}, ${team})">
+          ${crestSm(team)}<b>${esc(teamShort(team))}</b><small>${u !== undefined ? `used GW${u}` : `${home ? "v" : "@"} ${esc(teamShort(other))}`}</small></button>`;
+      };
+      html += `<div class="lmsfix">${btn(f.h, f.a, true)}${btn(f.a, f.h, false)}</div>`;
+    }
+    html += `</div><div id="lms-msg" class="faint" style="margin-top:8px;color:var(--red)"></div></div>`;
+  } else if (!meIn){
+    html += `<div class="banner info">You're not in this round — speak to the admin if you want in next time.</div>`;
+  }
+  // the field
+  const pickRevealed = gw => gwLocked(gw);
+  const order = [...st.entrants].sort((a,b) => {
+    const oa = st.out[a], ob = st.out[b];
+    if (!oa !== !ob) return oa ? 1 : -1;
+    if (oa && ob && oa.gw !== ob.gw) return ob.gw - oa.gw;
+    return (PLAYERS[a]?.name || "").localeCompare(PLAYERS[b]?.name || "");
+  });
+  html += `<div class="panel"><h2>The field</h2>`;
+  for (const pid of order){
+    const o = st.out[pid];
+    const won = st.winners?.includes(pid);
+    const chips = st.weeks.filter(w => w.res[pid]).map(w => lmsChip(w.gw, w.res[pid], true));
+    if (st.pickGw !== null && !o && !st.winners){
+      const t = lmsPickOf(pid, st.pickGw);
+      chips.push(pickRevealed(st.pickGw) ? lmsChip(st.pickGw, { team: t, outcome: "pending" }, true) : lmsChip(st.pickGw, { team: t }, false));
+    }
+    const status = won ? `<span class="ptsbadge pts-exact">👑 winner</span>`
+      : o ? `<span class="ptsbadge pts-wrong">out GW${o.gw}</span>`
+      : `<span class="ptsbadge pts-result">standing</span>`;
+    html += `<div class="lmsrow ${o ? "lmsout" : ""} ${pid === MYPID ? "me" : ""}">
+      <div class="lmsname">${faceOrDead(pid, "ava-sm", !!o, true)}<b>${esc(pid === MYPID ? "You" : (PLAYERS[pid]?.name || "?"))}</b> ${status}</div>
+      <div class="lmschips">${chips.join("") || '<span class="faint">no picks yet</span>'}</div></div>`;
+  }
+  const rep = st.weeks.filter(w => w.reprieve).map(w => w.gw);
+  html += `${rep.length ? `<p class="faint" style="margin-top:8px">🙏 Everyone left went out in GW ${rep.join(", ")} — so nobody did.</p>` : ""}
+    <p class="faint" style="margin-top:8px">Picks are hidden (✓) until each gameweek's deadline.</p></div>`;
+  html += lmsHistoryHtml();
+  el.innerHTML = html;
+}
+function lmsHistoryHtml(){
+  const h = [...(LMS.history || [])].sort((a,b) => (b.no || 0) - (a.no || 0));
+  if (!h.length) return "";
+  return `<div class="panel"><h2>Past rounds</h2><div class="tbl-scroll"><table>
+    <tr><th>Round</th><th>Gameweeks</th><th>Winner</th><th class="num">Pot</th></tr>
+    ${h.map(x => `<tr><td>${x.no}</td><td>GW ${x.startGw}${x.endGw ? "–" + x.endGw : ""}</td>
+      <td>${x.winners?.length ? esc(x.winners.map(w => w.name).join(" & ")) : '<span class="faint">no winner (reset)</span>'}</td>
+      <td class="num">${fmtMoney(x.pot || 0)}</td></tr>`).join("")}</table></div></div>`;
+}
+// ---- admin ----
+function lmsAdminHtml(roster){
+  const r = LMS.round, st = lmsState();
+  const gws = allGws();
+  const defStart = lmsAdminStartGw ?? (gws.find(g => !gwLocked(g)) ?? gws[gws.length - 1]);
+  const startSel = `<select onchange="lmsAdminStartGw=+this.value">${gws.map(g => `<option value="${g}" ${g===defStart?"selected":""}>GW ${g}${gwLocked(g)?" (locked)":""}</option>`).join("")}</select>`;
+  let html = `<div class="panel"><h2>🪓 Last Man Standing <span class="tag">side pot</span></h2>
+    <div class="cfgrow">
+      <label class="lmstoggle"><input type="checkbox" ${LMS.enabled ? "checked" : ""} onchange="saveLms({ enabled: this.checked })"> Show the Last Man tab to everyone</label>
+      <div class="field"><label>Buy-in (£)</label><input type="number" id="lms-buyin" value="${+LMS.buyIn || 0}" min="0" step="0.5"></div>
+      <button class="btn" onclick="saveLms({ buyIn: Math.max(0, +$('lms-buyin').value || 0) })">Save buy-in</button>
+    </div>`;
+  if (!r){
+    html += `<div class="cfgrow" style="margin-top:10px"><div class="field"><label>Start from</label>${startSel}</div>
+      <button class="btn btn-gold" onclick="lmsNewRound()">Start round 1</button></div>
+      <p class="faint">Then tick who's in. Picks for the start gameweek open straight away.</p></div>`;
+    return html;
+  }
+  const paid = r.paid || {}, ins = new Set(r.entrants || []);
+  const nIn = ins.size, nPaid = [...ins].filter(p => paid[p]).length;
+  html += `<p class="muted" style="margin:10px 0 6px">Round ${r.no || 1} · from GW ${r.startGw} · pot <b style="color:var(--gold)">${fmtMoney(lmsPot())}</b> · collected ${fmtMoney(nPaid * (+LMS.buyIn || 0))} (${nPaid}/${nIn} paid)
+    ${st?.winners?.length ? ` · <b style="color:var(--green)">won by ${esc(st.winners.map(p => PLAYERS[p]?.name).join(" & "))} (GW ${st.endGw})</b>` : st ? ` · ${st.alive.length} standing` : ""}</p>
+    <div class="tbl-scroll"><table><tr><th>Player</th><th class="num">In</th><th class="num">Paid</th><th>Status</th></tr>
+    ${roster.map(([pid,p]) => `<tr><td>${avatarImg(pid, "ava-sm")}${esc(p.name)}</td>
+      <td class="num"><input type="checkbox" ${ins.has(pid) ? "checked" : ""} onchange="lmsSetIn('${pid}', this.checked)"></td>
+      <td class="num"><input type="checkbox" ${paid[pid] ? "checked" : ""} ${ins.has(pid) ? "" : "disabled"} onchange="lmsSetPaid('${pid}', this.checked)"></td>
+      <td>${!ins.has(pid) ? '<span class="faint">—</span>' : st?.winners?.includes(pid) ? "👑 winner" : st?.out[pid] ? `💀 out GW${st.out[pid].gw}` : "standing"}${ins.has(pid) && !paid[pid] ? ' <span class="ptsbadge pts-wrong">owes</span>' : ""}</td></tr>`).join("")}
+    </table></div>
+    <div class="cfgrow" style="margin-top:12px"><div class="field"><label>New round starts</label>${startSel}</div>
+      <button class="btn ${st?.winners?.length ? "btn-gold" : ""}" onclick="lmsNewRound()">${st?.winners?.length ? "🏁 Bank it & start round " + ((r.no || 1) + 1) : "↺ Reset — start a new round"}</button></div>
+    <p class="faint">Starting a new round records this one in Past rounds (with its winner, if there is one), keeps the same players ticked in, and clears who's paid. Picks start from scratch.</p></div>`;
+  return html;
+}
+async function saveLms(patch){
+  try { await DB.collection("config").doc("lms").set(patch, { merge: true }); adminMsg("Last Man Standing saved ✓"); }
+  catch(e){ adminMsg("Couldn't save: " + esc(e.message), "err"); }
+}
+function lmsSetIn(pid, on){
+  const r = LMS.round; if (!r) return;
+  const s = new Set(r.entrants || []);
+  if (on) s.add(pid); else s.delete(pid);
+  const paid = { ...(r.paid || {}) };
+  if (!on) delete paid[pid];
+  saveLms({ round: { ...r, entrants: [...s], paid } });
+}
+function lmsSetPaid(pid, on){
+  const r = LMS.round; if (!r) return;
+  const paid = { ...(r.paid || {}) };
+  if (on) paid[pid] = true; else delete paid[pid];
+  saveLms({ round: { ...r, paid } });
+}
+async function lmsNewRound(){
+  const gws = allGws();
+  const startGw = lmsAdminStartGw ?? (gws.find(g => !gwLocked(g)) ?? gws[gws.length - 1]);
+  const r = LMS.round, st = lmsState();
+  const history = [...(LMS.history || [])];
+  if (r){
+    const won = st?.winners?.length;
+    if (!confirm(won ? `Bank round ${r.no || 1} (won by ${st.winners.map(p => PLAYERS[p]?.name).join(" & ")}, ${fmtMoney(st.pot)}) and start round ${(r.no || 1) + 1} from GW ${startGw}?`
+                     : `Round ${r.no || 1} has no winner yet. Reset it anyway and start round ${(r.no || 1) + 1} from GW ${startGw}? (Recorded as "no winner".)`)) return;
+    history.push({ no: r.no || 1, startGw: r.startGw, endGw: st?.endGw ?? null, pot: st?.pot ?? 0,
+      entrants: (r.entrants || []).length, winners: (st?.winners || []).map(p => ({ pid: p, name: PLAYERS[p]?.name || p })) });
+  }
+  const round = { id: "r" + Date.now().toString(36), no: (r?.no || 0) + 1, startGw,
+    entrants: r ? [...(r.entrants || [])] : [], paid: {} };
+  await saveLms({ round, history });
+}
+
 /* ---------- chrome / tabs ---------- */
 function renderChrome(){
   $("who-name").textContent = ME.name;
   $("who-role").textContent = ME.admin ? "League admin" : "Player";
   document.querySelector('[data-tab=admin]').classList.toggle("hidden", !ME.admin);
+  document.querySelector('[data-tab=lms]').classList.toggle("hidden", !LMS.enabled);
+  if (curTab === "lms" && !LMS.enabled) setTab("predict");
   $("feed-banner").innerHTML = !FEED
     ? `<div class="banner err">Fixture feed not found (<code>${esc(FIXTURES_URL)}</code>). Run the "Update fixtures" GitHub Action, or an admin can add results manually.</div>`
     : (FEED.sample ? `<div class="banner warn">Showing <b>sample fixtures</b> — run the "Update fixtures" GitHub Action to pull real Premier League fixtures automatically.</div>` : "");
@@ -2485,7 +2794,7 @@ $("tab-predict").addEventListener("focusin", e => {
 function setTab(t){
   curTab = t;
   document.querySelectorAll("#tabs button").forEach(b => b.classList.toggle("on", b.dataset.tab===t));
-  for (const x of ["predict","week","board","admin"]) $("tab-"+x).classList.toggle("hidden", x!==t);
+  for (const x of ["predict","week","board","lms","admin"]) $("tab-"+x).classList.toggle("hidden", x!==t);
   renderAll();
 }
 function stepGw(el, delta){
@@ -2512,6 +2821,7 @@ function renderAll(){
   if (curTab==="predict") renderPredict();
   if (curTab==="week") renderWeek();
   if (curTab==="board") renderBoard();
+  if (curTab==="lms") renderLms();
   if (curTab==="admin" && ME.admin) renderAdmin();
 }
 
@@ -2538,6 +2848,7 @@ function renderPredict(){
   else if (locked) html += `<div class="banner info">🔒 Predictions are locked.</div>`;
   else if (deadline) html += `<div class="banner ok">⏱ Locks at <b>${fmtKo(deadline.toISOString())}</b>.</div>`;
   if (!locked) html += nagBannerHtml(gw);
+  html += lmsNudgeHtml();
   let potChip = "";
   if (fx.length){
     const gwDoc = GAMEWEEKS["gw"+gw];
@@ -2623,7 +2934,7 @@ function renderPredict(){
         ? `<div class="subrow strow"><span class="sub-l"></span><span class="stmid ${res?"":"live"}">${res ? "FT" : "● " + liveLabel(f)}</span><span class="sub-r"></span></div>`
         : "";
       html += `<tr class="${res?"done":""}">
-        <td class="colme" title="${esc(teamName(f.h))} v ${esc(teamName(f.a))}">
+        <td class="colme ${swap ? "tapcell" : ""}" title="${esc(teamName(f.h))} v ${esc(teamName(f.a))}" ${swap ? `onclick="showFacts(${f.id})"` : ""}>
           ${statusRow}<div class="myrow">
             <span class="tcode">${crestSm(f.h)}${esc(teamShort(f.h))}</span>
             <input type="number" min="0" max="15" id="pk-${f.id}-h" class="${boxCls}" value="${bH}" ${locked||out?"disabled":""}>
@@ -2995,6 +3306,8 @@ function renderAdmin(){
       <input type="url" id="cfg-proxy" value="${esc(CONFIG.liveProxy||"")}" placeholder="https://your-worker.workers.dev — see the README">
     </div>
     <p class="faint">Changes apply to any week not yet finalised. Finalised weeks keep the points and stake they were scored with. The stake can also be overridden for a single week in Gameweek control. The proxy (a free Cloudflare Worker, setup in the README) makes live scores near-instant — leave blank to rely on the standard feed.</p></div>`;
+
+  html += lmsAdminHtml(roster);
 
   /* banter messages */
   const mpid = adminMsgPid && PLAYERS[adminMsgPid] ? adminMsgPid : "";

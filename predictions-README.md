@@ -32,6 +32,12 @@ league with your mates. No app to install — it runs in the browser from GitHub
   copy-ready invite button). They log in by picking their name and typing the code. Lost
   code? Reset it in one click.
 - **Admins** — you're the admin; you can nominate (and demote) other admins any time.
+- **Last Man Standing side pot** (optional, off by default) — switch it on in Admin and a
+  *Last Man* tab appears. Each week every survivor picks one team to win; each team once
+  per round; a draw, a defeat or no pick by the gameweek deadline and you're out (if everyone
+  left goes out the same week, they all survive it). Admin ticks who's in and who's paid,
+  sets the buy-in (pot = buy-in × players in), and banks the round / starts a new one — e.g.
+  when someone wins early. Past rounds are kept. Needs the `lmsPicks` rules block below.
 - **Banter features** — all computed in the app, nothing to set up:
   - *Shame the stragglers*: from 24h before the deadline the Predictions tab names everyone
     who hasn't finished their picks, with a 📋 Copy nag / 💬 Send to WhatsApp button.
@@ -134,6 +140,18 @@ service cloud.firestore {
       allow write: if isAdmin()
         && request.resource.data.img is string
         && request.resource.data.img.size() < 400000;
+      allow delete: if isAdmin();
+    }
+
+    // Last Man Standing picks — anyone logged in can read; you can only write your own.
+    match /lmsPicks/{docId} {
+      allow read: if signedIn();
+      allow create, update: if isAdmin() || (
+        signedIn()
+        && request.resource.data.pid is string
+        && docId == (request.resource.data.round + '_gw' + string(request.resource.data.gw) + '_' + request.resource.data.pid)
+        && get(/databases/$(database)/documents/players/$(request.resource.data.pid)).data.uid == request.auth.uid
+      );
       allow delete: if isAdmin();
     }
 
