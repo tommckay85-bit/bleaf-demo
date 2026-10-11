@@ -113,6 +113,14 @@ service cloud.firestore {
       allow read: if signedIn();
       allow write: if isAdmin();
     }
+    // Player heads (cropped photos) — league members only, admins upload.
+    match /avatars/{pid} {
+      allow read: if signedIn();
+      allow write: if isAdmin()
+        && request.resource.data.img is string
+        && request.resource.data.img.size() < 400000;
+      allow delete: if isAdmin();
+    }
 
     // Predictions — anyone logged in can read; you can only write your own.
     match /predictions/{docId} {
@@ -261,3 +269,24 @@ That's it — while games are live, the app polls the worker every 12 seconds
 polling). If the worker is ever down the app quietly falls back to the GitHub
 feed. Free-tier limits (100k requests/day) are ~10× more than a 15-player
 league can use.
+
+## Player heads (optional)
+
+Admin → Players → **📷 Photo** on any player card. Upload a cut-out of just the
+head: a transparent PNG is best (on iPhone, long-press the person in Photos →
+Copy/Share gives you one), and a plain white background is also stripped
+automatically. Heads appear on the winner / loser / still-in cards, above names
+in the predictions grid, and beside names in the tables. They're stored in
+Firestore behind the login (never in this public repo), so add the `avatars`
+block from the rules above before uploading.
+
+## Tests
+
+`tests/logic.test.js` (scoring, money, eliminations, live maths — plain Node) and
+`tests/browser.test.js` (the app end-to-end in headless Chromium via Playwright,
+against the frozen sample feed in `tests/fixtures-sample.json`):
+
+    node tests/logic.test.js
+    NODE_PATH=$(npm root -g) node tests/browser.test.js   # needs playwright
+
+Screenshots land in `tests/shots/` (git-ignored).
