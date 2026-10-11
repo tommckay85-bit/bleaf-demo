@@ -301,6 +301,16 @@ th.colme .ava-th{margin:0 0 2px auto}
 .ava-btn{height:18px;max-width:20px;vertical-align:-4px}
 .facepreview{display:flex;align-items:center;justify-content:center;height:190px;margin:10px 0;border-radius:10px;
   background:repeating-conic-gradient(#141a2c 0% 25%,#0e1220 0% 50%) 50%/18px 18px}
+.bulk-card{width:min(520px,94vw);max-height:90vh;display:flex;flex-direction:column}
+.bulk-list{overflow-y:auto;margin:10px 0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.bulk-item{display:flex;gap:8px;align-items:center;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:6px}
+.bulk-item.unmatched{border-color:var(--gold-dim)}
+.bulk-item.dupe{border-color:var(--red)}
+.bulk-face{width:52px;height:52px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:8px;
+  background:repeating-conic-gradient(#141a2c 0% 25%,#0e1220 0% 50%) 50%/12px 12px}
+.bulk-face img{max-width:48px;max-height:48px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.6))}
+.bulk-meta{min-width:0;flex:1;display:flex;flex-direction:column;gap:4px}
+.bulk-meta select{width:100%;font-size:12px;padding:4px}
 .facepreview img{max-height:170px;max-width:90%;filter:drop-shadow(0 8px 14px rgba(0,0,0,.6))}
 .facs-card{background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--steel);border-radius:12px;padding:18px;width:min(340px,94vw)}
 #face-file{width:100%;font-size:13px}
@@ -1347,28 +1357,62 @@ function cleanHead(img){
   g.drawImage(img, 0, 0, w, h);
   const id = g.getImageData(0, 0, w, h), d = id.data;
   const at = (x, y) => (y * w + x) * 4;
-  const corner = [[0,0],[w-1,0],[0,h-1],[w-1,h-1]].map(([x,y]) => at(x,y));
-  const alreadyCut = corner.some(i => d[i+3] < 20);
-  if (!alreadyCut){
-    // background colour = average of the four corners
-    const bg = [0,1,2].map(ch => corner.reduce((a,i) => a + d[i+ch], 0) / 4);
-    const near = i => d[i+3] > 0 && Math.abs(d[i]-bg[0]) + Math.abs(d[i+1]-bg[1]) + Math.abs(d[i+2]-bg[2]) < 60;
-    const seen = new Uint8Array(w * h), stack = [];
-    for (let x = 0; x < w; x++){ stack.push(x, 0, x, h-1); }
-    for (let y = 0; y < h; y++){ stack.push(0, y, w-1, y); }
-    while (stack.length){
-      const y = stack.pop(), x = stack.pop();
-      if (x < 0 || y < 0 || x >= w || y >= h) continue;
-      const p = y * w + x;
-      if (seen[p]) continue;
-      seen[p] = 1;
-      const i = p * 4;
-      if (!near(i)) continue;
-      d[i+3] = 0;
-      stack.push(x+1, y, x-1, y, x, y+1, x, y-1);
-    }
-    g.putImageData(id, 0, 0);
+  // Background = anything connected to the image edge that is already
+  // transparent, matches a corner colour, or is a light neutral grey/white —
+  // the last catches the fake "transparency" checkerboard some cut-out apps
+  // bake into the pixels.
+  // transparent corners carry no colour (often reads as black) — sample only opaque ones
+  const corners = [[0,0],[w-1,0],[0,h-1],[w-1,h-1]].map(([x,y]) => at(x,y)).filter(i => d[i+3] >= 24).map(i => [d[i],d[i+1],d[i+2]]);
+  // only trust the corner colour as "background" when all four corners agree
+  // (a stray dark corner pixel would otherwise eat dark hair touching the edge)
+  const cornerDiff = (a, b) => Math.abs(a[0]-b[0]) + Math.abs(a[1]-b[1]) + Math.abs(a[2]-b[2]);
+  const cornersAgree = corners.every(a => corners.every(b => cornerDiff(a, b) < 45));
+  if (!cornersAgree) corners.length = 0;
+  const isBg = i => {
+    if (d[i+3] < 24) return true;
+    const r = d[i], gg = d[i+1], b = d[i+2];
+    if (corners.some(c => Math.abs(r-c[0]) + Math.abs(gg-c[1]) + Math.abs(b-c[2]) < 60)) return true;
+    const mx = Math.max(r,gg,b), mn = Math.min(r,gg,b);
+    return mn >= 200 && mx - mn <= 24;
+  };
+  const seen = new Uint8Array(w * h), stack = [];
+  for (let x = 0; x < w; x++){ stack.push(x, 0, x, h-1); }
+  for (let y = 0; y < h; y++){ stack.push(0, y, w-1, y); }
+  while (stack.length){
+    const y = stack.pop(), x = stack.pop();
+    if (x < 0 || y < 0 || x >= w || y >= h) continue;
+    const p = y * w + x;
+    if (seen[p]) continue;
+    seen[p] = 1;
+    const i = p * 4;
+    if (!isBg(i)) continue;
+    d[i+3] = 0;
+    stack.push(x+1, y, x-1, y, x, y+1, x, y-1);
   }
+  // keep only the head: the largest connected opaque shape (drops stray
+  // specks left over from busy or patterned backgrounds)
+  const label = new Int32Array(w * h).fill(-1);
+  let best = -1, bestSize = 0, comp = 0;
+  for (let p0 = 0; p0 < w * h; p0++){
+    if (label[p0] !== -1 || d[p0*4+3] < 24) continue;
+    let size = 0; const st = [p0]; label[p0] = comp;
+    while (st.length){
+      const p = st.pop(); size++;
+      const x = p % w, y = (p - x) / w;
+      for (const q of [x > 0 ? p-1 : -1, x < w-1 ? p+1 : -1, y > 0 ? p-w : -1, y < h-1 ? p+w : -1]){
+        if (q >= 0 && label[q] === -1 && d[q*4+3] >= 24){ label[q] = comp; st.push(q); }
+      }
+    }
+    if (size > bestSize){ bestSize = size; best = comp; }
+    comp++;
+  }
+  for (let p = 0; p < w * h; p++) if (label[p] !== best) d[p*4+3] = 0;
+  // soften the cut edge: half-fade any head pixel touching the background
+  for (let y = 1; y < h-1; y++) for (let x = 1; x < w-1; x++){
+    const i = at(x,y);
+    if (d[i+3] && (!d[at(x+1,y)+3] || !d[at(x-1,y)+3] || !d[at(x,y+1)+3] || !d[at(x,y-1)+3])) d[i+3] = 140;
+  }
+  g.putImageData(id, 0, 0);
   // trim to the visible head
   let x0 = w, y0 = h, x1 = -1, y1 = -1;
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++){
@@ -1408,6 +1452,89 @@ async function saveFace(){
     renderAll();
   } catch(e){
     alert("Couldn't save the head: " + e.message + "\n\nHas the avatars rules block been added in Firebase? (see the README)");
+  }
+}
+// Bulk head upload: pick every cut-out at once; files named after the
+// players ("Reeves.png", "honey.webp") are matched automatically, the rest
+// can be assigned by hand before saving.
+let BULK_HEADS = []; // [{ file, url, pid }]
+const normName = t => (t || "").toLowerCase().replace(/\.[a-z0-9]+$/, "").replace(/[^a-z]/g, "");
+function matchHeadToPlayer(filename){
+  const f = normName(filename);
+  if (!f) return "";
+  const ps = Object.entries(PLAYERS).filter(([,p]) => p.active !== false);
+  for (const [pid,p] of ps) if (normName(p.name) === f) return pid;
+  for (const [pid,p] of ps) if (normName(p.name.split(" ")[0]) === f) return pid;
+  for (const [pid,p] of ps){ const n = normName(p.name); if (n.length >= 3 && (f.includes(n) || n.includes(f))) return pid; }
+  return "";
+}
+function openBulkHeads(){
+  if (!$("bulk-overlay")){
+    document.body.insertAdjacentHTML("beforeend", `
+      <div id="bulk-overlay" class="roast-overlay hidden">
+        <div class="facs-card bulk-card" onclick="event.stopPropagation()">
+          <h2 style="margin-bottom:8px">📷 Upload player heads</h2>
+          <p class="faint" style="margin-bottom:10px">Select all the cut-outs at once. Files named after a player are matched automatically — check each one, fix any that are wrong, then save.</p>
+          <input type="file" id="bulk-files" accept="image/*" multiple onchange="bulkFilesPicked(this)">
+          <div id="bulk-list" class="bulk-list"></div>
+          <div class="cfgrow" style="justify-content:flex-end">
+            <button class="btn" onclick="$('bulk-overlay').classList.add('hidden')">Cancel</button>
+            <button class="btn btn-gold" id="bulk-save" onclick="saveBulkHeads()">Save heads</button>
+          </div>
+        </div>
+      </div>`);
+  }
+  BULK_HEADS = [];
+  $("bulk-files").value = "";
+  renderBulkList();
+  $("bulk-overlay").classList.remove("hidden");
+}
+function bulkFilesPicked(input){
+  const files = [...(input.files || [])];
+  BULK_HEADS = files.map(file => ({ file, url: null, pid: matchHeadToPlayer(file.name) }));
+  renderBulkList();
+  BULK_HEADS.forEach((h, i) => {
+    const img = new Image();
+    img.onload = () => { h.url = cleanHead(img) || null; h.failed = !h.url; renderBulkList(); };
+    img.onerror = () => { h.failed = true; renderBulkList(); };
+    img.src = URL.createObjectURL(h.file);
+  });
+}
+function renderBulkList(){
+  const el = $("bulk-list"); if (!el) return;
+  const roster = Object.entries(PLAYERS).filter(([,p]) => p.active !== false).sort((a,b) => a[1].name.localeCompare(b[1].name));
+  const taken = {};
+  BULK_HEADS.forEach(h => { if (h.pid) taken[h.pid] = (taken[h.pid] || 0) + 1; });
+  el.innerHTML = BULK_HEADS.length ? BULK_HEADS.map((h, i) => `
+    <div class="bulk-item ${h.pid ? "" : "unmatched"} ${h.pid && taken[h.pid] > 1 ? "dupe" : ""}">
+      <div class="bulk-face">${h.url ? `<img src="${h.url}" alt="">` : h.failed ? "⚠️" : "…"}</div>
+      <div class="bulk-meta">
+        <div class="faint" style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(h.file.name)}</div>
+        <select onchange="BULK_HEADS[${i}].pid=this.value;renderBulkList()">
+          <option value="">— skip —</option>
+          ${roster.map(([pid,p]) => `<option value="${pid}" ${pid===h.pid?"selected":""}>${esc(p.name)}${AVATARS[pid] ? " (replace)" : ""}</option>`).join("")}
+        </select>
+      </div>
+    </div>`).join("") : `<p class="faint" style="text-align:center;padding:18px 0">No files chosen yet.</p>`;
+  const ready = BULK_HEADS.filter(h => h.pid && h.url).length;
+  const btn = $("bulk-save");
+  if (btn){ btn.textContent = ready ? `Save ${ready} head${ready === 1 ? "" : "s"}` : "Save heads"; btn.disabled = !ready || Object.values(taken).some(n => n > 1); }
+}
+async function saveBulkHeads(){
+  const ready = BULK_HEADS.filter(h => h.pid && h.url);
+  if (!ready.length) return;
+  const btn = $("bulk-save"); btn.disabled = true; btn.textContent = "Saving…";
+  try {
+    for (const h of ready){
+      await DB.collection("avatars").doc(h.pid).set({ img: h.url, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+      AVATARS[h.pid] = h.url;
+    }
+    $("bulk-overlay").classList.add("hidden");
+    adminMsg(`Saved ${ready.length} head${ready.length === 1 ? "" : "s"}: ${esc(ready.map(h => PLAYERS[h.pid]?.name).join(", "))}.`);
+    renderAll();
+  } catch(e){
+    alert("Couldn't save: " + e.message + "\n\nHas the avatars rules block been added in Firebase? (see the README)");
+    renderBulkList();
   }
 }
 async function removeFace(){
@@ -2228,7 +2355,7 @@ function renderAdmin(){
     <p class="faint">A unique login code is generated for each player — copy it from the table below and send it to them on WhatsApp. They sign in by picking their name and entering the code.</p></div>`;
 
   /* players & weekly in/out */
-  html += `<div class="panel"><h2>Players ${gw!==null?`<span class="tag">In / out applies to GW ${gw}</span>`:""}</h2>
+  html += `<div class="panel"><div class="panelhead"><h2>Players ${gw!==null?`<span class="tag">In / out applies to GW ${gw}</span>`:""}</h2><button class="btn btn-sm" onclick="openBulkHeads()">📷 Upload heads</button></div>
     <div class="pgrid">`;
   for (const [pid,p] of roster){
     const out = gw!==null && isOut(gw,pid);
