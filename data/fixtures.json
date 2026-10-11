@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-11T13:48:37Z",
+  "updated": "2026-10-11T13:49:13Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -151,6 +151,7 @@
     "492": "Awoniyi",
     "153": "Disasi",
     "204": "Mitchell",
+    "214": "Kamada",
     "222": "Strand Larsen",
     "588": "Khalaili",
     "643": "Chilwell",
@@ -2042,14 +2043,19 @@
       "kickoff": "2026-10-11T13:00:00Z",
       "h": 8,
       "a": 18,
-      "hs": 0,
+      "hs": 1,
       "as": 1,
-      "min": 41,
+      "min": 45,
       "finished": false,
       "stats": [
         {
           "k": "goals_scored",
-          "h": [],
+          "h": [
+            {
+              "value": 1,
+              "element": 214
+            }
+          ],
           "a": [
             {
               "value": 1,
@@ -2067,7 +2073,7 @@
       "a": 9,
       "hs": 0,
       "as": 0,
-      "min": 40,
+      "min": 45,
       "finished": false
     },
     {
