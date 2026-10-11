@@ -326,4 +326,128 @@ assert.strictEqual(run(`matchHeadToPlayer('IMG_4021.jpg')`), '', 'unnamed photo 
 assert.strictEqual(run(`matchHeadToPlayer('Retired.png')`), '', 'inactive players never matched');
 console.log('AVATAR TESTS PASSED');
 
+// --- stragglers nudge ---
+run(`GAMEWEEKS = {}; PLAYERS.gaz = { name:'Gaz', active:true };
+const _k = Date.now() + 5 * 3600 * 1000;
+FEED.fixtures.filter(f => f.gw === 3).forEach((f,i) => { f._ko = f.kickoff; f.kickoff = new Date(_k + i * 3600 * 1000).toISOString(); });
+PREDS[3] = {
+  tom:  { pid:'tom',  picks:{ 301:{h:1,a:0}, 302:{h:1,a:0}, 303:{h:1,a:0}, 304:{h:1,a:0}, 305:{h:1,a:0} } },
+  dave: { pid:'dave', picks:{ 301:{h:2,a:1} } },
+}`);
+let sg = runJ('stragglers(3)');
+assert.deepStrictEqual(sg.list.map(r => r.pid), ['gaz','sam','dave'], 'stragglers: fewest picks first, then by name; tom (all in) and retired excluded');
+assert.strictEqual(sg.total, 5);
+assert.ok(sg.left > 4.9 * 3600e3 && sg.left <= 5 * 3600e3, 'time left to deadline');
+const nag = run('nagText(3, stragglers(3))');
+assert.ok(nag.includes('GW 3') && nag.includes('Gaz (nothing)') && nag.includes('Dave (1/5)') && /locks in [45]h/.test(nag), 'nag message names and counts: ' + nag);
+assert.ok(run('nagBannerHtml(3)').includes('Copy nag'), 'banner renders with copy button');
+assert.strictEqual(run('stragglers(3, Date.now() - 20 * 3600e3)'), null, 'no nag more than 24h out');
+run(`GAMEWEEKS.gw3 = { out:['gaz','sam','dave'] }`);
+assert.deepStrictEqual(runJ('stragglers(3).list'), [], 'out players are not nagged');
+run(`GAMEWEEKS = {}; FEED.fixtures.filter(f => f.gw === 3).forEach(f => { f.kickoff = f._ko; delete f._ko; })`);
+assert.strictEqual(run('stragglers(3)'), null, 'no nag once locked');
+assert.strictEqual(run('fmtLeft(26*3600e3)'), '1d 2h');
+assert.strictEqual(run('fmtLeft(61*60e3)'), '1h 1m');
+assert.strictEqual(run('fmtLeft(59e3)'), '1m');
+console.log('STRAGGLER TESTS PASSED');
+
+// --- goal flashes ---
+// GW3 kicked off (sample deadline is in the past); 301 is LIV v ARS, 302 is ...
+run(`MYPID = 'tom'; GAMEWEEKS = {}; SCORE_SEEN = null;
+FEED.fixtures.filter(f => f.gw === 3).forEach(f => { f._ko = f.kickoff; f.kickoff = new Date(Date.now() - 30*60e3).toISOString(); f.hs = 0; f.as = 0; });
+PREDS[3] = {
+  tom:  { pid:'tom',  picks:{ 301:{h:1,a:0}, 302:{h:2,a:2} } },
+  dave: { pid:'dave', picks:{ 301:{h:0,a:0}, 302:{h:1,a:1} } },
+  sam:  { pid:'sam',  picks:{ 301:{h:2,a:1}, 302:{h:0,a:1} } },
+  gaz:  { pid:'gaz',  picks:{ 301:{h:0,a:2} } },
+}`);
+assert.deepStrictEqual(runJ('goalFlashes()'), [], 'first look only seeds');
+run(`FEED.fixtures.find(f => f.id === 301).hs = 1`);
+let fl = runJ('goalFlashes()');
+assert.strictEqual(fl.length, 1, 'one goal, one flash');
+const t1 = fl[0];
+assert.ok(t1.title.includes(run('teamShort(5)') + ' score!') && t1.title.includes('1–0'), 'headline names the scorer and score: ' + t1.title);
+// before 0-0: dave (0-0 exact) and gaz (0-2) were alive; after 1-0 dave & gaz are dead; tom's 1-0 lands
+assert.ok(t1.lines.some(l => /Dave & Gaz's exacts are dead/.test(l)), 'dead exacts listed: ' + t1.lines);
+assert.ok(t1.lines.includes("★ You're on for the exact"), 'my exact landing is called out');
+assert.ok(t1.lines.some(l => /You take the lead/.test(l)), 'leader change: ' + t1.lines);
+assert.strictEqual(t1.good, true, 'good news for me');
+assert.deepStrictEqual(runJ('goalFlashes()'), [], 'same score again: no repeat');
+// the slower feed briefly lags (back to 0-0) then catches up: never re-fires
+run(`FEED.fixtures.find(f => f.id === 301).hs = 0`);
+assert.deepStrictEqual(runJ('goalFlashes()'), [], 'a lagging feed does not un-fire');
+run(`FEED.fixtures.find(f => f.id === 301).hs = 1`);
+assert.deepStrictEqual(runJ('goalFlashes()'), [], 'nor re-fire when it catches up');
+// sam's 2-1 still alive at 1-0; a second home goal kills it and tom's lead
+run(`FEED.fixtures.find(f => f.id === 301).hs = 2`);
+fl = runJ('goalFlashes()');
+assert.ok(fl[0].lines.includes("💀 Your exact's dead") && fl[0].bad, 'my exact dying is bad news: ' + fl[0].lines);
+// away goal elsewhere
+run(`FEED.fixtures.find(f => f.id === 302).as = 1`);
+fl = runJ('goalFlashes()');
+assert.strictEqual(fl.length, 1);
+assert.ok(fl[0].lines.some(l => /Sam is on for the exact/.test(l)), 'others landing an exact: ' + fl[0].lines);
+// an admin-entered result for a fixture means no flash from its feed score
+run(`GAMEWEEKS = { gw3: { overrides: { 303: {h:0,a:0} } } }; FEED.fixtures.find(f => f.id === 303).hs = 1`);
+assert.deepStrictEqual(runJ('goalFlashes()'), [], 'overridden fixture never flashes');
+run(`GAMEWEEKS = {}`);
+// a new gameweek reseeds silently
+run(`SCORE_SEEN.gw = 99`);
+assert.deepStrictEqual(runJ('goalFlashes()'), [], 'reseed on gameweek change');
+run(`FEED.fixtures.filter(f => f.gw === 3).forEach(f => { f.kickoff = f._ko; delete f._ko; f.hs = null; f.as = null; })`);
+console.log('GOAL-FLASH TESTS PASSED');
+
+// --- badges, superlatives, nemesis ---
+run(`PLAYERS = {
+  tom:  { name:'Tom',  active:true }, dave: { name:'Dave', active:true },
+  sam:  { name:'Sam',  active:true }, gaz:  { name:'Gaz',  active:true },
+};
+GAMEWEEKS = {
+  gw1: { finalized:true, payouts:{ dave:20 }, winners:[{pid:'dave',name:'Dave',pts:34}],
+    table:[ {pid:'dave',name:'Dave',pts:34,exact:3,correct:4,predicted:5,rank:1},
+            {pid:'tom',name:'Tom',pts:24,exact:1,correct:3,predicted:5,rank:2},
+            {pid:'sam',name:'Sam',pts:12,exact:0,correct:2,predicted:5,rank:3},
+            {pid:'gaz',name:'Gaz',pts:0,exact:0,correct:0,predicted:5,rank:4} ] },
+  gw2: { finalized:true, payouts:{ dave:20 }, winners:[{pid:'dave',name:'Dave',pts:38}],
+    table:[ {pid:'dave',name:'Dave',pts:38,exact:2,correct:5,predicted:5,rank:1},
+            {pid:'sam',name:'Sam',pts:22,exact:1,correct:2,predicted:5,rank:2},
+            {pid:'tom',name:'Tom',pts:18,exact:1,correct:3,predicted:5,rank:3},
+            {pid:'gaz',name:'Gaz',pts:6,exact:0,correct:1,predicted:5,rank:4} ] },
+};`);
+const bd = runJ('seasonBadges()');
+const keys = pid => (bd[pid] || []).map(b => b.key).sort();
+assert.deepStrictEqual(keys('dave'), ['b2b','banker','hattrick','sniper'], 'dave: sniper, banker, hat-trick, back-to-back');
+assert.deepStrictEqual(keys('gaz'), ['deluded','duck','spoon'], 'gaz: spoon x2, most blanks, a duck');
+assert.strictEqual(bd.gaz.find(b => b.key === 'spoon').n, 2, 'spoon count');
+assert.strictEqual(bd.dave.find(b => b.key === 'banker').n, 40, 'banker total');
+assert.ok(run(`badgeChips(seasonBadges().dave)`).includes('🎯'), 'chips render');
+let sup = runJ('weekSuperlatives(1)');
+assert.ok(sup.some(x => x.t === 'Sniper' && x.txt.startsWith('Dave — 3 exact')), 'weekly sniper');
+assert.ok(sup.some(x => x.t === 'Duck' && x.txt.startsWith('Gaz')), 'weekly duck');
+assert.ok(sup.some(x => x.t === 'Daylight'), 'won by 10+ is daylight');
+// with predictions loaded: deluded pick and lone genius (GW1: 101 ARS 3-0 WOL? sample results)
+run(`PREDS[1] = {
+  dave: { picks:{ 101:{h:3,a:0} } }, tom: { picks:{ 101:{h:1,a:0} } },
+  sam:  { picks:{ 101:{h:0,a:4} } }, gaz: { picks:{ 101:{h:2,a:0} } } }`);
+sup = runJ('weekSuperlatives(1)');
+const lg = sup.find(x => x.t === 'Lone genius'), dl = sup.find(x => x.t === 'Deluded');
+assert.ok(lg && lg.txt.startsWith('only Dave called') && lg.txt.includes('3–0'), 'lone genius: ' + JSON.stringify(lg));
+assert.ok(dl && dl.txt.startsWith('Sam went') && dl.txt.includes('0–4') && dl.txt.includes('finished 3–0'), 'deluded: ' + JSON.stringify(dl));
+// head to head + nemesis
+run(`MYPID = 'tom'`);
+const h = runJ(`headToHead('tom','sam')`);
+assert.deepStrictEqual([h.weeks, h.aAbove, h.bAbove, h.aPts, h.bPts], [2,1,1,42,34], 'h2h tom v sam');
+const nb = runJ(`nemesisOf('tom')`);
+assert.strictEqual(nb.nemesis.pid, 'dave', 'nemesis: dave finished above tom every week');
+assert.strictEqual(nb.bunny.pid, 'gaz', 'bunny: tom finished above gaz every week');
+assert.ok(run('h2hHtml()').includes('Your nemesis: Dave'), 'h2h panel names the nemesis');
+// share card data
+const cd = runJ('resultCardData(2)');
+assert.strictEqual(cd.winners[0].name, 'Dave');
+assert.strictEqual(cd.share, 20);
+assert.deepStrictEqual(cd.losers, ['gaz'], 'card carries the spoon');
+assert.ok(cd.roast.length > 10 && cd.roast.includes('Gaz'), 'card roast names the loser');
+assert.strictEqual(run('resultCardData(3)'), null, 'no card for an unfinished week');
+console.log('BADGE / SUPERLATIVE / NEMESIS / CARD TESTS PASSED');
+
 console.log('\nALL LOGIC SUITES PASSED');

@@ -519,6 +519,81 @@ const FIREBASE_STUB = `
   assert(await page.evaluate(() => /^data:image\/(webp|png)/.test(AVATARS.dave || '')), 'bulk save stores the matched head');
   assert(!(await page.isVisible('#bulk-overlay')), 'bulk upload closes on save');
 
+  // ---- shame the stragglers: deadline inside 24h ----
+  await page.click('[data-tab=predict]'); await page.waitForTimeout(150);
+  await page.evaluate(() => {
+    const k = Date.now() + 3 * 3600e3;
+    FEED.fixtures.filter(f => f.gw === 3).forEach((f,i) => { f._ko = f.kickoff; f.kickoff = new Date(k + i * 3600e3).toISOString(); f._hs = f.hs; f._as = f.as; f.hs = null; f.as = null; f._fin = f.finished; f.finished = false; });
+    window._ov = GAMEWEEKS.gw3.overrides; GAMEWEEKS.gw3.overrides = {};
+    viewGw = 3; renderAll();
+  });
+  await page.waitForTimeout(200);
+  assert(await page.isVisible('#tab-predict .banner.nag'), 'stragglers banner shows inside 24h of the deadline');
+  const nagTxt = await page.textContent('#tab-predict .banner.nag');
+  assert(/to the deadline/.test(nagTxt) && nagTxt.includes('Dave') && nagTxt.includes('Sam') && !nagTxt.includes('Gaz'), 'banner names stragglers, not out players: ' + nagTxt);
+  const waHref = await page.$eval('#tab-predict .banner.nag a', a => a.href);
+  assert(waHref.startsWith('https://wa.me/?text=') && decodeURIComponent(waHref).includes('Still waiting on'), 'WhatsApp link carries the nag');
+  await page.screenshot({ path: OUT + '/shot-13-nag.png' });
+  await page.evaluate(() => {
+    FEED.fixtures.filter(f => f.gw === 3).forEach(f => { f.kickoff = f._ko; f.hs = f._hs; f.as = f._as; f.finished = f._fin; });
+    GAMEWEEKS.gw3.overrides = window._ov; renderAll();
+  });
+  await page.waitForTimeout(150);
+  assert(!(await page.isVisible('#tab-predict .banner.nag')), 'no nag once locked');
+
+  // ---- goal flash toast ----
+  await page.evaluate(() => {
+    const f = FEED.fixtures.find(x => x.id === 303);
+    f._ko = f.kickoff; f.kickoff = new Date(Date.now() - 20 * 60e3).toISOString(); f.hs = 0; f.as = 0; f.finished = false;
+    window._ov303 = GAMEWEEKS.gw3.overrides[303]; delete GAMEWEEKS.gw3.overrides[303];
+    SCORE_SEEN = null; goalFlashes();
+    f.as = 1; flashGoals();
+  });
+  await page.waitForTimeout(150);
+  assert(await page.isVisible('#toasts .toast'), 'goal toast pops up');
+  const toastTxt = await page.textContent('#toasts .toast');
+  assert(toastTxt.includes('score!') && toastTxt.includes('0–1'), 'toast headline: ' + toastTxt);
+  await page.screenshot({ path: OUT + '/shot-14-goal-toast.png' });
+  await page.click('#toasts .toast');
+  await page.waitForTimeout(150);
+  assert(await page.isVisible('#facts-overlay'), 'tapping the toast opens the match facts');
+  await page.click('#facts-overlay .btn');
+  await page.evaluate(() => { const f = FEED.fixtures.find(x => x.id === 303); f.kickoff = f._ko; f.hs = null; f.as = null; if (window._ov303) GAMEWEEKS.gw3.overrides[303] = window._ov303; renderAll(); });
+
+  // ---- finalised week: superlatives + share card ----
+  await page.evaluate(() => {
+    PREDS[2] = { tom:{ picks:{ 201:{h:0,a:2}, 203:{h:4,a:2} } }, sam:{ picks:{ 201:{h:1,a:1} } }, dave:{ picks:{ 201:{h:2,a:0} } } };
+    viewGw = 2; navigator.canShare = undefined;
+  });
+  await page.click('[data-tab=week]'); await page.waitForTimeout(250);
+  const wkFinal = await page.textContent('#tab-week');
+  assert(wkFinal.includes('Superlatives') && wkFinal.includes('Lone genius'), 'superlatives panel on the finalised week');
+  await page.click('#tab-week .sharerow .btn');
+  await page.waitForTimeout(800);
+  assert(await page.isVisible('#card-overlay'), 'share falls back to an image preview where the share sheet is unavailable');
+  const cardDims = await page.$eval('#card-img', i => [i.naturalWidth, i.naturalHeight]);
+  assert(cardDims[0] === 1080 && cardDims[1] === 1350, 'result card is 1080x1350 (' + cardDims + ')');
+  const cardShot = await page.evaluate(() => CARD_CACHE[2].url.split(',')[1]);
+  fs.writeFileSync(OUT + '/shot-15-result-card.png', Buffer.from(cardShot, 'base64'));
+  await page.screenshot({ path: OUT + '/shot-16-card-preview.png' });
+  await page.click('#card-overlay .btn:not(.btn-gold)');
+  // the roast card has its own share button
+  await page.evaluate(() => { CARD_GW = 2; $('roast-overlay').classList.remove('hidden'); });
+  assert(await page.isVisible('#roast-overlay .sharebtn'), 'roast card offers a share button');
+  await page.click('#roast-overlay .btn'); await page.waitForTimeout(100);
+
+  // ---- leaderboard: badges + nemesis / head-to-head ----
+  await page.click('[data-tab=board]'); await page.waitForTimeout(200);
+  const boardTxt = await page.textContent('#tab-board');
+  assert((await page.$$('#tab-board .bdgs .bdg')).length >= 3, 'badge chips beside names');
+  assert(boardTxt.includes('Badges') && boardTxt.includes('Wooden Spoonist') && boardTxt.includes('Sniper'), 'badge legend panel');
+  assert(boardTxt.includes('Head to head') && boardTxt.includes('Your nemesis: Dave') && boardTxt.includes('Your bunny: Gaz'), 'nemesis and bunny named');
+  assert((await page.$$('#tab-board .h2hcard img.ava-h2h')).length >= 1, 'h2h card shows heads');
+  await page.selectOption('#tab-board .panelhead select', 'sam');
+  await page.waitForTimeout(150);
+  assert((await page.textContent('#tab-board .h2hcard')).includes('Sam'), 'picking a rival swaps the h2h card');
+  await page.screenshot({ path: OUT + '/shot-17-board-badges.png', fullPage: true });
+
   // ---- mobile ----
   await page.setViewportSize({ width: 390, height: 844 });
   await page.click('[data-tab=predict]'); await page.waitForTimeout(200);
@@ -567,6 +642,10 @@ const FIREBASE_STUB = `
   await page.click('[data-tab=predict]'); await page.waitForTimeout(200);
   const hscroll = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 2);
   assert(!hscroll, 'no horizontal scroll on mobile');
+  await page.click('[data-tab=board]'); await page.waitForTimeout(200);
+  const hscrollBoard = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 2);
+  assert(!hscrollBoard, 'no horizontal scroll on the mobile leaderboard (badges + h2h)');
+  await page.screenshot({ path: OUT + '/shot-18-mobile-board.png', fullPage: true });
 
   await browser.close();
   const passed = errors.length === 0;

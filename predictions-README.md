@@ -32,6 +32,21 @@ league with your mates. No app to install — it runs in the browser from GitHub
   copy-ready invite button). They log in by picking their name and typing the code. Lost
   code? Reset it in one click.
 - **Admins** — you're the admin; you can nominate (and demote) other admins any time.
+- **Banter features** — all computed in the app, nothing to set up:
+  - *Shame the stragglers*: from 24h before the deadline the Predictions tab names everyone
+    who hasn't finished their picks, with a 📋 Copy nag / 💬 Send to WhatsApp button.
+  - *Goal flashes*: when a goal lands mid-game, a toast says what it did — whose exact
+    score just died, who's now on for one, who's taken the lead. Tap it for the match facts.
+  - *Result card*: on a finalised week (and on the winner/roast pop-ups) 📤 Share makes a
+    1080×1350 image — winner's head, table, pot, superlatives and the roast — for the group.
+    Phones open the share sheet; elsewhere you get the image to press-and-hold or download.
+  - *Superlatives*: a weekly line-up on the finalised This Week view (Sniper, Lone genius,
+    Deluded, Duck, Photo finish, Daylight…).
+  - *Badges*: season titles that move with the record holder (🎯 Sniper, 💰 The Banker,
+    🥄 Wooden Spoonist, 🤡 Deluded) and permanent achievements (🎩 Hat-trick, 👑 Back-to-back,
+    🦆 Duck), shown beside names on the Leaderboard with a legend.
+  - *Nemesis & head-to-head*: the Leaderboard names who finishes above you most often (and
+    your "bunny"), with a you-vs-them card against any rival.
 
 Everything is free: GitHub Pages hosting, GitHub Actions, the FPL API, and Firebase's
 free tier (which for ~15 players you won't get anywhere near the limits of).
