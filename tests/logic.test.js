@@ -450,4 +450,47 @@ assert.ok(cd.roast.length > 10 && cd.roast.includes('Gaz'), 'card roast names th
 assert.strictEqual(run('resultCardData(3)'), null, 'no card for an unfinished week');
 console.log('BADGE / SUPERLATIVE / NEMESIS / CARD TESTS PASSED');
 
+// --- last man standing ---
+// GW1: 101 T1 3-0 T10, 102 T4 1-1 T3, 103 T5 2-1 T9, 104 T6 2-2 T2, 105 T8 1-0 T7
+// GW2: 201 T3 0-2 T5, 202 T9 1-3 T6, 203 T10 0-0 T8, 204 T7 1-2 T1, 205 T2 3-1 T4
+run(`GAMEWEEKS = {}; MYPID = 'tom';
+LMS = { enabled:true, buyIn:10, history:[], round:{ id:'rA', no:1, startGw:1, entrants:['tom','dave','sam','gaz'], paid:{ tom:true } } };
+const P = (gw, pid, team) => LMS_PICKS['rA_gw'+gw+'_'+pid] = { round:'rA', gw, pid, team };
+LMS_PICKS = {};
+P(1,'tom',1); P(1,'dave',4); P(1,'sam',5);          // gaz: no pick
+P(2,'tom',5); P(2,'sam',9);`);
+let ls = runJ('lmsState()');
+assert.deepStrictEqual(ls.out.dave, { gw:1, team:4, outcome:'draw' }, 'a draw knocks you out');
+assert.strictEqual(ls.out.gaz.outcome, 'nopick', 'no pick knocks you out');
+assert.deepStrictEqual([ls.out.sam.gw, ls.out.sam.outcome], [2,'lose'], 'a defeat knocks you out');
+assert.deepStrictEqual(ls.winners, ['tom'], 'last one standing wins');
+assert.strictEqual(ls.endGw, 2);
+assert.strictEqual(ls.pot, 40, 'pot = buy-in x entrants');
+assert.strictEqual(ls.pickGw, null, 'no more picks once won');
+assert.strictEqual(run('lmsOutcome(2, 5)'), 'win', 'away win counts');
+assert.deepStrictEqual(runJ('lmsUsedTeams("tom", 3)'), { 1:1, 5:2 }, 'used teams tracked per round');
+// everyone out in the same week -> everyone survives it
+run(`LMS.round = { id:'rB', no:2, startGw:1, entrants:['tom','sam'], paid:{} }; LMS_PICKS = {};
+const Q = (gw, pid, team) => LMS_PICKS['rB_gw'+gw+'_'+pid] = { round:'rB', gw, pid, team };
+Q(1,'tom',4); Q(1,'sam',6); Q(2,'tom',2); Q(2,'sam',10);`);
+ls = runJ('lmsState()');
+assert.strictEqual(ls.weeks[0].reprieve, true, 'all out together = reprieve');
+assert.deepStrictEqual(ls.winners, ['tom'], 'then tom wins GW2');
+// a gameweek still in play holds everything after it
+run(`LMS.round = { id:'rC', no:3, startGw:3, entrants:['tom','sam'], paid:{} }; LMS_PICKS = {
+  rC_gw3_tom: { round:'rC', gw:3, pid:'tom', team:5 }, rC_gw3_sam: { round:'rC', gw:3, pid:'sam', team:3 } }`);
+ls = runJ('lmsState()');
+assert.strictEqual(ls.weeks[0].done, false, 'pending week not resolved');
+assert.deepStrictEqual(ls.alive.sort(), ['sam','tom'], 'nobody out while games are pending');
+assert.strictEqual(ls.winners, null);
+// a team whose game moved out of the week survives (void)
+assert.strictEqual(run('lmsOutcome(1, 99)'), 'void', 'no fixture = void');
+// fewer than two players: nothing happens
+run(`LMS.round.entrants = ['tom']`);
+assert.strictEqual(runJ('lmsState()').winners, null, 'a one-man round never resolves');
+run(`LMS = { enabled:false, buyIn:5, round:null, history:[] }; LMS_PICKS = {}`);
+assert.strictEqual(run('lmsState()'), null);
+assert.strictEqual(run('lmsNudgeHtml()'), '', 'no nudge when switched off');
+console.log('LAST-MAN-STANDING TESTS PASSED');
+
 console.log('\nALL LOGIC SUITES PASSED');

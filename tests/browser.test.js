@@ -644,6 +644,63 @@ const FIREBASE_STUB = `
   assert((await page.textContent('#tab-board .h2hcard')).includes('Sam'), 'picking a rival swaps the h2h card');
   await page.screenshot({ path: OUT + '/shot-17-board-badges.png', fullPage: true });
 
+  // ---- score popup: tap anywhere on the score boxes ----
+  await page.click('[data-tab=predict]'); await page.waitForTimeout(150);
+  await page.evaluate(() => { viewGw = 3; renderAll(); });
+  await page.waitForTimeout(150);
+  await page.click('#tab-predict .predgrid tr.done td.colme input[type=number]', { force: true });
+  await page.waitForTimeout(150);
+  assert(await page.isVisible('#facts-overlay'), 'tapping the score box itself opens the match popup');
+  await page.click('#facts-overlay .btn'); await page.waitForTimeout(100);
+
+  // ---- last man standing ----
+  assert(!(await page.isVisible('[data-tab=lms]')), 'Last Man tab hidden while switched off');
+  await page.click('[data-tab=admin]'); await page.waitForTimeout(150);
+  assert((await page.textContent('#tab-admin')).includes('Last Man Standing'), 'admin has the LMS panel');
+  await page.evaluate(() => {
+    const k = Date.now() + 2 * 86400e3;
+    FEED.fixtures.filter(f => f.gw === 3).forEach((f,i) => { f._ko = f.kickoff; f.kickoff = new Date(k + i * 3600e3).toISOString(); f._hs = f.hs; f._as = f.as; f.hs = null; f.as = null; f._fin = f.finished; f.finished = false; });
+    window._ov = GAMEWEEKS.gw3.overrides; GAMEWEEKS.gw3.overrides = {};
+    LMS = { enabled:true, buyIn:10, history:[{ no:1, startGw:1, endGw:1, pot:30, winners:[{pid:'sam',name:'Sam'}] }],
+      round:{ id:'rX', no:2, startGw:1, entrants:['tom','dave','sam','gaz'], paid:{ tom:true, sam:true } } };
+    LMS_PICKS = {
+      rX_gw1_tom:{ round:'rX', gw:1, pid:'tom', team:1 }, rX_gw1_dave:{ round:'rX', gw:1, pid:'dave', team:4 },
+      rX_gw1_sam:{ round:'rX', gw:1, pid:'sam', team:5 }, rX_gw1_gaz:{ round:'rX', gw:1, pid:'gaz', team:8 },
+      rX_gw2_tom:{ round:'rX', gw:2, pid:'tom', team:5 }, rX_gw2_sam:{ round:'rX', gw:2, pid:'sam', team:6 }, rX_gw2_gaz:{ round:'rX', gw:2, pid:'gaz', team:10 },
+    };
+    renderChrome(); renderAll();
+  });
+  await page.waitForTimeout(200);
+  const lmsAdmin = await page.textContent('#tab-admin');
+  assert(lmsAdmin.includes('Round 2') && lmsAdmin.includes('£40') && lmsAdmin.includes('2/4 paid'), 'admin sees round, pot and who has paid');
+  assert((await page.$$('#tab-admin input[onchange^="lmsSetIn"]')).length >= 4, 'admin can tick players in');
+  assert(lmsAdmin.includes('Reset — start a new round'), 'admin can reset mid-round');
+  assert(await page.isVisible('[data-tab=lms]'), 'Last Man tab appears when switched on');
+  await page.click('[data-tab=lms]'); await page.waitForTimeout(200);
+  const lmsTxt = await page.textContent('#tab-lms');
+  assert(lmsTxt.includes('£40') && lmsTxt.includes('side pot'), 'LMS tab shows the pot');
+  assert(lmsTxt.includes('Your pick · GW 3'), 'survivor gets the pick panel for the next gameweek');
+  assert((await page.$$('#tab-lms .lmsteam:disabled')).length === 2, 'teams already used this round are disabled');
+  assert((await page.$$('#tab-lms .lmsrow.lmsout')).length === 2, 'dave (draw) and gaz (defeat) are out');
+  await page.click('#tab-lms .lmsteam:not(:disabled)');
+  await page.waitForTimeout(200);
+  assert((await page.$$('#tab-lms .lmsteam.on')).length === 1, 'tapping a team picks it');
+  assert(lmsTxt.includes('Past rounds') && lmsTxt.includes('Sam'), 'past rounds listed');
+  await page.screenshot({ path: OUT + '/shot-24-lms.png', fullPage: true });
+  await page.click('[data-tab=predict]'); await page.waitForTimeout(150);
+  await page.evaluate(() => { delete LMS_PICKS.rX_gw3_tom; renderAll(); });
+  await page.waitForTimeout(100);
+  assert((await page.textContent('#tab-predict')).includes("Last Man Standing: you haven't picked"), 'predictions tab nudges an LMS survivor without a pick');
+  // won round
+  await page.evaluate(() => {
+    FEED.fixtures.filter(f => f.gw === 3).forEach(f => { f.kickoff = f._ko; f.hs = f._hs; f.as = f._as; f.finished = f._fin; });
+    GAMEWEEKS.gw3.overrides = window._ov;
+    LMS_PICKS.rX_gw2_sam.team = 3; setTab('lms');
+  });
+  await page.waitForTimeout(200);
+  assert((await page.textContent('#tab-lms .lmswin')).includes('Tom'), 'winner card when one is left');
+  await page.screenshot({ path: OUT + '/shot-25-lms-won.png', fullPage: true });
+
   // ---- mobile ----
   await page.setViewportSize({ width: 390, height: 844 });
   await page.click('[data-tab=predict]'); await page.waitForTimeout(200);
@@ -696,6 +753,12 @@ const FIREBASE_STUB = `
   const hscrollBoard = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 2);
   assert(!hscrollBoard, 'no horizontal scroll on the mobile leaderboard (badges + h2h)');
   await page.screenshot({ path: OUT + '/shot-18-mobile-board.png', fullPage: true });
+  await page.click('[data-tab=lms]'); await page.waitForTimeout(200);
+  const hscrollLms = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 2);
+  assert(!hscrollLms, 'no horizontal scroll on the mobile Last Man tab');
+  const tabsFit = await page.$eval('#tabs', el => el.scrollWidth <= el.clientWidth + 1);
+  assert(tabsFit, 'five tabs fit across a phone');
+  await page.screenshot({ path: OUT + '/shot-26-mobile-lms.png', fullPage: true });
 
   await browser.close();
   const passed = errors.length === 0;
