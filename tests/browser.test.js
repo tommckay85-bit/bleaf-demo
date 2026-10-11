@@ -144,7 +144,8 @@ const FIREBASE_STUB = `
 
   // ---- predictions tab ----
   const predictTxt = await page.textContent('#tab-predict');
-  assert(predictTxt.includes('Predictions are locked'), 'locked banner (GW3 sample deadline passed)');
+  assert(!predictTxt.includes('Predictions are locked'), 'no lock banner once the week is under way (strip + grid lead)');
+  assert(!predictTxt.includes("Who's predicted so far"), "who's predicted dropped once picks are locked");
   assert(await page.isVisible('#tab-predict .predgrid'), 'predictions grid renders');
   assert((await page.$$('#tab-predict .predgrid input[type=number]')).length === 10, 'two score boxes per fixture');
   assert((await page.$$('#tab-predict .predgrid input[type=number]:disabled')).length === 10, 'boxes locked after the deadline');
@@ -155,15 +156,23 @@ const FIREBASE_STUB = `
   assert(stripTxt.includes('POSITION') || stripTxt.includes('position'), 'pulse strip renders');
   assert(/clear of|behind/i.test(stripTxt), 'strip shows the gap to a rival');
   assert(/up for grabs/i.test(stripTxt), 'strip shows points still available');
-  // sticky names: grid has its own scrollport with a pinned header
+  // one page scroll: no inner vertical scroll box; the names row floats down with the page
   const wrapOv = await page.$eval('#tab-predict .predgrid-wrap', el => getComputedStyle(el).overflowY);
-  assert(wrapOv === 'auto', 'grid scrolls in its own window');
-  const thSticky = await page.$eval('#tab-predict .predgrid th', el => getComputedStyle(el).position);
-  assert(thSticky === 'sticky', 'player names header pinned while scrolling');
+  assert(wrapOv === 'hidden', 'grid has no inner vertical scroll box');
+  const pinY = await page.evaluate(() => {
+    const t = document.querySelector('#tab-predict .predgrid');
+    document.body.style.paddingBottom = '3000px';
+    window.scrollTo(0, window.scrollY + t.getBoundingClientRect().top + 150);
+    floatGridHead();
+    const y = t.rows[0].cells[1].getBoundingClientRect().top;
+    window.scrollTo(0, 0); floatGridHead(); document.body.style.paddingBottom = '';
+    return Math.round(y);
+  });
+  assert(Math.abs(pinY) <= 2, 'player names row pinned to the top while the page scrolls (' + pinY + ')');
   const potTxt = await page.textContent('#tab-predict .potchip');
   assert(/£\d/.test(potTxt) && potTxt.includes('pot'), 'pot chip shows in the panel header (' + potTxt.trim() + ')');
-  const lockLines = await page.$eval('#tab-predict .banner', el => Math.round(el.getBoundingClientRect().height));
-  assert(lockLines < 45, 'locked banner is a single compact line (' + lockLines + 'px)');
+  assert(await page.isVisible('#tab-predict .hint[data-hint=scores]'), 'one-time "tap any score" hint during play');
+  assert(await page.isVisible('.signout-right .hint-bubble'), 'one-time refresh hint bubble');
   assert((await page.textContent('.signout-right')).includes('↻'), 'refresh button in the header');
   assert(await page.$('#ptr') !== null, 'pull-to-refresh pill exists');
   assert(await page.evaluate(() => typeof hardRefresh === 'function'), 'hardRefresh wired');
@@ -443,8 +452,15 @@ const FIREBASE_STUB = `
   await page.screenshot({ path: OUT + '/shot-6-board.png' });
 
   // ---- admin ----
-  await page.evaluate(() => { viewGw = 3; adminGw = 3; });
+  await page.evaluate(() => { viewGw = 3; adminGw = 3; try { localStorage.removeItem('lefuck_admin_open'); } catch(e){} });
   await page.click('[data-tab=admin]'); await page.waitForTimeout(200);
+  const admSecs = await page.$$eval('#tab-admin details.adm', ds => ds.map(d => d.dataset.key + (d.open ? '+' : '-')));
+  assert(admSecs[0] === 'gameweek+' && admSecs.slice(1).every(x => x.endsWith('-')), 'admin: gameweek control first and open, the rest folded (' + admSecs + ')');
+  assert((await page.textContent('#tab-admin details.adm[data-key=players] summary')).includes('active'), 'folded sections show a one-line status');
+  await page.click('#tab-admin details.adm[data-key=players] summary'); await page.waitForTimeout(100);
+  assert(await page.evaluate(() => adminOpenSet().has('players')), 'opened sections are remembered');
+  await page.evaluate(() => { localStorage.setItem('lefuck_admin_open', JSON.stringify(ADMIN_ORDER)); renderAll(); });
+  await page.waitForTimeout(150);
   const adminTxt = await page.textContent('#tab-admin');
   assert(adminTxt.includes('League settings'), 'admin league settings');
   assert(!!(await page.$('#cfg-stake')), 'stake config input');
@@ -503,7 +519,7 @@ const FIREBASE_STUB = `
   assert(!(await page.isVisible('#face-overlay')), 'upload closes on save');
   assert((await page.$$('#tab-admin .pcard .ava-btn')).length === 1, 'player card shows the saved head');
   // the head lands on the roast card (Gaz bottom of GW2)
-  await page.evaluate(() => { try { localStorage.clear(); } catch(e){} roastChecked = false; winnerChecked = true; maybeShowRoast(); });
+  await page.evaluate(() => { try { localStorage.clear(); localStorage.setItem('lefuck_admin_open', JSON.stringify(ADMIN_ORDER)); } catch(e){} roastChecked = false; winnerChecked = true; maybeShowRoast(); });
   await page.waitForTimeout(300);
   assert(await page.isVisible('#roast-overlay'), 'roast card shows');
   assert((await page.$$('#roast-face img.bigface.ring-red')).length === 1, 'roast card shows the loser\'s head with a red glow');
