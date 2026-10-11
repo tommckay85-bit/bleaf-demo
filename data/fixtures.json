@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-11T16:53:35Z",
+  "updated": "2026-10-11T16:54:12Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -189,6 +189,7 @@
     "346": "Calvert-Lewin",
     "367": "Gakpo",
     "368": "Szoboszlai",
+    "371": "Gravenberch",
     "377": "Munoz",
     "379": "Isak",
     "155": "Enzo",
@@ -2120,8 +2121,30 @@
       "a": 15,
       "hs": 0,
       "as": 0,
-      "min": 58,
-      "finished": false
+      "min": 62,
+      "finished": false,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 411
+            }
+          ]
+        },
+        {
+          "k": "red_cards",
+          "h": [
+            {
+              "value": 1,
+              "element": 371
+            }
+          ],
+          "a": []
+        }
+      ]
     },
     {
       "id": 54,
