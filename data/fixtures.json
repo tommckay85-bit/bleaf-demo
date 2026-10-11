@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-11T13:37:39Z",
+  "updated": "2026-10-11T13:38:16Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -154,6 +154,7 @@
     "222": "Strand Larsen",
     "588": "Khalaili",
     "643": "Chilwell",
+    "209": "Johnson",
     "229": "Tarkowski",
     "236": "Dewsbury-Hall",
     "242": "George",
@@ -2044,7 +2045,7 @@
       "a": 18,
       "hs": 0,
       "as": 1,
-      "min": 30,
+      "min": 35,
       "finished": false,
       "stats": [
         {
@@ -2066,9 +2067,21 @@
       "h": 11,
       "a": 9,
       "hs": 0,
-      "as": 0,
-      "min": 31,
-      "finished": false
+      "as": 1,
+      "min": 34,
+      "finished": false,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 209
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 58,
