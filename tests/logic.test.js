@@ -320,6 +320,10 @@ console.log('PROXY-URL TESTS PASSED');
 run(`AVATARS = { reeves: 'data:image/jpeg;base64,AAAA' }`);
 assert.ok(run(`avatarImg('reeves', 'ava-th')`).includes('src="data:image/jpeg;base64,AAAA"'), 'avatar img rendered for a player with a head');
 assert.strictEqual(run(`avatarImg('nobody', 'ava-th')`), '', 'no head -> nothing rendered (names stay as before)');
+assert.strictEqual(run(`matchHeadToPlayer('Dave.png')`), 'dave', 'filename matches a player name');
+assert.strictEqual(run(`matchHeadToPlayer('SAM head.webp')`), 'sam', 'case and extras ignored');
+assert.strictEqual(run(`matchHeadToPlayer('IMG_4021.jpg')`), '', 'unnamed photo left for manual pick');
+assert.strictEqual(run(`matchHeadToPlayer('Retired.png')`), '', 'inactive players never matched');
 console.log('AVATAR TESTS PASSED');
 
 console.log('\nALL LOGIC SUITES PASSED');

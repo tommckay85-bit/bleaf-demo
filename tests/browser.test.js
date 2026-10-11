@@ -495,6 +495,30 @@ const FIREBASE_STUB = `
   await page.click('[data-tab=admin]'); await page.waitForTimeout(150);
   await page.screenshot({ path: OUT + '/shot-7-admin.png' });
 
+  // ---- bulk head upload: files matched to players by name ----
+  await page.click('[data-tab=admin]'); await page.waitForTimeout(150);
+  await page.click('text=📷 Upload heads');
+  await page.waitForTimeout(100);
+  const headPng = await page.evaluate(() => {
+    const c = document.createElement('canvas'); c.width = 200; c.height = 260;
+    const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0,0,200,260);
+    g.fillStyle = '#c98f6b'; g.beginPath(); g.ellipse(100,120,60,80,0,0,Math.PI*2); g.fill();
+    return c.toDataURL('image/png').split(',')[1];
+  });
+  await page.setInputFiles('#bulk-files', [
+    { name:'Dave.png', mimeType:'image/png', buffer: Buffer.from(headPng, 'base64') },
+    { name:'IMG_0042.png', mimeType:'image/png', buffer: Buffer.from(headPng, 'base64') },
+  ]);
+  await page.waitForTimeout(500);
+  const bulk = await page.evaluate(() => BULK_HEADS.map(h => [h.file.name, h.pid, !!h.url]));
+  assert(bulk[0][1] === 'dave' && bulk[0][2], 'named file matched to its player and processed (' + JSON.stringify(bulk) + ')');
+  assert(bulk[1][1] === '' && bulk[1][2], 'unnamed file processed but left unassigned');
+  assert((await page.textContent('#bulk-save')).includes('Save 1 head'), 'save button counts matched heads');
+  await page.click('#bulk-save');
+  await page.waitForTimeout(300);
+  assert(await page.evaluate(() => /^data:image\/(webp|png)/.test(AVATARS.dave || '')), 'bulk save stores the matched head');
+  assert(!(await page.isVisible('#bulk-overlay')), 'bulk upload closes on save');
+
   // ---- mobile ----
   await page.setViewportSize({ width: 390, height: 844 });
   await page.click('[data-tab=predict]'); await page.waitForTimeout(200);
