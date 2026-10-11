@@ -126,6 +126,52 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 .banner.info{background:#0c1a2e;border-color:var(--steel-dim);color:#8fe3ff}
 .banner.err{background:#331a17;border-color:var(--red);color:#eba49c}
 .banner.ok{background:#12291c;border-color:var(--green);color:#8fd8ac}
+/* stragglers nudge */
+.banner.nag{background:#2b1414;border-color:var(--red);color:#f3c2c9}
+.naghead{margin-bottom:8px}
+.nagnames{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.nagname{display:inline-flex;align-items:center;background:rgba(0,0,0,.25);border:1px solid #5a2a30;border-radius:999px;padding:3px 10px 3px 6px;font-weight:600;color:var(--ink)}
+.nagname .ava-sm{margin-right:5px;height:20px}
+.nagname small{color:var(--ink-dim);margin-left:5px;font-weight:500}
+.nagname.nagme{border-color:var(--gold);color:var(--gold)}
+.nagme-line{font-style:italic;margin-bottom:8px}
+.nagbtns{display:flex;flex-wrap:wrap;gap:8px}
+.nagbtns .btn{text-decoration:none;font-size:13px;padding:7px 12px}
+/* goal flashes */
+#toasts{position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:70;display:flex;flex-direction:column;gap:8px;width:min(420px,calc(100vw - 24px));pointer-events:none}
+.toast{pointer-events:auto;cursor:pointer;background:#0f1a2c;border:1px solid var(--steel-dim);border-left:5px solid var(--steel);border-radius:10px;padding:10px 14px;font-size:13.5px;line-height:1.45;color:var(--ink);box-shadow:0 10px 30px rgba(0,0,0,.55);animation:toastin .25s ease-out}
+.toast b{display:block;font-size:15px;margin-bottom:2px}
+.toast.good{border-left-color:var(--green)}
+.toast.bad{border-left-color:var(--red)}
+@keyframes toastin{from{transform:translateY(-12px);opacity:0}to{transform:none;opacity:1}}
+/* superlatives, badges, head-to-head, share card */
+.sharerow{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin:-4px 0 14px}
+.supline{padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:13.5px}
+.supline:last-child{border-bottom:0}
+.supe{display:inline-block;width:26px}
+.bdgs{white-space:nowrap}
+.bdg{display:inline-block;font-size:15px;margin-left:2px;cursor:help}
+.bdg sub{font-size:10px;color:var(--ink-dim);vertical-align:baseline;margin-left:1px}
+.bdg.big{font-size:24px;width:34px;text-align:center;flex:none}
+.bdglegend{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
+.bdgrow{display:flex;gap:8px;align-items:flex-start;font-size:13px}
+.nemline{font-size:13.5px;margin:4px 0}
+.h2hcard{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;margin:14px 0 8px}
+.h2hside{flex:1;text-align:center;min-width:0}
+.ava-h2h{display:block;height:84px;max-width:96px;margin:0 auto 4px}
+.h2hblank{font-size:52px;line-height:84px}
+.h2hname{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.h2hscore{text-align:center;flex:none}
+.h2hbig{font-size:40px;font-weight:900;color:var(--gold);line-height:1}
+.h2hbig span{color:var(--ink-dim);margin:0 6px}
+.h2htbl{width:100%;font-size:13.5px}
+.h2htbl td{padding:5px 4px;border:0}
+.h2ha{text-align:left;width:30%}.h2hb{text-align:right;width:30%}
+.h2hl{text-align:center;color:var(--ink-dim)}
+.h2hwin{color:var(--green);font-weight:700}
+.sharebtn{margin-left:6px}
+.cardprev{max-width:440px;padding:16px}
+.cardprev img{width:100%;border-radius:10px;display:block}
 
 /* ---------- gameweek nav ---------- */
 .gwnav{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:16px}
@@ -486,6 +532,7 @@ code{background:var(--bg2);border:1px solid var(--line);border-radius:4px;paddin
     <div id="roast-name" class="name"></div>
     <p id="roast-msg"></p>
     <button class="btn btn-gold" onclick="document.getElementById('roast-overlay').classList.add('hidden')">😂 Seen</button>
+    <button class="btn sharebtn" onclick="shareResult(CARD_GW, this)">📤 Share the result</button>
   </div>
 </div>
 
@@ -497,6 +544,7 @@ code{background:var(--bg2);border:1px solid var(--line);border-radius:4px;paddin
     <div class="name">CHAMPION!</div>
     <p id="win-msg"></p>
     <button class="btn btn-gold" onclick="document.getElementById('win-overlay').classList.add('hidden')">🍻 Cheers</button>
+    <button class="btn sharebtn" onclick="shareResult(CARD_GW, this)">📤 Rub it in</button>
   </div>
 </div>
 
@@ -771,6 +819,7 @@ async function loadFeed(){
     FEED_RAW = await r.text();
     FEED = JSON.parse(FEED_RAW);
     lastFeedFetch = Date.now();
+    goalFlashes(); // seed: goals already in when the app opens aren't news
   } catch(e){ FEED = null; }
 }
 
@@ -791,6 +840,7 @@ async function refreshFeed(force){
     if (txt !== FEED_RAW){
       FEED_RAW = txt; FEED = JSON.parse(txt);
       renderChrome(); renderAll();
+      flashGoals();
       // keep an open match-facts popup and the race chart live too
       const fo = $("facts-overlay");
       if (factsFid && fo && !fo.classList.contains("hidden")) showFacts(factsFid);
@@ -840,6 +890,7 @@ async function refreshLiveProxy(){
     }
     if (changed){
       renderChrome(); renderAll();
+      flashGoals();
       const fo = $("facts-overlay");
       if (factsFid && fo && !fo.classList.contains("hidden")) showFacts(factsFid);
     }
@@ -1566,6 +1617,7 @@ const WINNER_MSGS = [
   "All hail {name}. The rest of them paid {amount} for the privilege of watching you win.",
 ];
 let winnerChecked = false;
+let CARD_GW = null; // the week the winner/roast cards are about (for 📤 share)
 function maybeShowWinner(){
   if (winnerChecked || !ME) return;
   const done = Object.entries(GAMEWEEKS)
@@ -1581,6 +1633,7 @@ function maybeShowWinner(){
   if (seenTimes(key) >= 2) return; // twice is a lap of honour, three's showing off
   bumpSeen(key);
   const amount = g.payouts?.[MYPID] != null ? fmtMoney(g.payouts[MYPID]) : "the pot";
+  CARD_GW = g.gw;
   $("win-title").textContent = `GW ${g.gw} · you won the week`;
   $("win-msg").textContent = pickMsg("winner", WINNER_MSGS, g.gw, { name: ME.name, pts: me.pts, amount }, MYPID);
   setFace("win-face", [MYPID], "🏆", "gold");
@@ -1604,6 +1657,7 @@ function maybeShowRoast(){
   const key = "lefuck_seen_roast_" + MYPID + "_gw" + g.gw;
   if (seenTimes(key) >= 2) return;
   bumpSeen(key);
+  CARD_GW = g.gw;
   const names = losers.map(l=>l.name).join(" & ");
   const isMe = losers.some(l=>l.pid===MYPID);
   $("roast-title").textContent = isMe ? `GW ${g.gw}: it's you. It's actually you.` : `GW ${g.gw} loser of the week`;
@@ -1788,6 +1842,511 @@ function maybeShowStillIn(){
   showAfter(["win-overlay","roast-overlay"], "stillin-overlay");
 }
 
+/* ---------- shame the stragglers (last 24h before the deadline) ---------- */
+function fmtLeft(ms){
+  const m = Math.max(0, Math.ceil(ms / 60000));
+  const d = Math.floor(m / 1440), h = Math.floor((m % 1440) / 60), mm = m % 60;
+  return d ? `${d}d ${h}h` : h ? `${h}h ${mm}m` : `${mm}m`;
+}
+// Everyone still owing picks, fewest first. null outside the nag window.
+function stragglers(gw, now){
+  const fx = gwFixtures(gw), dl = gwDeadline(gw);
+  now = now ?? Date.now();
+  if (!fx.length || !dl || gwLocked(gw) || GAMEWEEKS["gw"+gw]?.finalized) return null;
+  const left = dl - now;
+  if (left <= 0 || left > 24 * 3600 * 1000) return null;
+  const preds = PREDS[gw] || {};
+  const list = Object.entries(PLAYERS)
+    .filter(([pid,p]) => p.active !== false && !isOut(gw, pid))
+    .map(([pid,p]) => ({ pid, name: p.name, n: Object.keys(preds[pid]?.picks || {}).length }))
+    .filter(r => r.n < fx.length)
+    .sort((a,b) => a.n - b.n || a.name.localeCompare(b.name));
+  return { list, left, total: fx.length, deadline: dl };
+}
+const NAG_LINES = [
+  "Get your picks in, you lazy sods.",
+  "Put the phone down after you've predicted, not before.",
+  "The pot doesn't fill itself, gents.",
+  "No picks, no chance. Sort it out.",
+  "Your mum's already done hers.",
+];
+function nagText(gw, s){
+  const who = s.list.map(r => `${r.name.split(" ")[0]} (${r.n ? r.n + "/" + s.total : "nothing"})`).join(", ");
+  return `🚨 LEFUCK GW ${gw} locks in ${fmtLeft(s.left)} (${fmtKo(s.deadline.toISOString())}).\n` +
+    `Still waiting on: ${who}.\n${NAG_LINES[gw % NAG_LINES.length]}\n👉 ${location.origin}${location.pathname}`;
+}
+async function copyText(txt){
+  try { await navigator.clipboard.writeText(txt); return true; } catch(e){}
+  const ta = document.createElement("textarea");
+  ta.value = txt; ta.style.position = "fixed"; ta.style.opacity = "0";
+  document.body.appendChild(ta); ta.select();
+  let ok = false; try { ok = document.execCommand("copy"); } catch(e){}
+  ta.remove();
+  return ok;
+}
+async function copyNag(gw, btn){
+  const s = stragglers(gw);
+  if (!s || !s.list.length) return;
+  const ok = await copyText(nagText(gw, s));
+  if (btn){ btn.textContent = ok ? "✓ Copied — paste it in the group" : "Couldn't copy"; setTimeout(() => btn.textContent = "📋 Copy nag", 2500); }
+}
+function nagBannerHtml(gw){
+  const s = stragglers(gw);
+  if (!s || !s.list.length) return "";
+  const meLate = s.list.some(r => r.pid === MYPID);
+  const names = s.list.map(r => `<span class="nagname ${r.pid===MYPID?"nagme":""}">${avatarImg(r.pid, "ava-sm")}${esc(r.pid===MYPID ? "You" : r.name.split(" ")[0])} <small>${r.n}/${s.total}</small></span>`).join("");
+  const wa = "https://wa.me/?text=" + encodeURIComponent(nagText(gw, s));
+  return `<div class="banner nag"><div class="naghead">⏰ <b id="nag-left" data-dl="${s.deadline.getTime()}">${fmtLeft(s.left)}</b> to the deadline — still waiting on ${s.list.length}:</div>
+    <div class="nagnames">${names}</div>
+    ${meLate ? `<div class="nagme-line">…and one of them is you. Practise what you preach.</div>` : ""}
+    <div class="nagbtns"><button class="btn" onclick="copyNag(${gw}, this)">📋 Copy nag</button><a class="btn" href="${esc(wa)}" target="_blank" rel="noopener">💬 Send to WhatsApp</a></div></div>`;
+}
+// tick the countdown without re-rendering the grid (which could eat typing)
+setInterval(() => {
+  const el = $("nag-left");
+  if (el) el.textContent = fmtLeft(+el.dataset.dl - Date.now());
+}, 30 * 1000);
+
+/* ---------- goal flashes: a toast with consequences when a goal lands ---------- */
+let SCORE_SEEN = null; // { gw, s: fid -> {h,a} } — highest score seen so far this session
+// Run fn with some fixtures' feed scores temporarily swapped (for "before" tables).
+function withFeedScores(gw, map, fn){
+  const saved = [];
+  for (const f of gwFixtures(gw)) if (map[f.id]){ saved.push([f, f.hs, f.as]); f.hs = map[f.id].h; f.as = map[f.id].a; }
+  try { return fn(); } finally { for (const [f,h,a] of saved){ f.hs = h; f.as = a; } }
+}
+const firstName = pid => pid === MYPID ? "You" : (PLAYERS[pid]?.name || "").split(" ")[0];
+function nameList(pids){
+  const n = pids.map(firstName);
+  if (n.length > 3) return n.slice(0, 3).join(", ") + ` +${n.length - 3}`;
+  return n.length <= 1 ? (n[0] || "") : n.slice(0, -1).join(", ") + " & " + n[n.length - 1];
+}
+function goalFlash(gw, f, before, after){
+  const preds = PREDS[gw] || {};
+  const rowsBefore = withFeedScores(gw, { [f.id]: before }, () => scoreWeek(gw, { live:true }));
+  const rowsAfter = scoreWeek(gw, { live:true });
+  const died = [], landed = [];
+  for (const r of rowsAfter){
+    const pk = preds[r.pid]?.picks?.[f.id];
+    if (!pk || pk.h === null || pk.h === undefined) continue;
+    const ph = +pk.h, pa = +pk.a;
+    const aliveBefore = ph >= before.h && pa >= before.a, aliveAfter = ph >= after.h && pa >= after.a;
+    if (aliveBefore && !aliveAfter) died.push(r.pid);
+    if (ph === after.h && pa === after.a) landed.push(r.pid);
+  }
+  const lines = [];
+  let good = false, bad = false;
+  if (died.includes(MYPID)){ lines.push("💀 Your exact's dead"); bad = true; }
+  const deadOthers = died.filter(p => p !== MYPID);
+  if (deadOthers.length) lines.push(`💀 ${nameList(deadOthers)}'s exact${deadOthers.length > 1 ? "s are" : " is"} dead`);
+  if (landed.includes(MYPID)){ lines.push("★ You're on for the exact"); good = true; }
+  const landOthers = landed.filter(p => p !== MYPID);
+  if (landOthers.length) lines.push(`★ ${nameList(landOthers)} ${landOthers.length > 1 ? "are" : "is"} on for the exact`);
+  const top = rows => rows.filter(r => r.rank === 1).map(r => r.pid).sort();
+  const tb = top(rowsBefore), ta = top(rowsAfter);
+  let leadLine = false;
+  if (rowsAfter.some(r => r.rank > 1) && tb.join() !== ta.join()){
+    leadLine = true;
+    if (ta.length === 1) lines.push(`👑 ${firstName(ta[0])} take${ta[0] === MYPID ? "" : "s"} the lead`);
+    else lines.push(`👑 ${nameList(ta)} level at the top`);
+    if (ta.includes(MYPID)) good = true; else if (tb.includes(MYPID)) bad = true;
+  }
+  const mb = rowsBefore.find(r => r.pid === MYPID), ma = rowsAfter.find(r => r.pid === MYPID);
+  if (mb && ma && mb.rank !== ma.rank && !(leadLine && (ta.includes(MYPID) || tb.includes(MYPID)))){
+    if (ma.rank < mb.rank){ lines.push(`📈 You're up to ${ordinal(ma.rank)}`); good = true; }
+    else { lines.push(`📉 You drop to ${ordinal(ma.rank)}`); bad = true; }
+  }
+  const scorer = after.h > before.h ? f.h : f.a;
+  return {
+    fid: f.id,
+    title: `⚽ ${teamShort(scorer)} score! ${teamShort(f.h)} ${after.h}–${after.a} ${teamShort(f.a)}`,
+    lines: lines.length ? lines : ["Nobody's week changes. Yet."],
+    good: good && !bad, bad,
+  };
+}
+// Compare the feed with what this session has already seen; one flash per
+// fixture that gained a goal. Scores only ratchet up, so the slower GitHub
+// feed briefly lagging the fast lane never re-fires (or un-fires) a goal.
+function goalFlashes(){
+  const gw = currentGw();
+  if (gw === null || !FEED) return [];
+  if (!SCORE_SEEN || SCORE_SEEN.gw !== gw){
+    SCORE_SEEN = { gw, s: {} };
+    for (const f of gwFixtures(gw)) SCORE_SEEN.s[f.id] = { h: f.hs ?? 0, a: f.as ?? 0 };
+    return [];
+  }
+  const out = [];
+  for (const f of gwFixtures(gw)){
+    const cur = { h: +(f.hs ?? 0), a: +(f.as ?? 0) };
+    const seen = SCORE_SEEN.s[f.id] || cur;
+    if (cur.h > seen.h || cur.a > seen.a){
+      const before = { h: Math.min(seen.h, cur.h), a: Math.min(seen.a, cur.a) };
+      const ov = GAMEWEEKS["gw"+gw]?.overrides?.[f.id]; // admin-entered result: the feed isn't the story
+      if (gwLocked(gw) && !GAMEWEEKS["gw"+gw]?.finalized && !(ov && ov.h != null)) out.push(goalFlash(gw, f, before, cur));
+    }
+    SCORE_SEEN.s[f.id] = { h: Math.max(seen.h, cur.h), a: Math.max(seen.a, cur.a) };
+  }
+  return out;
+}
+function showToast(t){
+  let box = $("toasts");
+  if (!box){ box = document.createElement("div"); box.id = "toasts"; document.body.appendChild(box); }
+  const el = document.createElement("div");
+  el.className = "toast" + (t.good ? " good" : t.bad ? " bad" : "");
+  el.innerHTML = `<b>${esc(t.title)}</b>${t.lines.map(l => `<div>${esc(l)}</div>`).join("")}`;
+  el.onclick = () => { el.remove(); if (t.fid) showFacts(t.fid); };
+  box.appendChild(el);
+  while (box.children.length > 3) box.firstChild.remove();
+  setTimeout(() => el.remove(), 10 * 1000);
+}
+function flashGoals(){
+  const fl = goalFlashes();
+  if (ME) fl.forEach(showToast);
+}
+
+/* ---------- badges & superlatives ---------- */
+const BADGES = {
+  sniper:   { e:"🎯", t:"Sniper",          d:"most exact scores this season" },
+  banker:   { e:"💰", t:"The Banker",      d:"most money won this season" },
+  spoon:    { e:"🥄", t:"Wooden Spoonist", d:"most last-place finishes" },
+  deluded:  { e:"🤡", t:"Deluded",         d:"most predictions that scored nothing" },
+  hattrick: { e:"🎩", t:"Hat-trick",       d:"3+ exact scores in one week" },
+  b2b:      { e:"👑", t:"Back-to-back",    d:"won two weeks running" },
+  duck:     { e:"🦆", t:"Duck",            d:"scored nothing all week" },
+};
+function finalisedWeeks(){
+  return Object.entries(GAMEWEEKS)
+    .filter(([,g]) => g.finalized && g.table?.length)
+    .map(([id,g]) => ({ gw: +id.replace("gw",""), ...g }))
+    .sort((a,b) => a.gw - b.gw);
+}
+// pid -> [{key, n}]. Titles (top four) go to the current record holder(s);
+// achievements (the rest) are kept for good once earned, with a count.
+function seasonBadges(){
+  const st = {};
+  const get = pid => st[pid] || (st[pid] = { exact:0, won:0, spoon:0, blanks:0, hattrick:0, b2b:0, duck:0 });
+  let prevWin = new Set(), prevGw = null;
+  for (const g of finalisedWeeks()){
+    const maxRank = Math.max(...g.table.map(r => r.rank || 1));
+    const win = new Set((g.winners?.length ? g.winners : g.table.filter(r => r.rank === 1)).map(w => w.pid));
+    for (const r of g.table){
+      const s = get(r.pid);
+      s.exact += r.exact || 0;
+      s.won = round2(s.won + (g.payouts?.[r.pid] || 0));
+      if (maxRank > 1 && r.rank === maxRank) s.spoon++;
+      s.blanks += Math.max(0, (r.predicted ?? 0) - (r.correct || 0));
+      if ((r.exact || 0) >= 3) s.hattrick++;
+      if (win.has(r.pid) && prevGw === g.gw - 1 && prevWin.has(r.pid)) s.b2b++;
+      if (!r.pts) s.duck++;
+    }
+    prevWin = win; prevGw = g.gw;
+  }
+  const out = {};
+  const add = (pid, key, n) => (out[pid] || (out[pid] = [])).push({ key, n });
+  for (const [key, stat] of [["sniper","exact"], ["banker","won"], ["spoon","spoon"], ["deluded","blanks"]]){
+    const best = Math.max(0, ...Object.values(st).map(s => s[stat]));
+    if (best > 0) for (const [pid,s] of Object.entries(st)) if (s[stat] === best) add(pid, key, best);
+  }
+  for (const key of ["hattrick", "b2b", "duck"])
+    for (const [pid,s] of Object.entries(st)) if (s[key]) add(pid, key, s[key]);
+  return out;
+}
+function badgeChips(list){
+  return (list || []).map(b => {
+    const B = BADGES[b.key];
+    const ach = ["hattrick","b2b","duck"].includes(b.key);
+    const n = b.key === "banker" ? fmtMoney(b.n) : b.n;
+    return `<span class="bdg" title="${esc(B.t)} — ${esc(B.d)} (${esc(n)})">${B.e}${ach && b.n > 1 ? `<sub>×${b.n}</sub>` : ""}</span>`;
+  }).join("");
+}
+// One-liners for a finalised week, for the This Week view and the share card.
+function weekSuperlatives(gw){
+  const g = GAMEWEEKS["gw"+gw];
+  if (!g?.finalized || !g.table?.length) return [];
+  const t = g.table, out = [];
+  const nm = r => (PLAYERS[r.pid]?.name || r.name || "").split(" ")[0];
+  const joinN = rs => { const n = rs.map(nm); return n.length <= 1 ? n[0] : n.slice(0, -1).join(", ") + " & " + n[n.length - 1]; };
+  // the top of the table
+  const firsts = t.filter(r => r.rank === 1);
+  const second = t.find(r => r.rank > 1);
+  if (firsts.length > 1) out.push({ e:"🤝", t:"Dead heat", txt:`${joinN(firsts)} split the pot on ${firsts[0].pts}` });
+  else if (second){
+    const margin = firsts[0].pts - second.pts;
+    if (margin >= 10) out.push({ e:"🚀", t:"Daylight", txt:`${nm(firsts[0])} won by ${margin} points. Nobody else turned up.` });
+    else if (margin <= 2) out.push({ e:"📸", t:"Photo finish", txt:`${nm(firsts[0])} pipped ${nm(second)} by ${margin}` });
+  }
+  const maxEx = Math.max(...t.map(r => r.exact || 0));
+  if (maxEx >= 2 || (maxEx === 1 && t.filter(r => r.exact === 1).length === 1))
+    out.push({ e:"🎯", t:"Sniper", txt:`${joinN(t.filter(r => r.exact === maxEx))} — ${maxEx} exact score${maxEx > 1 ? "s" : ""}` });
+  const preds = PREDS[gw];
+  if (preds){
+    const lone = [];
+    let worst = null;
+    for (const f of gwFixtures(gw)){
+      const res = fixtureResult(gw, f);
+      if (!res) continue;
+      const hits = t.filter(r => { const pk = preds[r.pid]?.picks?.[f.id]; return pk && +pk.h === res.h && +pk.a === res.a; });
+      if (hits.length === 1 && t.length > 2) lone.push({ r: hits[0], f, res });
+      for (const r of t){
+        const pk = preds[r.pid]?.picks?.[f.id];
+        if (!pk || Math.sign(pk.h - pk.a) === Math.sign(res.h - res.a)) continue;
+        const dist = Math.abs(pk.h - res.h) + Math.abs(pk.a - res.a);
+        if (!worst || dist > worst.dist || (dist === worst.dist && +pk.h + +pk.a > +worst.pk.h + +worst.pk.a)) worst = { r, f, pk, res, dist };
+      }
+    }
+    if (lone.length){
+      const L = lone.sort((a,b) => (b.res.h + b.res.a) - (a.res.h + a.res.a))[0];
+      out.push({ e:"🧠", t:"Lone genius", txt:`only ${nm(L.r)} called ${teamShort(L.f.h)} ${L.res.h}–${L.res.a} ${teamShort(L.f.a)}` });
+    }
+    if (worst && worst.dist >= 3)
+      out.push({ e:"🤡", t:"Deluded", txt:`${nm(worst.r)} went ${teamShort(worst.f.h)} ${worst.pk.h}–${worst.pk.a} ${teamShort(worst.f.a)}. It finished ${worst.res.h}–${worst.res.a}.` });
+  }
+  const ducks = t.filter(r => !r.pts);
+  if (ducks.length) out.push({ e:"🦆", t:"Duck", txt:`${joinN(ducks)} — zero points. Not one.` });
+  return out;
+}
+
+/* ---------- nemesis & head-to-head ---------- */
+function headToHead(a, b){
+  const h = { weeks:0, aAbove:0, bAbove:0, level:0, aPts:0, bPts:0, aExact:0, bExact:0, aWins:0, bWins:0, aWon:0, bWon:0 };
+  for (const g of finalisedWeeks()){
+    const ra = g.table.find(x => x.pid === a), rb = g.table.find(x => x.pid === b);
+    if (!ra || !rb) continue;
+    h.weeks++;
+    if (ra.rank < rb.rank) h.aAbove++; else if (rb.rank < ra.rank) h.bAbove++; else h.level++;
+    h.aPts += ra.pts; h.bPts += rb.pts;
+    h.aExact += ra.exact || 0; h.bExact += rb.exact || 0;
+    if (ra.rank === 1) h.aWins++;
+    if (rb.rank === 1) h.bWins++;
+    h.aWon = round2(h.aWon + (g.payouts?.[a] || 0)); h.bWon = round2(h.bWon + (g.payouts?.[b] || 0));
+  }
+  return h;
+}
+function rivalsOf(pid){
+  const s = new Set();
+  for (const g of finalisedWeeks()) if (g.table.some(r => r.pid === pid)) g.table.forEach(r => { if (r.pid !== pid) s.add(r.pid); });
+  return [...s];
+}
+// Nemesis: who finishes above you most often (net of the reverse, then points).
+// Bunny: the mirror image — who you finish above most.
+function nemesisOf(pid){
+  let nem = null, bun = null;
+  for (const o of rivalsOf(pid)){
+    const h = headToHead(pid, o);
+    if (!h.weeks) continue;
+    const nk = [h.bAbove, h.bAbove - h.aAbove, h.bPts - h.aPts];
+    const bk = [h.aAbove, h.aAbove - h.bAbove, h.aPts - h.bPts];
+    const better = (x, y) => !y || x[0] > y[0] || (x[0] === y[0] && (x[1] > y[1] || (x[1] === y[1] && x[2] > y[2])));
+    if (h.bAbove > 0 && better(nk, nem?.k)) nem = { pid: o, h, k: nk };
+    if (h.aAbove > 0 && better(bk, bun?.k)) bun = { pid: o, h, k: bk };
+  }
+  return { nemesis: nem, bunny: bun };
+}
+function h2hHtml(){
+  const rivals = rivalsOf(MYPID);
+  if (!rivals.length) return "";
+  const { nemesis, bunny } = nemesisOf(MYPID);
+  const nameOf = pid => PLAYERS[pid]?.name || finalisedWeeks().flatMap(g => g.table).find(r => r.pid === pid)?.name || pid;
+  const el = $("tab-board");
+  let opp = el?.dataset.h2h;
+  if (!rivals.includes(opp)) opp = nemesis?.pid || rivals.sort((a,b) => nameOf(a).localeCompare(nameOf(b)))[0];
+  const h = headToHead(MYPID, opp);
+  const fn = pid => esc(nameOf(pid).split(" ")[0]);
+  let html = `<div class="panel"><div class="panelhead"><h2>⚔️ Head to head</h2>
+    <select onchange="$('tab-board').dataset.h2h=this.value;renderBoard()">${rivals.slice().sort((a,b) => nameOf(a).localeCompare(nameOf(b)))
+      .map(p => `<option value="${esc(p)}" ${p===opp?"selected":""}>vs ${esc(nameOf(p))}${p===nemesis?.pid?" 😈":""}</option>`).join("")}</select></div>`;
+  if (nemesis) html += `<div class="nemline">😈 <b>Your nemesis: ${fn(nemesis.pid)}</b> — finished above you in ${nemesis.h.bAbove} of ${nemesis.h.weeks} week${nemesis.h.weeks>1?"s":""}.</div>`;
+  if (bunny) html += `<div class="nemline">🐰 <b>Your bunny: ${fn(bunny.pid)}</b> — you've finished above them in ${bunny.h.aAbove} of ${bunny.h.weeks}.</div>`;
+  const row = (label, a, b, money) => {
+    const fa = money ? fmtMoney(a) : a, fb = money ? fmtMoney(b) : b;
+    return `<tr><td class="h2ha ${a>b?"h2hwin":""}">${fa}</td><td class="h2hl">${label}</td><td class="h2hb ${b>a?"h2hwin":""}">${fb}</td></tr>`;
+  };
+  html += `<div class="h2hcard">
+    <div class="h2hside">${avatarImg(MYPID, "ava-h2h") || '<div class="h2hblank">🙂</div>'}<div class="h2hname">You</div></div>
+    <div class="h2hscore"><div class="h2hbig">${h.aAbove}<span>–</span>${h.bAbove}</div><div class="faint">weeks finished above${h.level ? ` · ${h.level} level` : ""}</div></div>
+    <div class="h2hside">${avatarImg(opp, "ava-h2h") || '<div class="h2hblank">😐</div>'}<div class="h2hname">${fn(opp)}</div></div>
+  </div>
+  <table class="h2htbl">${row("weekly wins", h.aWins, h.bWins)}${row("points", h.aPts, h.bPts)}${row("exact scores", h.aExact, h.bExact)}${row("£ won", h.aWon, h.bWon, true)}</table>
+  <p class="faint" style="margin-top:6px">${h.weeks} finalised week${h.weeks===1?"":"s"} you've both played.</p></div>`;
+  return html;
+}
+
+/* ---------- WhatsApp result card ---------- */
+function resultCardData(gw){
+  const g = GAMEWEEKS["gw"+gw];
+  if (!g?.finalized || !g.table?.length) return null;
+  const maxRank = Math.max(...g.table.map(r => r.rank || 1));
+  const losers = maxRank > 1 ? g.table.filter(r => r.rank === maxRank) : [];
+  const loserNames = losers.map(l => l.name).join(" & ");
+  const winners = g.winners?.length ? g.winners : g.table.filter(r => r.rank === 1);
+  return {
+    gw,
+    winners: winners.map(w => ({ pid: w.pid, name: PLAYERS[w.pid]?.name || w.name, pts: w.pts })),
+    table: g.table.map(r => ({ pid: r.pid, name: PLAYERS[r.pid]?.name || r.name, pts: r.pts, exact: r.exact || 0, rank: r.rank })),
+    pot: g.pot ?? null,
+    share: winners[0] && g.payouts ? (g.payouts[winners[0].pid] ?? null) : null,
+    losers: losers.map(l => l.pid),
+    roast: losers.length ? pickMsg("loser", ROASTS, gw, { name: loserNames, pts: losers[0].pts }, losers.length === 1 ? losers[0].pid : null) : "",
+    sups: weekSuperlatives(gw).filter(s => s.t !== "Duck").slice(0, 2),
+  };
+}
+function loadImg(src){
+  return new Promise(res => {
+    if (!src) return res(null);
+    const i = new Image();
+    i.onload = () => res(i); i.onerror = () => res(null);
+    i.src = src;
+  });
+}
+function wrapLines(ctx, text, maxW){
+  const words = String(text).split(/\s+/), lines = [];
+  let line = "";
+  for (const w of words){
+    const t = line ? line + " " + w : w;
+    if (ctx.measureText(t).width > maxW && line){ lines.push(line); line = w; } else line = t;
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+async function drawResultCard(gw){
+  const d = resultCardData(gw);
+  if (!d) return null;
+  const W = 1080, H = 1350, F = "'Inter','Helvetica Neue',Arial,sans-serif";
+  const c = document.createElement("canvas");
+  c.width = W; c.height = H;
+  const x = c.getContext("2d");
+  const bg = x.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, "#142440"); bg.addColorStop(.55, "#0b1322"); bg.addColorStop(1, "#06080e");
+  x.fillStyle = bg; x.fillRect(0, 0, W, H);
+  const glow = x.createRadialGradient(W/2, 380, 20, W/2, 380, 520);
+  glow.addColorStop(0, "rgba(255,215,94,.22)"); glow.addColorStop(1, "rgba(255,215,94,0)");
+  x.fillStyle = glow; x.fillRect(0, 0, W, H);
+  x.textAlign = "center"; x.textBaseline = "alphabetic";
+  // header: crest + title
+  const logo = await loadImg("data:image/svg+xml;charset=utf-8," + encodeURIComponent(
+    LOGO_SVG.replace("<svg ", '<svg width="200" height="228" ').replace("<g filter", LOGO_DEFS + "<g filter")));
+  if (logo) x.drawImage(logo, 60, 44, 96, 110);
+  x.textAlign = "left";
+  x.fillStyle = "#ffd75e"; x.font = `900 64px ${F}`; x.fillText("LEFUCK", 176, 106);
+  x.fillStyle = "#8fa3c0"; x.font = `600 34px ${F}`; x.fillText(`GAMEWEEK ${gw} · FULL TIME`, 178, 148);
+  // winner hero
+  x.textAlign = "center";
+  const heads = await Promise.all(d.winners.slice(0, 3).map(w => loadImg(AVATARS[w.pid])));
+  let y = 200;
+  const HH = 300;
+  const imgs = heads.filter(Boolean);
+  if (imgs.length){
+    x.save();
+    x.shadowColor = "rgba(255,215,94,.7)"; x.shadowBlur = 40;
+    const ws = imgs.map(i => Math.min(HH * i.width / i.height, 320));
+    const total = ws.reduce((a,b) => a + b, 0) - (imgs.length - 1) * 60;
+    let hx = W/2 - total/2;
+    imgs.forEach((i, k) => { x.drawImage(i, hx, y, ws[k], HH); hx += ws[k] - 60; });
+    x.restore();
+  } else {
+    x.font = `220px ${F}`; x.fillText("🏆", W/2, y + 240);
+  }
+  y += HH + 60;
+  x.fillStyle = "#ffd75e"; x.font = `800 36px ${F}`;
+  x.fillText(d.winners.length > 1 ? "🏆 JOINT CHAMPIONS" : "🏆 CHAMPION", W/2, y);
+  y += 78;
+  x.fillStyle = "#ffffff";
+  let wn = d.winners.map(w => w.name).join(" & ");
+  let fs = 76; x.font = `900 ${fs}px ${F}`;
+  while (x.measureText(wn).width > W - 120 && fs > 40){ fs -= 4; x.font = `900 ${fs}px ${F}`; }
+  x.fillText(wn, W/2, y);
+  y += 54;
+  x.fillStyle = "#c9d6ea"; x.font = `600 36px ${F}`;
+  const wPts = d.winners[0]?.pts ?? 0;
+  x.fillText(`${wPts} pts${d.share != null ? ` · takes ${fmtMoney(d.share)}${d.winners.length > 1 ? " each" : ""}` : ""}${d.pot != null ? `  (pot ${fmtMoney(d.pot)})` : ""}`, W/2, y);
+  y += 46;
+  // table
+  const rows = d.table;
+  const footer = (d.roast ? 170 : 0) + (d.sups.length ? 44 * d.sups.length + 10 : 0) + 70;
+  const rh = Math.max(34, Math.min(58, Math.floor((H - y - footer) / Math.max(1, rows.length))));
+  const tx = 120, tw = W - 240;
+  x.fillStyle = "rgba(255,255,255,.05)";
+  x.beginPath(); (x.roundRect ? x.roundRect(tx - 24, y, tw + 48, rh * rows.length + 20, 22) : x.rect(tx - 24, y, tw + 48, rh * rows.length + 20)); x.fill();
+  y += 10;
+  const lose = new Set(d.losers);
+  for (const r of rows){
+    const cy = y + rh * 0.68;
+    const medal = r.rank === 1 ? "🥇" : r.rank === 2 ? "🥈" : r.rank === 3 ? "🥉" : lose.has(r.pid) ? "🥄" : String(r.rank);
+    x.font = `700 ${Math.round(rh * .55)}px ${F}`;
+    x.textAlign = "center"; x.fillStyle = "#8fa3c0"; x.fillText(medal, tx + 22, cy);
+    x.textAlign = "left"; x.fillStyle = r.rank === 1 ? "#ffd75e" : lose.has(r.pid) ? "#ff8a9c" : "#e8eef8";
+    x.fillText(r.name, tx + 70, cy);
+    x.textAlign = "right"; x.fillText(String(r.pts), tx + tw, cy);
+    if (r.exact){ x.fillStyle = "#8fa3c0"; x.font = `600 ${Math.round(rh * .4)}px ${F}`; x.fillText(`${r.exact}★`, tx + tw - 100, cy); }
+    y += rh;
+  }
+  y += 50;
+  // superlatives
+  x.textAlign = "center";
+  for (const s of d.sups){
+    x.fillStyle = "#8fe3ff"; x.font = `600 30px ${F}`;
+    const t = `${s.e} ${s.t}: ${s.txt}`;
+    x.fillText(wrapLines(x, t, W - 140)[0], W/2, y);
+    y += 44;
+  }
+  // roast
+  if (d.roast){
+    y += 8;
+    x.fillStyle = "#ff8a9c"; x.font = `italic 600 32px ${F}`;
+    const ls = wrapLines(x, "🥄 " + d.roast, W - 160).slice(0, 3);
+    for (const l of ls){ x.fillText(l, W/2, y); y += 42; }
+  }
+  x.fillStyle = "#4f6280"; x.font = `600 26px ${F}`;
+  x.fillText("Think you can do better? Get in the league.", W/2, H - 36);
+  return c;
+}
+let CARD_CACHE = {}; // gw -> { sig, file, url }
+function cardSig(gw){
+  const d = resultCardData(gw);
+  return d ? JSON.stringify(d) + d.winners.map(w => (AVATARS[w.pid] || "").length).join(",") : "";
+}
+async function prepCard(gw){
+  const sig = cardSig(gw);
+  if (!sig) return null;
+  if (CARD_CACHE[gw]?.sig === sig) return CARD_CACHE[gw];
+  const c = await drawResultCard(gw);
+  if (!c) return null;
+  const blob = await new Promise(r => c.toBlob(r, "image/png"));
+  const entry = { sig, url: c.toDataURL("image/png"),
+    file: blob && typeof File === "function" ? new File([blob], `lefuck-gw${gw}.png`, { type: "image/png" }) : null };
+  CARD_CACHE[gw] = entry;
+  return entry;
+}
+async function shareResult(gw, btn){
+  const label = btn?.textContent;
+  if (btn) btn.textContent = "…";
+  try {
+    const card = await prepCard(gw);
+    if (!card) return;
+    if (card.file && navigator.canShare && navigator.canShare({ files: [card.file] })){
+      try { await navigator.share({ files: [card.file], text: `LEFUCK · GW ${gw} results` }); return; }
+      catch(e){ if (e.name === "AbortError") return; } // not allowed (gesture expired etc.) — show it instead
+    }
+    showCardPreview(gw, card);
+  } finally { if (btn) btn.textContent = label; }
+}
+function showCardPreview(gw, card){
+  if (!$("card-overlay")){
+    document.body.insertAdjacentHTML("beforeend", `
+      <div id="card-overlay" class="roast-overlay hidden" onclick="this.classList.add('hidden')">
+        <div class="roast-card cardprev" onclick="event.stopPropagation()">
+          <img id="card-img" alt="Result card">
+          <p class="faint" style="margin:10px 0">Press and hold the image to save or share it, then post it in the group.</p>
+          <div class="nagbtns" style="justify-content:center"><a id="card-dl" class="btn btn-gold">⬇ Download</a>
+          <button class="btn" onclick="$('card-overlay').classList.add('hidden')">Close</button></div>
+        </div>
+      </div>`);
+  }
+  $("card-img").src = card.url;
+  $("card-dl").href = card.url; $("card-dl").download = `lefuck-gw${gw}.png`;
+  $("card-overlay").classList.remove("hidden");
+}
+
 /* ---------- chrome / tabs ---------- */
 function renderChrome(){
   $("who-name").textContent = ME.name;
@@ -1879,6 +2438,7 @@ function renderPredict(){
   else if (locked && !myCount) html += `<div class="banner err">🔒 Deadline passed — no picks in, you've missed this week.</div>`;
   else if (locked) html += `<div class="banner info">🔒 Predictions are locked.</div>`;
   else if (deadline) html += `<div class="banner ok">⏱ Locks at <b>${fmtKo(deadline.toISOString())}</b>.</div>`;
+  if (!locked) html += nagBannerHtml(gw);
   let potChip = "";
   if (fx.length){
     const gwDoc = GAMEWEEKS["gw"+gw];
@@ -2105,6 +2665,10 @@ function renderWeek(){
     const maxRank = Math.max(...(gwDoc.table||[]).map(x=>x.rank||1));
     const spoons = (gwDoc.table||[]).filter(x=>x.rank===maxRank && maxRank>1);
     if (spoons.length) html += `<div class="banner err">🥄 Wooden spoon: <b>${esc(spoons.map(s=>s.name).join(" & "))}</b> — ${spoons[0].pts} pts. Shameful scenes.</div>`;
+    html += `<div class="sharerow"><button class="btn btn-gold" onclick="shareResult(${gw}, this)">📤 Share result card</button><span class="faint">One image for the group chat — winner, table, pot and the roast.</span></div>`;
+    const sups = weekSuperlatives(gw);
+    if (sups.length) html += `<div class="panel"><h2>🏅 Superlatives</h2>${sups.map(x => `<div class="supline"><span class="supe">${x.e}</span><b>${esc(x.t)}</b> — ${esc(x.txt)}</div>`).join("")}</div>`;
+    setTimeout(() => prepCard(gw), 0); // pre-draw so the share sheet opens straight from the tap
   } else {
     const anyResult = fx.some(f => fixtureResultLive(gw,f));
     html += `<div class="banner info">${liveNow ? "<span class=\"livedot\">● LIVE</span> — points move with the goals as they go in. Nothing's final until full time." : anyResult ? "Live standings — updates automatically as results come in. The week hasn't been finalised yet." : "No results in yet. Scores update automatically as matches are played — points count at full time."}</div>`;
@@ -2203,6 +2767,7 @@ function renderBoard(){
   const months = [...new Set(Object.values(GAMEWEEKS).filter(g=>g.finalized&&g.monthKey).map(g=>g.monthKey))].sort();
   const sel = el.dataset.month || "";
   const rows = seasonAgg(sel || null);
+  const badges = seasonBadges();
   let html = "";
   // season-pulse strip: my standing in the race that actually pays out
   const meIdx = rows.findIndex(r => r.pid === MYPID);
@@ -2232,11 +2797,24 @@ function renderBoard(){
     <tr><th class="rank">#</th><th>Player</th><th class="num">🏆 Wins</th><th class="num">🥈 Runner-up</th><th class="num">Total pts</th><th class="num">Exact scores</th><th class="num">Correct results</th><th class="num">Weeks</th></tr>`;
   rows.forEach((r,i)=>{
     html += `<tr class="${r.pid===MYPID?"me":""} ${i===0?"pos1":i===1?"pos2":""}">
-      <td class="rank">${i+1}</td><td>${avatarImg(r.pid, "ava-sm")}${esc(r.name)}</td><td class="num"><b>${r.wins}</b></td><td class="num">${r.runs}</td>
+      <td class="rank">${i+1}</td><td>${avatarImg(r.pid, "ava-sm")}${esc(r.name)}${badges[r.pid] ? ` <span class="bdgs">${badgeChips(badges[r.pid])}</span>` : ""}</td><td class="num"><b>${r.wins}</b></td><td class="num">${r.runs}</td>
       <td class="num"><b>${r.pts}</b></td><td class="num">${r.exact}</td><td class="num">${r.correct}</td><td class="num">${r.weeks}</td></tr>`;
   });
   if (!rows.length) html += `<tr><td colspan="8" class="muted">Nothing here yet — the table fills up once the admin finalises a gameweek.</td></tr>`;
   html += `</table></div></div>`;
+
+  // badges: who holds what (tooltips don't exist on phones, so spell it out)
+  const held = Object.keys(BADGES).map(key => ({ key, who: Object.entries(badges).filter(([,l]) => l.some(b => b.key === key))
+    .map(([pid,l]) => ({ pid, n: l.find(b => b.key === key).n })) })).filter(b => b.who.length);
+  if (held.length){
+    const nm = pid => esc((PLAYERS[pid]?.name || finalisedWeeks().flatMap(g => g.table).find(r => r.pid === pid)?.name || "?").split(" ")[0]);
+    html += `<div class="panel"><h2>🏅 Badges</h2><div class="bdglegend">${held.map(b => {
+      const B = BADGES[b.key];
+      const who = b.who.map(w => nm(w.pid) + (b.key === "banker" ? ` (${fmtMoney(w.n)})` : w.n > 1 || ["sniper","spoon","deluded"].includes(b.key) ? ` (${w.n})` : "")).join(", ");
+      return `<div class="bdgrow"><span class="bdg big">${B.e}</span><div><b>${esc(B.t)}</b> <span class="faint">${esc(B.d)}</span><div>${who}</div></div></div>`;
+    }).join("")}</div></div>`;
+  }
+  html += h2hHtml();
 
   // money: running balances since the last settle-up
   const mrows = moneyAgg();
