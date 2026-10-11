@@ -285,6 +285,25 @@ tr.pos2 td{background:linear-gradient(90deg,rgba(154,167,181,.10),transparent 70
 .roast-overlay{position:fixed;inset:0;background:rgba(6,9,13,.82);backdrop-filter:blur(3px);z-index:50;display:flex;align-items:center;justify-content:center;padding:20px}
 .roast-card{background:var(--panel);border:2px solid var(--gold);border-radius:14px;padding:28px 24px;max-width:420px;text-align:center;box-shadow:0 18px 60px rgba(0,0,0,.6)}
 .roast-card .roast-spoon{font-size:52px;margin-bottom:6px}
+.roast-card .roast-spoon.hasface{font-size:0;line-height:0}
+.facestack{position:relative;display:inline-flex;justify-content:center}
+.bigface{height:150px;max-width:150px;object-fit:contain;filter:drop-shadow(0 0 2px rgba(255,255,255,.35)) drop-shadow(0 10px 16px rgba(0,0,0,.6))}
+.bigface+.bigface{margin-left:-34px}
+.bigface.ring-red{filter:drop-shadow(0 0 2px rgba(255,255,255,.35)) drop-shadow(0 0 14px rgba(255,84,112,.65)) drop-shadow(0 10px 16px rgba(0,0,0,.6))}
+.bigface.ring-green{filter:drop-shadow(0 0 2px rgba(255,255,255,.35)) drop-shadow(0 0 14px rgba(49,232,140,.6)) drop-shadow(0 10px 16px rgba(0,0,0,.6))}
+.bigface.ring-gold{filter:drop-shadow(0 0 2px rgba(255,255,255,.4)) drop-shadow(0 0 20px rgba(255,215,94,.7)) drop-shadow(0 10px 16px rgba(0,0,0,.6))}
+.facebadge{position:absolute;right:-14px;bottom:-2px;font-size:40px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,.6))}
+.ava{object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6))}
+.ava-th{display:block;height:28px;max-width:30px;margin:0 auto 2px}
+.predgrid tr:first-child th{vertical-align:bottom}
+th.colme .ava-th{margin:0 0 2px auto}
+.ava-sm{height:24px;max-width:26px;vertical-align:middle;margin-right:7px}
+.ava-btn{height:18px;max-width:20px;vertical-align:-4px}
+.facepreview{display:flex;align-items:center;justify-content:center;height:190px;margin:10px 0;border-radius:10px;
+  background:repeating-conic-gradient(#141a2c 0% 25%,#0e1220 0% 50%) 50%/18px 18px}
+.facepreview img{max-height:170px;max-width:90%;filter:drop-shadow(0 8px 14px rgba(0,0,0,.6))}
+.facs-card{background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--steel);border-radius:12px;padding:18px;width:min(340px,94vw)}
+#face-file{width:100%;font-size:13px}
 .roast-card .lbl{font-family:"Oswald";font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
 .roast-card .name{font-family:"Oswald";font-size:32px;font-weight:700;margin:6px 0 10px}
 .roast-card p{color:var(--ink-dim);font-size:15px;margin-bottom:18px}
@@ -452,7 +471,7 @@ code{background:var(--bg2);border:1px solid var(--line);border-radius:4px;paddin
 <!-- loser-of-the-week roast -->
 <div id="roast-overlay" class="roast-overlay hidden" onclick="this.classList.add('hidden')">
   <div class="roast-card" onclick="event.stopPropagation()">
-    <div class="roast-spoon">🥄</div>
+    <div id="roast-face" class="roast-spoon">🥄</div>
     <div id="roast-title" class="lbl">Loser of the week</div>
     <div id="roast-name" class="name"></div>
     <p id="roast-msg"></p>
@@ -463,7 +482,7 @@ code{background:var(--bg2);border:1px solid var(--line);border-radius:4px;paddin
 <!-- gameweek winner celebration -->
 <div id="win-overlay" class="roast-overlay hidden" onclick="this.classList.add('hidden')">
   <div class="roast-card champ" onclick="event.stopPropagation()">
-    <div class="roast-spoon">🏆</div>
+    <div id="win-face" class="roast-spoon">🏆</div>
     <div id="win-title" class="lbl"></div>
     <div class="name">CHAMPION!</div>
     <p id="win-msg"></p>
@@ -581,6 +600,7 @@ document.querySelectorAll(".logo-slot").forEach(el => el.innerHTML = LOGO_SVG);
 let AUTH, DB, MYPID = null, ME = null;
 let CONFIG = { ...DEFAULT_POINTS, stake: DEFAULT_STAKE }; // {result, exact, stake}
 let MSGS = { winner:[], loser:[], stillin:[], out:[], perPlayer:{} }; // admin's bespoke banter
+let AVATARS = {};                             // pid -> cropped head (data URL), admin-uploaded
 let SETTLEMENTS = [];                         // past pay-outs (money resets)
 let PLAYERS = {};                             // pid -> player doc
 let CODES = {};                               // pid -> code (admins only)
@@ -715,6 +735,11 @@ function startSubscriptions(){
     MSGS = { winner: m.winner||[], loser: m.loser||[], stillin: m.stillin||[], out: m.out||[],
              perPlayer: m.perPlayer||{} };
   });
+  DB.collection("avatars").onSnapshot(snap => {
+    AVATARS = {};
+    snap.forEach(d => { const img = d.data().img; if (typeof img === "string" && img.startsWith("data:image/")) AVATARS[d.id] = img; });
+    if (ME) renderAll();
+  }, err => console.warn("avatars not readable (add the avatars rules block)", err));
   DB.collection("settlements").onSnapshot(snap => {
     SETTLEMENTS = []; snap.forEach(d => SETTLEMENTS.push({ id: d.id, ...d.data() }));
     if (ME) renderAll();
@@ -1264,6 +1289,135 @@ function pickMsg(cat, builtins, seed, subs, pid){
   for (const [k,v] of Object.entries(subs || {})) msg = msg.replaceAll("{"+k+"}", String(v));
   return msg;
 }
+// ---- player heads ----
+function avatarImg(pid, cls){
+  const src = AVATARS[pid];
+  return src ? `<img class="ava ${cls||""}" src="${src}" alt="">` : "";
+}
+// Banter-card hero: the player's head(s) with the card's emoji as a badge,
+// falling back to the plain emoji until the admin has uploaded faces.
+function setFace(elId, pids, emoji, ring){
+  const el = $(elId);
+  if (!el) return;
+  const faces = (pids || []).filter(p => AVATARS[p]).slice(0, 3);
+  if (!faces.length){ el.classList.remove("hasface"); el.textContent = emoji; return; }
+  el.classList.add("hasface");
+  el.innerHTML = `<span class="facestack">${faces.map(p => `<img class="bigface ring-${ring}" src="${AVATARS[p]}" alt="">`).join("")}<span class="facebadge">${emoji}</span></span>`;
+}
+
+// Admin head upload: the admin pre-cuts each head (transparent PNG, or on a
+// plain white/flat background which is stripped here), so the app just
+// cleans, trims and shrinks it. Stored in Firestore — behind the login,
+// never in the public repo.
+const HEAD_MAX = 240;
+let HEAD_EDIT = null; // { pid, img }
+function openFaceEditor(pid){
+  if (!$("face-overlay")){
+    document.body.insertAdjacentHTML("beforeend", `
+      <div id="face-overlay" class="roast-overlay hidden">
+        <div class="facs-card" onclick="event.stopPropagation()">
+          <h2 id="face-title" style="margin-bottom:8px"></h2>
+          <p class="faint" style="margin-bottom:10px">Upload a cut-out of just the head — a transparent PNG is best; a plain white background is removed automatically.</p>
+          <input type="file" id="face-file" accept="image/*" onchange="faceFilePicked(this)">
+          <div id="face-preview" class="facepreview"><span class="faint">No head yet</span></div>
+          <div class="cfgrow" style="justify-content:space-between">
+            <button class="btn btn-danger" id="face-remove" onclick="removeFace()">Remove</button>
+            <span style="flex:1"></span>
+            <button class="btn" onclick="$('face-overlay').classList.add('hidden')">Cancel</button>
+            <button class="btn btn-gold" onclick="saveFace()">Save head</button>
+          </div>
+        </div>
+      </div>`);
+  }
+  HEAD_EDIT = { pid, img: null };
+  $("face-title").textContent = `📷 ${PLAYERS[pid]?.name || "Player"}'s head`;
+  $("face-file").value = "";
+  $("face-preview").innerHTML = AVATARS[pid] ? `<img src="${AVATARS[pid]}" alt="">` : `<span class="faint">No head yet</span>`;
+  $("face-remove").style.visibility = AVATARS[pid] ? "visible" : "hidden";
+  $("face-overlay").classList.remove("hidden");
+}
+// Make a flat background transparent by flood-filling inwards from the
+// edges (so a white sticker or teeth inside the head are left alone), then
+// trim to the head and scale down.
+function cleanHead(img){
+  const k = Math.min(1, 900 / Math.max(img.width, img.height));
+  const w = Math.max(1, Math.round(img.width * k)), h = Math.max(1, Math.round(img.height * k));
+  const c = document.createElement("canvas"); c.width = w; c.height = h;
+  const g = c.getContext("2d", { willReadFrequently: true });
+  g.drawImage(img, 0, 0, w, h);
+  const id = g.getImageData(0, 0, w, h), d = id.data;
+  const at = (x, y) => (y * w + x) * 4;
+  const corner = [[0,0],[w-1,0],[0,h-1],[w-1,h-1]].map(([x,y]) => at(x,y));
+  const alreadyCut = corner.some(i => d[i+3] < 20);
+  if (!alreadyCut){
+    // background colour = average of the four corners
+    const bg = [0,1,2].map(ch => corner.reduce((a,i) => a + d[i+ch], 0) / 4);
+    const near = i => d[i+3] > 0 && Math.abs(d[i]-bg[0]) + Math.abs(d[i+1]-bg[1]) + Math.abs(d[i+2]-bg[2]) < 60;
+    const seen = new Uint8Array(w * h), stack = [];
+    for (let x = 0; x < w; x++){ stack.push(x, 0, x, h-1); }
+    for (let y = 0; y < h; y++){ stack.push(0, y, w-1, y); }
+    while (stack.length){
+      const y = stack.pop(), x = stack.pop();
+      if (x < 0 || y < 0 || x >= w || y >= h) continue;
+      const p = y * w + x;
+      if (seen[p]) continue;
+      seen[p] = 1;
+      const i = p * 4;
+      if (!near(i)) continue;
+      d[i+3] = 0;
+      stack.push(x+1, y, x-1, y, x, y+1, x, y-1);
+    }
+    g.putImageData(id, 0, 0);
+  }
+  // trim to the visible head
+  let x0 = w, y0 = h, x1 = -1, y1 = -1;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++){
+    if (d[at(x,y)+3] > 24){ if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  }
+  if (x1 < 0) return null;
+  const tw = x1 - x0 + 1, th = y1 - y0 + 1;
+  const s = Math.min(1, HEAD_MAX / Math.max(tw, th));
+  const out = document.createElement("canvas");
+  out.width = Math.max(1, Math.round(tw * s)); out.height = Math.max(1, Math.round(th * s));
+  out.getContext("2d").drawImage(c, x0, y0, tw, th, 0, 0, out.width, out.height);
+  // WebP keeps transparency and stays small; browsers without WebP encoding give PNG
+  let url = out.toDataURL("image/webp", 0.86);
+  if (!url.startsWith("data:image/webp")) url = out.toDataURL("image/png");
+  return url;
+}
+function faceFilePicked(input){
+  const file = input.files && input.files[0];
+  if (!file) return;
+  const img = new Image();
+  img.onload = () => {
+    const url = cleanHead(img);
+    if (!url){ alert("Couldn't find a head in that image — is it all background?"); return; }
+    HEAD_EDIT.img = url;
+    $("face-preview").innerHTML = `<img src="${url}" alt="">`;
+  };
+  img.src = URL.createObjectURL(file);
+}
+async function saveFace(){
+  if (!HEAD_EDIT?.img){ alert("Choose a head image first."); return; }
+  const { pid, img } = HEAD_EDIT;
+  try {
+    await DB.collection("avatars").doc(pid).set({ img, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    AVATARS[pid] = img;
+    $("face-overlay").classList.add("hidden");
+    adminMsg(`Head saved for ${esc(PLAYERS[pid]?.name || "player")}.`);
+    renderAll();
+  } catch(e){
+    alert("Couldn't save the head: " + e.message + "\n\nHas the avatars rules block been added in Firebase? (see the README)");
+  }
+}
+async function removeFace(){
+  if (!HEAD_EDIT?.pid || !confirm("Remove this player's head?")) return;
+  await DB.collection("avatars").doc(HEAD_EDIT.pid).delete();
+  delete AVATARS[HEAD_EDIT.pid];
+  $("face-overlay").classList.add("hidden");
+  renderAll();
+}
+
 // Overlays are funny once, annoying on every refresh: remember showings on
 // this device (survives reloads and home-screen app relaunches).
 function seenTimes(key){ try { return +localStorage.getItem(key) || 0; } catch(e){ return 0; } }
@@ -1302,6 +1456,7 @@ function maybeShowWinner(){
   const amount = g.payouts?.[MYPID] != null ? fmtMoney(g.payouts[MYPID]) : "the pot";
   $("win-title").textContent = `GW ${g.gw} · you won the week`;
   $("win-msg").textContent = pickMsg("winner", WINNER_MSGS, g.gw, { name: ME.name, pts: me.pts, amount }, MYPID);
+  setFace("win-face", [MYPID], "🏆", "gold");
   $("win-overlay").classList.remove("hidden");
   celebrate();
 }
@@ -1328,6 +1483,7 @@ function maybeShowRoast(){
   $("roast-name").textContent = names;
   $("roast-msg").textContent = pickMsg("loser", ROASTS, g.gw, { name: names, pts: losers[0].pts },
     losers.length === 1 ? losers[0].pid : null);
+  setFace("roast-face", losers.map(l => l.pid), "🥄", "red");
   showAfter(["win-overlay"], "roast-overlay");
 }
 
@@ -1488,7 +1644,7 @@ function maybeShowStillIn(){
                  leaderpts: st.leader.pts, left: st.left, s: st.left === 1 ? "" : "s" };
   if (st.stillIn){
     card.classList.add("inplay"); card.classList.remove("dead");
-    $("stillin-spoon").textContent = st.leading ? "🔥" : "⚽";
+    setFace("stillin-spoon", [MYPID], st.leading ? "🔥" : "⚽", "green");
     $("stillin-title").textContent = `GW ${gw} · ${st.done}/${st.total} played`;
     $("stillin-name").textContent = "STILL IN IT!";
     const standard = st.leading
@@ -1497,7 +1653,7 @@ function maybeShowStillIn(){
     $("stillin-msg").textContent = pickMsg("stillin", [standard], gw + st.done, subs, MYPID);
   } else {
     card.classList.add("dead"); card.classList.remove("inplay");
-    $("stillin-spoon").textContent = "💀";
+    setFace("stillin-spoon", [MYPID], "💀", "red");
     $("stillin-title").textContent = `GW ${gw} · ${st.done}/${st.total} played`;
     $("stillin-name").textContent = "LOSER!";
     $("stillin-msg").textContent = pickMsg("out", OUT_MSGS, st.done, subs, MYPID);
@@ -1653,7 +1809,7 @@ function renderPredict(){
       return `<div class="hstat ${dead.has(pid)?"hdead":""}">${r.pts} ${mark}</div>`;
     };
     html += `<div class="predgrid-wrap"><table class="predgrid">
-      <tr><th class="colme">You${statFor(MYPID)}</th>${others.map(([pid,p])=>`<th>${esc(p.name.split(" ")[0])}${statFor(pid)}</th>`).join("")}</tr>`;
+      <tr><th class="colme">${avatarImg(MYPID, "ava-th")}You${statFor(MYPID)}</th>${others.map(([pid,p])=>`<th>${avatarImg(pid, "ava-th")}${esc(p.name.split(" ")[0])}${statFor(pid)}</th>`).join("")}</tr>`;
     const ptsCfg = GAMEWEEKS["gw"+gw]?.finalized ? (GAMEWEEKS["gw"+gw].pointsUsed || CONFIG) : CONFIG;
     for (const f of fx){
       const pk = mine[f.id] || {};
@@ -1838,7 +1994,7 @@ function renderWeek(){
     const dead = deadWk.has(r.pid);
     html += `<tr class="${r.pid===MYPID?"me":""} ${r.rank===1?"pos1":r.rank===2?"pos2":""} ${dead?"deadrow":""}">
       <td class="rank">${r.rank===1?'<span class="medal">🥇</span>':r.rank===2?'<span class="medal">🥈</span>':r.rank}</td>
-      <td>${esc(r.name)}${dead?' <span title="mathematically out of the running">💀</span>':""}</td><td class="num"><b>${r.pts}</b></td><td class="num">${r.exact}</td><td class="num">${r.correct}</td></tr>`;
+      <td>${avatarImg(r.pid, "ava-sm")}${esc(r.name)}${dead?' <span title="mathematically out of the running">💀</span>':""}</td><td class="num"><b>${r.pts}</b></td><td class="num">${r.exact}</td><td class="num">${r.correct}</td></tr>`;
   }
   if (!table.length) html += `<tr><td colspan="5" class="muted">No players in this week.</td></tr>`;
   html += `</table></div></div>`;
@@ -1949,7 +2105,7 @@ function renderBoard(){
     <tr><th class="rank">#</th><th>Player</th><th class="num">🏆 Wins</th><th class="num">🥈 Runner-up</th><th class="num">Total pts</th><th class="num">Exact scores</th><th class="num">Correct results</th><th class="num">Weeks</th></tr>`;
   rows.forEach((r,i)=>{
     html += `<tr class="${r.pid===MYPID?"me":""} ${i===0?"pos1":i===1?"pos2":""}">
-      <td class="rank">${i+1}</td><td>${esc(r.name)}</td><td class="num"><b>${r.wins}</b></td><td class="num">${r.runs}</td>
+      <td class="rank">${i+1}</td><td>${avatarImg(r.pid, "ava-sm")}${esc(r.name)}</td><td class="num"><b>${r.wins}</b></td><td class="num">${r.runs}</td>
       <td class="num"><b>${r.pts}</b></td><td class="num">${r.exact}</td><td class="num">${r.correct}</td><td class="num">${r.weeks}</td></tr>`;
   });
   if (!rows.length) html += `<tr><td colspan="8" class="muted">Nothing here yet — the table fills up once the admin finalises a gameweek.</td></tr>`;
@@ -2092,6 +2248,7 @@ function renderAdmin(){
       </div>
       <div class="pline">
         <button class="btn btn-sm" onclick="renamePlayer('${pid}')">Rename</button>
+        <button class="btn btn-sm" onclick="openFaceEditor('${pid}')">${AVATARS[pid] ? avatarImg(pid, "ava-btn") + " Photo" : "📷 Photo"}</button>
         <button class="btn btn-sm" onclick="setPlayer('${pid}',{admin:${p.admin?"false":"true"}})" ${pid===MYPID?"disabled title='You cannot change your own admin status'":""}>${p.admin?"Remove admin":"Make admin"}</button>
         <button class="btn btn-sm btn-danger" onclick="retirePlayer('${pid}','${esc(p.name)}')" ${pid===MYPID?"disabled":""}>Remove</button>
       </div>

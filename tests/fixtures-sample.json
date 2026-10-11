@@ -1,0 +1,34 @@
+{
+  "sample": true,
+  "updated": "2026-08-29T12:00:00Z",
+  "source": "sample data — run the Update fixtures GitHub Action to replace with the live FPL feed",
+  "teams": {
+    "1": { "name": "Arsenal", "short": "ARS" },
+    "2": { "name": "Aston Villa", "short": "AVL" },
+    "3": { "name": "Chelsea", "short": "CHE" },
+    "4": { "name": "Everton", "short": "EVE" },
+    "5": { "name": "Liverpool", "short": "LIV" },
+    "6": { "name": "Man City", "short": "MCI" },
+    "7": { "name": "Man Utd", "short": "MUN" },
+    "8": { "name": "Newcastle", "short": "NEW" },
+    "9": { "name": "Spurs", "short": "TOT" },
+    "10": { "name": "West Ham", "short": "WHU" }
+  },
+  "fixtures": [
+    { "id": 101, "gw": 1, "kickoff": "2026-08-15T14:00:00Z", "h": 1, "a": 10, "hs": 3, "as": 0, "finished": true },
+    { "id": 102, "gw": 1, "kickoff": "2026-08-15T14:00:00Z", "h": 4, "a": 3, "hs": 1, "as": 1, "finished": true },
+    { "id": 103, "gw": 1, "kickoff": "2026-08-15T16:30:00Z", "h": 5, "a": 9, "hs": 2, "as": 1, "finished": true },
+    { "id": 104, "gw": 1, "kickoff": "2026-08-16T13:00:00Z", "h": 6, "a": 2, "hs": 2, "as": 2, "finished": true },
+    { "id": 105, "gw": 1, "kickoff": "2026-08-16T15:30:00Z", "h": 8, "a": 7, "hs": 1, "as": 0, "finished": true },
+    { "id": 201, "gw": 2, "kickoff": "2026-08-22T14:00:00Z", "h": 3, "a": 5, "hs": 0, "as": 2, "finished": true },
+    { "id": 202, "gw": 2, "kickoff": "2026-08-22T14:00:00Z", "h": 9, "a": 6, "hs": 1, "as": 3, "finished": true },
+    { "id": 203, "gw": 2, "kickoff": "2026-08-22T16:30:00Z", "h": 10, "a": 8, "hs": 0, "as": 0, "finished": true },
+    { "id": 204, "gw": 2, "kickoff": "2026-08-23T13:00:00Z", "h": 7, "a": 1, "hs": 1, "as": 2, "finished": true },
+    { "id": 205, "gw": 2, "kickoff": "2026-08-23T15:30:00Z", "h": 2, "a": 4, "hs": 3, "as": 1, "finished": true },
+    { "id": 301, "gw": 3, "kickoff": "2026-08-29T14:00:00Z", "h": 5, "a": 1, "hs": null, "as": null, "finished": false },
+    { "id": 302, "gw": 3, "kickoff": "2026-08-29T14:00:00Z", "h": 8, "a": 3, "hs": null, "as": null, "finished": false },
+    { "id": 303, "gw": 3, "kickoff": "2026-08-29T16:30:00Z", "h": 6, "a": 7, "hs": null, "as": null, "finished": false },
+    { "id": 304, "gw": 3, "kickoff": "2026-08-30T13:00:00Z", "h": 4, "a": 9, "hs": null, "as": null, "finished": false },
+    { "id": 305, "gw": 3, "kickoff": "2026-08-30T15:30:00Z", "h": 10, "a": 2, "hs": null, "as": null, "finished": false }
+  ]
+}

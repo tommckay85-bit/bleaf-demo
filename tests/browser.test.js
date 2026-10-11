@@ -1,0 +1,551 @@
+const { chromium } = require('playwright');
+const fs = require('fs');
+const path = require('path');
+
+const REPO = path.join(__dirname, '..');
+const OUT = path.join(__dirname, 'shots');
+fs.mkdirSync(OUT, { recursive: true });
+// face photo for the player-heads tests: TEST_FACE env var, else a generated stand-in
+const FACE = process.env.TEST_FACE || null;
+const CHROME = process.env.PW_CHROMIUM || (fs.existsSync('/opt/pw-browsers/chromium-1194/chrome-linux/chrome') ? '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' : undefined);
+
+const FIREBASE_STUB = `
+(function(){
+  const authObj = {
+    onAuthStateChanged(cb){ setTimeout(()=>cb(null),0); },
+    signOut: async()=>{},
+    signInWithEmailAndPassword: async()=>{ throw {code:'auth/invalid-credential'}; },
+    createUserWithEmailAndPassword: async()=>({user:{uid:'u1'}}),
+  };
+  const snapFor = (name) => ({
+    empty: !(window.__docs && window.__docs[name] && window.__docs[name].length),
+    forEach(cb){ ((window.__docs||{})[name]||[]).forEach(cb); },
+  });
+  const dbObj = {
+    collection(name){ return {
+      get: async()=> snapFor(name),
+      onSnapshot(cb){ setTimeout(()=>cb(snapFor(name)),0); return ()=>{}; },
+      where(){ return { onSnapshot(cb){ setTimeout(()=>cb(snapFor('none')),0); return ()=>{}; } }; },
+      doc(){ return { get: async()=>({exists:false}), set: async()=>{}, delete: async()=>{},
+                      onSnapshot(cb){ setTimeout(()=>cb({exists:false}),0); return ()=>{}; } }; },
+    }; },
+  };
+  window.firebase = {
+    apps: [],
+    initializeApp(cfg, name){ const app = { name: name||'[DEFAULT]', auth: ()=>authObj }; window.firebase.apps.push(app); return app; },
+    auth: ()=>authObj,
+    firestore: Object.assign(()=>dbObj, { FieldValue: { serverTimestamp: ()=>0, delete: ()=>0 } }),
+  };
+})();
+`;
+
+(async () => {
+  const browser = await chromium.launch({ executablePath: CHROME });
+  const page = await browser.newPage({ viewport: { width: 1180, height: 900 } });
+  const errors = [];
+  page.on('pageerror', e => errors.push('PAGE ERROR: ' + e.message));
+  page.on('console', m => { if (m.type()==='error' && !/net::|Failed to load resource/.test(m.text())) errors.push('CONSOLE: ' + m.text()); });
+
+  // serve repo files from memory; swap in a fake firebase config + stub SDK
+  await page.route('**/*', async route => {
+    const u = new URL(route.request().url());
+    if (u.hostname === 'www.gstatic.com') return route.fulfill({ contentType:'application/javascript', body: u.pathname.includes('firebase-app') ? FIREBASE_STUB : '/*noop*/' });
+    if (u.hostname.startsWith('fonts.')) return route.fulfill({ contentType:'text/css', body:'' });
+    if (u.hostname !== 'league.test') return route.abort();
+    let p = u.pathname === '/' ? '/predictions.html' : u.pathname;
+    // always test against the frozen sample feed, never the live one
+    if (p.startsWith('/data/history-')) return route.fulfill({ status:404, body:'none' });
+    const file = p.startsWith('/data/fixtures.json') ? path.join(__dirname, 'fixtures-sample.json') : path.join(REPO, p.split('?')[0]);
+    if (!fs.existsSync(file)) return route.fulfill({ status:404, body:'nope' });
+    let body = fs.readFileSync(file);
+    if (p.endsWith('predictions.html')) body = body.toString().replace('PASTE_YOUR_FIREBASE_CONFIG_HERE', 'FAKE_KEY_FOR_TEST');
+    const ct = p.endsWith('.html')?'text/html':p.endsWith('.json')?'application/json':'application/octet-stream';
+    return route.fulfill({ contentType: ct, body });
+  });
+
+  const assert = (cond, msg) => { if (!cond) { errors.push('ASSERT FAILED: ' + msg); } else console.log('ok -', msg); };
+
+  // ---- 1. founder screen (no players yet) ----
+  await page.goto('https://league.test/predictions.html');
+  await page.waitForTimeout(400);
+  assert(await page.isVisible('#view-founder'), 'founder screen shows when no players exist');
+  await page.screenshot({ path: OUT + '/shot-1-founder.png' });
+
+  // ---- 2. login screen (players exist) ----
+  await page.addInitScript(() => { window.__docs = { players: [
+    { id:'p1', data: ()=>({ name:'Dave', active:true }) },
+    { id:'p2', data: ()=>({ name:'Sarah', active:true }) },
+    { id:'p3', data: ()=>({ name:'Big Tony', active:false }) },
+  ]}; });
+  await page.reload(); await page.waitForTimeout(400);
+  assert(await page.isVisible('#view-auth'), 'login screen shows when players exist');
+  const opts = await page.$$eval('#li-player option', os => os.map(o=>o.textContent));
+  assert(opts.includes('Dave') && opts.includes('Sarah'), 'player names listed');
+  assert(!opts.includes('Big Tony'), 'inactive player hidden from login');
+  await page.selectOption('#li-player', 'p1');
+  const hiddenUser = await page.$eval('#li-user', el => el.value);
+  assert(/^p1\.v1@/.test(hiddenUser), 'hidden username tracks selected player for password managers');
+  const codeAttrs = await page.$eval('#li-code', el => el.type + '|' + el.autocomplete);
+  assert(codeAttrs === 'password|current-password', 'code field is a real password field');
+  await page.fill('#li-code', 'abcd-2345');
+  await page.click('#view-auth button.btn-primary');
+  await page.waitForTimeout(300);
+  assert((await page.textContent('#auth-err')).includes("isn't right"), 'bad code shows friendly error');
+  await page.screenshot({ path: OUT + '/shot-2-login.png' });
+
+  // ---- 3. main app, driven with injected state ----
+  await page.evaluate(() => {
+    MYPID = 'tom';
+    PLAYERS = {
+      tom: { name:'Tom', admin:true, active:true, codeVersion:1 },
+      dave:{ name:'Dave', admin:false, active:true, codeVersion:1 },
+      sam: { name:'Sam', admin:false, active:true, codeVersion:1 },
+      gaz: { name:'Gaz', admin:false, active:true, codeVersion:1 },
+    };
+    ME = PLAYERS.tom;
+    CODES = { tom:'AAAA2222', dave:'BBBB3333', sam:'CCCC4444', gaz:'DDDD5555' };
+    CONFIG = { result:6, exact:10, stake:5 };
+    GAMEWEEKS = {
+      gw1: { finalized:true, monthKey:'2026-08', pointsUsed:{result:6,exact:10},
+        table:[ {pid:'dave',name:'Dave',pts:34,exact:2,correct:4,predicted:5,rank:1},
+                {pid:'tom',name:'Tom',pts:24,exact:1,correct:3,predicted:5,rank:2},
+                {pid:'sam',name:'Sam',pts:12,exact:0,correct:2,predicted:4,rank:3},
+                {pid:'gaz',name:'Gaz',pts:6,exact:0,correct:1,predicted:5,rank:4} ],
+        winners:[{pid:'dave',name:'Dave',pts:34}], runnersUp:[{pid:'tom',name:'Tom',pts:24}] },
+      gw2: { finalized:true, monthKey:'2026-08', pointsUsed:{result:6,exact:10},
+        table:[ {pid:'tom',name:'Tom',pts:38,exact:2,correct:5,predicted:5,rank:1},
+                {pid:'sam',name:'Sam',pts:22,exact:1,correct:2,predicted:5,rank:2},
+                {pid:'dave',name:'Dave',pts:18,exact:1,correct:3,predicted:5,rank:3},
+                {pid:'gaz',name:'Gaz',pts:12,exact:0,correct:2,predicted:3,rank:4} ],
+        winners:[{pid:'tom',name:'Tom',pts:38}], runnersUp:[{pid:'sam',name:'Sam',pts:22}] },
+      gw3: { out:['gaz'], overrides: { 301: {h:2,a:1}, 302: {h:0,a:3} } },
+    };
+    PREDS = { 3: {
+      tom: { pid:'tom', picks:{ 301:{h:2,a:1}, 302:{h:1,a:1}, 303:{h:0,a:2}, 304:{h:1,a:0}, 305:{h:3,a:1} } },
+      dave:{ pid:'dave', picks:{ 301:{h:1,a:0}, 302:{h:2,a:0} } },
+    } };
+    predUnsub = ()=>{};
+    show('app'); renderChrome(); renderAll();
+  });
+  await page.waitForTimeout(300);
+  assert(await page.isVisible('#view-app'), 'main app visible');
+  // winner celebration first: Tom won GW2
+  assert(await page.isVisible('#win-overlay'), 'winner celebration shows for the champ');
+  assert((await page.textContent('#win-msg')).includes('Tom'), 'winner message names the champ');
+  assert(!!(await page.$('.fx-canvas')), 'confetti canvas running');
+  await page.screenshot({ path: OUT + '/shot-12-champion.png' });
+  await page.click('#win-overlay .btn');
+  await page.waitForTimeout(900);
+  // roast modal queued next: Gaz is bottom of the latest finalised week (GW2)
+  assert(await page.isVisible('#roast-overlay'), 'loser roast queued after celebration');
+  assert((await page.textContent('#roast-name')).includes('Gaz'), 'roast names the loser');
+  await page.click('#roast-overlay .btn'); await page.waitForTimeout(100);
+  assert(!(await page.isVisible('#roast-overlay')), 'roast dismisses');
+
+  // ---- predictions tab ----
+  const predictTxt = await page.textContent('#tab-predict');
+  assert(predictTxt.includes('Predictions are locked'), 'locked banner (GW3 sample deadline passed)');
+  assert(await page.isVisible('#tab-predict .predgrid'), 'predictions grid renders');
+  assert((await page.$$('#tab-predict .predgrid input[type=number]')).length === 10, 'two score boxes per fixture');
+  assert((await page.$$('#tab-predict .predgrid input[type=number]:disabled')).length === 10, 'boxes locked after the deadline');
+  const sticky = await page.$eval('#tab-predict .predgrid td.colme', el => getComputedStyle(el).position);
+  assert(sticky === 'sticky', 'own column is sticky');
+  // week-pulse strip: score, position, gap, games left + points available
+  const stripTxt = await page.textContent('#tab-predict .pulsestrip');
+  assert(stripTxt.includes('POSITION') || stripTxt.includes('position'), 'pulse strip renders');
+  assert(/clear of|behind/i.test(stripTxt), 'strip shows the gap to a rival');
+  assert(/up for grabs/i.test(stripTxt), 'strip shows points still available');
+  // sticky names: grid has its own scrollport with a pinned header
+  const wrapOv = await page.$eval('#tab-predict .predgrid-wrap', el => getComputedStyle(el).overflowY);
+  assert(wrapOv === 'auto', 'grid scrolls in its own window');
+  const thSticky = await page.$eval('#tab-predict .predgrid th', el => getComputedStyle(el).position);
+  assert(thSticky === 'sticky', 'player names header pinned while scrolling');
+  const potTxt = await page.textContent('#tab-predict .potchip');
+  assert(/£\d/.test(potTxt) && potTxt.includes('pot'), 'pot chip shows in the panel header (' + potTxt.trim() + ')');
+  const lockLines = await page.$eval('#tab-predict .banner', el => Math.round(el.getBoundingClientRect().height));
+  assert(lockLines < 45, 'locked banner is a single compact line (' + lockLines + 'px)');
+  assert((await page.textContent('.signout-right')).includes('↻'), 'refresh button in the header');
+  assert(await page.$('#ptr') !== null, 'pull-to-refresh pill exists');
+  assert(await page.evaluate(() => typeof hardRefresh === 'function'), 'hardRefresh wired');
+  assert((await page.$$('#tab-predict .res-exact')).length === 1, 'exact-score marker (star) under my pick');
+  // played games: real score in the boxes, coloured prediction below
+  assert((await page.$$('#tab-predict .subrow .mypk.pk-exact')).length === 2, 'exact pick digits gold below the score');
+  assert((await page.$$('#tab-predict .subrow .mypk.pk-bad')).length === 2, 'wrong pick digits red below the score');
+  const ftBoxVals = await page.$$eval('#tab-predict input.pk-ftbox', els => els.map(e => e.value).join(''));
+  assert(ftBoxVals === '2103', 'finished boxes show the real scores (' + ftBoxVals + ')');
+  assert((await page.$$('#tab-predict input[type=number]:not([class*=pk-])')).length >= 2, 'unplayed games keep plain pick boxes');
+  assert((await page.$$('#tab-predict .res-bad')).length >= 1, 'wrong/no-pick marker under my picks');
+  assert((await page.$$('#tab-predict .predgrid tr.done')).length === 2, 'finished games shaded (2 done rows)');
+  const myHead = await page.$eval('#tab-predict .predgrid th.colme', el => el.textContent);
+  assert(myHead.includes('10') && myHead.includes('\u{1F947}'), 'header tally: my points and 1st medal');
+  const headRow = await page.$eval('#tab-predict .predgrid tr', el => el.textContent);
+  assert(headRow.includes('\u{1F480}'), 'eliminated player shows skull in header');
+  const badgeCount = (await page.$$('#tab-predict .predgrid .ptsbadge')).length;
+  assert(badgeCount > 0, 'others picks revealed after deadline in grid');
+  await page.screenshot({ path: OUT + '/shot-3-predictions.png' });
+
+  // ---- live in-play scoring ----
+  await page.evaluate(() => { const f = FEED.fixtures.find(x=>x.id===303); f.hs = 0; f.as = 2; renderAll(); });
+  await page.waitForTimeout(200);
+  const liveBoxes = await page.evaluate(() => [$('pk-303-h').value, $('pk-303-a').value].join('-'));
+  assert(liveBoxes === '0-2', 'live score shown in the boxes (' + liveBoxes + ')');
+  assert((await page.$$('#tab-predict input.pk-livebox')).length === 2, 'live boxes marked as in play');
+  const lscW = await page.$eval('#tab-predict .subrow.live .ssc', el => Math.round(el.getBoundingClientRect().width));
+  const inpW = await page.$eval('#tab-predict .predgrid input[type=number]', el => Math.round(el.getBoundingClientRect().width));
+  assert(lscW === inpW, 'prediction digits aligned to the input boxes (' + lscW + ' vs ' + inpW + ')');
+  const subrAlign = await page.$eval('#tab-predict .subrow.live .sub-r', el => getComputedStyle(el).textAlign);
+  assert(subrAlign === 'right', 'points marker fully right-justified');
+  const anim = await page.$eval('#tab-predict input.pk-livebox', el => getComputedStyle(el).animationName);
+  assert(anim === 'none', 'live boxes do not pulse');
+  // minutes played / half-time (wall clock since kickoff, feed as floor)
+  await page.evaluate(() => { const f = FEED.fixtures.find(x=>x.id===303); f.__ko = f.kickoff; f.kickoff = new Date(Date.now() - 70*60000).toISOString(); f.min = 40; renderAll(); });
+  await page.waitForTimeout(150);
+  assert((await page.textContent('#tab-predict .strow .stmid.live')).includes('52′'), 'second-half minutes from the wall clock');
+  await page.evaluate(() => { const f = FEED.fixtures.find(x=>x.id===303); f.kickoff = new Date(Date.now() - 55*60000).toISOString(); f.min = 45; renderAll(); });
+  await page.waitForTimeout(150);
+  assert((await page.textContent('#tab-predict .strow .stmid.live')).includes('HT'), 'half time shown around the interval');
+  // match-facts popup: tap the live score, see scorers / cards
+  await page.evaluate(() => {
+    FEED.players = { 101:'Haaland', 102:'Foden', 103:'Bruno G.' };
+    const f = FEED.fixtures.find(x=>x.id===303);
+    f.stats = [
+      { k:'goals_scored', h:[], a:[{value:2,element:101}] },
+      { k:'red_cards', h:[{value:1,element:103}], a:[] },
+    ];
+    renderAll();
+  });
+  await page.waitForTimeout(150);
+  await page.click('#tab-predict .subrow.live');
+  await page.waitForTimeout(150);
+  assert(await page.isVisible('#facts-overlay'), 'facts popup opens from the live score');
+  const factsTxt = await page.textContent('#facts-overlay');
+  assert(factsTxt.includes('Haaland ×2') && factsTxt.includes('Bruno G.'), 'popup lists scorers and red card');
+  assert(factsTxt.includes('Live score'), 'popup header says Live score');
+  // an open popup refreshes when new goals arrive
+  await page.evaluate(() => {
+    FEED.fixtures.find(x=>x.id===303).stats[0].a.push({value:1,element:102});
+    showFacts(303);
+  });
+  await page.waitForTimeout(100);
+  assert((await page.textContent('#facts-overlay')).includes('Foden'), 'popup picks up new scorers');
+  await page.click('#facts-overlay .facts-card button');
+  await page.waitForTimeout(100);
+  assert(!(await page.isVisible('#facts-overlay')), 'facts popup closes');
+  await page.evaluate(() => { const f = FEED.fixtures.find(x=>x.id===303); delete f.stats; delete FEED.players; renderAll(); });
+  await page.waitForTimeout(100);
+  await page.evaluate(() => { const f = FEED.fixtures.find(x=>x.id===303); f.kickoff = f.__ko; delete f.__ko; delete f.min; renderAll(); });
+  await page.waitForTimeout(150);
+  const ftDigits = await page.$$eval('#tab-predict .subrow.ft', els => els.map(e => e.textContent.replace(/\s+/g,'')));
+  assert(ftDigits.length === 2 && ftDigits[0].startsWith('Prediction') && ftDigits[1].endsWith('✗'), 'finished games use the FT subrow, quiet zeros (' + ftDigits.join('|') + ')');
+  const koAlign = await page.$eval('#tab-predict .predgrid .ko', el => getComputedStyle(el).textAlign);
+  assert(koAlign === 'left' || koAlign === 'start', 'upcoming kickoff dates stay left-justified');
+  // fixed-width lozenges; the exact-score star floats above without shifting them
+  await page.evaluate(() => { PREDS[3].dave.picks[303] = { h:0, a:2 }; renderAll(); });
+  await page.waitForTimeout(150);
+  const badgeWs = await page.$$eval('#tab-predict .predgrid td .ptsbadge', els => [...new Set(els.map(e => Math.round(e.getBoundingClientRect().width)))]);
+  assert(badgeWs.length === 1, 'grid lozenges uniform width (' + badgeWs.join(',') + ')');
+  const realStars = await page.$$eval('#tab-predict .predgrid .pstar', els => els.length);
+  assert(realStars === 1, 'star above exact lozenge only (' + realStars + ')');
+  const starAbove = await page.$eval('#tab-predict .predgrid .pstar', el => {
+    const badge = el.parentElement.querySelector('.ptsbadge');
+    return el.getBoundingClientRect().bottom <= badge.getBoundingClientRect().top + 1;
+  });
+  assert(starAbove, 'star sits above the lozenge');
+  const offCentre = await page.$$eval('#tab-predict .predgrid td:not(.colme)', tds => tds
+    .map(td => { const b = td.querySelector('.ptsbadge'); if (!b) return 0;
+      const tr = td.getBoundingClientRect(), br = b.getBoundingClientRect();
+      return Math.abs((tr.top + tr.height/2) - (br.top + br.height/2)); })
+    .filter(d => d > 2).length);
+  assert(offCentre === 0, 'lozenges centred on their rows (' + offCentre + ' off-centre)');
+  await page.evaluate(() => { delete PREDS[3].dave.picks[303]; FEED.fixtures.find(x=>x.id===303).hs = 0; FEED.fixtures.find(x=>x.id===303).as = 2; renderAll(); });
+  await page.waitForTimeout(150);
+  const hstatAlign = await page.$eval('#tab-predict .predgrid th.colme .hstat', el => getComputedStyle(el).textAlign);
+  assert(hstatAlign === 'right', 'You points+medal right-justified in header');
+  assert((await page.$$('#tab-predict .res-exact')).length === 2, 'live exact counts provisionally in grid');
+  const liveHead = await page.$eval('#tab-predict .predgrid th.colme', el => el.textContent);
+  assert(liveHead.includes('20'), 'header tally includes live points');
+  assert((await page.$$('#tab-predict .predgrid tr.done')).length === 2, 'live game not shaded as done');
+  // column order follows the live standings: as Sam, Tom (20) sits before Dave (6)
+  await page.evaluate(() => { MYPID = 'sam'; ME = PLAYERS.sam; renderAll(); });
+  await page.waitForTimeout(150);
+  const colOrder = await page.$$eval('#tab-predict .predgrid tr:first-child th', ths => ths.map(t => t.textContent.trim()));
+  assert(colOrder[1].startsWith('Tom') && colOrder[2].startsWith('Dave'), 'other players ordered by who is winning (' + colOrder.join(',') + ')');
+  await page.evaluate(() => { MYPID = 'tom'; ME = PLAYERS.tom; renderAll(); });
+  await page.waitForTimeout(150);
+  const myrowJustify = await page.$eval('#tab-predict .predgrid .myrow', el => getComputedStyle(el).justifyContent);
+  assert(myrowJustify === 'flex-end', 'own picks right-justified against the divider');
+  await page.click('[data-tab=week]'); await page.waitForTimeout(200);
+  const wkLive = await page.textContent('#tab-week');
+  assert(wkLive.includes('LIVE'), 'week tab shows LIVE banner while a game is in play');
+  assert(wkLive.includes('● '), 'live fixture marked in fixtures list');
+  const pgDisplay = await page.$eval('#tab-week .pickgrid', el => getComputedStyle(el).display);
+  assert(pgDisplay === 'grid', 'picks chips laid out on an even grid');
+  const pgWidths = await page.$$eval('#tab-week .pickgrid .ptsbadge', els => [...new Set(els.map(e => Math.round(e.getBoundingClientRect().width)))]);
+  assert(pgWidths.length === 1, 'pick chips uniform width (' + pgWidths.join(',') + ')');
+  await page.screenshot({ path: OUT + '/shot-13-live.png' });
+  await page.click('[data-tab=predict]'); await page.waitForTimeout(150);
+  // fast-lane proxy merges raw FPL data straight into the live view
+  await page.route('https://proxy.test/**', route => route.fulfill({ contentType:'application/json',
+    body: JSON.stringify([{ id:303, team_h_score:4, team_a_score:4, minutes:61, finished:false,
+      stats:[{ identifier:'goals_scored', h:[{value:4,element:101}], a:[{value:4,element:102}] }] }]) }));
+  await page.evaluate(() => { CONFIG.liveProxy = 'proxy.test/fx'; FEED.players = { 101:'Haaland', 102:'Foden' }; return refreshLiveProxy(); });
+  await page.waitForTimeout(200);
+  const merged = await page.evaluate(() => { const f = FEED.fixtures.find(x=>x.id===303); return [f.hs, f.as, f.min]; });
+  assert(merged.join(',') === '4,4,61', 'proxy scores merged into the feed, scheme-less URL tolerated (' + merged + ')');
+  const proxyBoxes = await page.evaluate(() => [$('pk-303-h').value, $('pk-303-a').value].join('-'));
+  assert(proxyBoxes === '4-4', 'grid re-rendered from proxy data — live score in the boxes (' + proxyBoxes + ')');
+  await page.evaluate(() => { CONFIG.liveProxy = ''; delete FEED.players; const f = FEED.fixtures.find(x=>x.id===303); delete f.min; delete f.stats; f.hs = null; f.as = null; renderAll(); });
+  await page.waitForTimeout(150);
+
+  // ---- still-in verdict overlays ----
+  await page.evaluate(() => {
+    stillInChecked = false;
+    GAMEWEEKS.gw3.overrides = { 301:{h:2,a:1}, 302:{h:0,a:3}, 303:{h:0,a:2}, 304:{h:5,a:5} };
+    renderAll();
+  });
+  await page.waitForTimeout(300);
+  assert(await page.isVisible('#stillin-overlay'), 'still-in verdict shows at 4/5 results');
+  assert((await page.textContent('#stillin-name')).includes('STILL IN'), 'tom is still in it');
+  await page.screenshot({ path: OUT + '/shot-10-stillin.png' });
+  await page.click('#stillin-overlay .btn'); await page.waitForTimeout(100);
+  await page.evaluate(() => {
+    MYPID = 'sam'; ME = PLAYERS.sam; stillInChecked = false; renderAll();
+  });
+  await page.waitForTimeout(300);
+  assert(await page.isVisible('#stillin-overlay'), 'loser verdict shows for eliminated player');
+  assert((await page.textContent('#stillin-name')).includes('LOSER'), 'eliminated player gets LOSER');
+  await page.screenshot({ path: OUT + '/shot-11-loser.png' });
+  await page.click('#stillin-overlay .btn'); await page.waitForTimeout(100);
+  // verdicts remember they've been shown — a refresh must not replay them
+  await page.evaluate(() => { stillInChecked = false; renderAll(); });
+  await page.waitForTimeout(250);
+  assert(!(await page.isVisible('#stillin-overlay')), 'LOSER verdict not repeated after a refresh');
+  // endgame panel: one game left, tom (20 pts) is uncatchable
+  const wpTxt = await page.textContent('#tab-predict');
+  assert(wpTxt.includes('Who can still win'), 'endgame win-paths panel appears with one game left');
+  assert(wpTxt.includes('whatever happens'), 'uncatchable leader called out');
+  assert(wpTxt.includes("can't win this week"), 'everyone else ruled out');
+  await page.evaluate(() => { MYPID = 'tom'; ME = PLAYERS.tom; renderAll(); });
+  await page.waitForTimeout(200);
+
+  // ---- entering picks: auto-advance + saved-state button ----
+  await page.evaluate(() => { GAMEWEEKS.gw3.unlocked = true; renderAll(); });
+  await page.waitForTimeout(200);
+  const liveInputs = await page.$$('#tab-predict .predgrid input[type=number]:not([disabled])');
+  assert(liveInputs.length === 10, 'inputs re-enabled when admin-unlocked');
+  assert(await page.$eval('#save-btn', el => el.classList.contains('btn-saved')), 'save button renders green when picks already saved');
+  assert((await page.textContent('#save-btn')).includes('Saved — all in'), 'green button says all picks are in');
+  await liveInputs[0].click();
+  await page.keyboard.type('3');
+  const focusedId = await page.evaluate(() => document.activeElement.id);
+  const secondId = await liveInputs[1].evaluate(el => el.id);
+  assert(focusedId === secondId, 'typing a digit advances focus to the next box');
+  await page.keyboard.type('1');
+  const thirdFocused = await page.evaluate(() => document.activeElement.id);
+  const thirdId = await liveInputs[2].evaluate(el => el.id);
+  assert(thirdFocused === thirdId, 'advance keeps chaining through the grid');
+  assert(await page.$eval('#save-btn', el => el.classList.contains('btn-gold')), 'editing a pick flips the save button back to gold');
+  assert((await page.textContent('#save-btn')).includes('Save predictions'), 'gold button asks to save again');
+  await page.evaluate(() => renderAll());
+  await page.waitForTimeout(150);
+  const keptVal = await page.$eval('#tab-predict .predgrid input[type=number]:not([disabled])', el => el.value);
+  assert(keptVal === '3', 're-render preserves an unsaved typed score');
+  assert(await page.$eval('#save-btn', el => el.classList.contains('btn-gold')), 're-render keeps the dirty button gold');
+  await page.evaluate(() => savePicks(3));
+  await page.waitForTimeout(150);
+  assert(await page.$eval('#save-btn', el => el.classList.contains('btn-saved')), 'save turns the button green');
+  assert((await page.textContent('#save-btn')).includes('Saved — all in'), 'green button confirms all picks in after save');
+  await page.screenshot({ path: OUT + '/shot-12-saved-btn.png' });
+  // regression: a grid rendered before stored picks arrive must NOT blank them
+  await page.evaluate(() => { const saved = PREDS[3].tom; delete PREDS[3].tom; renderAll(); PREDS[3].tom = saved; renderAll(); });
+  await page.waitForTimeout(150);
+  const refilled = await page.$eval('#tab-predict .predgrid input[type=number]:not([disabled])', el => el.value);
+  assert(refilled === '2', 'stored picks re-fill a grid that rendered empty before they loaded');
+  assert(await page.$eval('#save-btn', el => el.classList.contains('btn-saved')), 'button back to green once stored picks load');
+  let confirmMsg = '';
+  page.once('dialog', d => { confirmMsg = d.message(); d.dismiss(); });
+  await page.evaluate(() => { document.querySelectorAll('#tab-predict .predgrid input[type=number]').forEach(i => i.value = ''); return savePicks(3); });
+  assert(confirmMsg.includes('FEWER predictions'), 'saving fewer picks than stored asks for confirmation first');
+  await page.evaluate(() => { GAMEWEEKS.gw3.unlocked = false; renderAll(); });
+  await page.waitForTimeout(200);
+
+  // ---- this week tab ----
+  await page.click('[data-tab=week]'); await page.waitForTimeout(200);
+  assert((await page.textContent('#tab-week')).includes('Gameweek 3 table'), 'week tab renders');
+  const weekText = await page.textContent('#tab-week');
+  assert(!weekText.includes('Gaz'), 'out player excluded from week table');
+  assert(!weekText.includes('Predicted'), 'Predicted column removed from week table');
+  assert(weekText.includes('💀'), 'mathematically-out players skulled in week table');
+  // weekend race chart from injected score history
+  await page.evaluate(() => {
+    HISTORY[3] = { gw:3, events:[
+      { t: 1757000000, changes:[{ id:301, hs:0, as:0, finished:false }] },
+      { t: 1757003000, changes:[{ id:301, hs:2, as:1, finished:true }] },
+      { t: 1757090000, changes:[{ id:302, hs:0, as:3, finished:true }] },
+    ]};
+    renderAll();
+  });
+  await page.waitForTimeout(200);
+  assert(await page.isVisible('#race-svg'), 'weekend race chart renders');
+  const raceLines = (await page.$$('#race-svg polyline')).length;
+  assert(raceLines === 3, 'one race line per player (' + raceLines + ')');
+  const raceTxt = await page.textContent('#tab-week');
+  assert(raceTxt.includes('How the weekend unfolded') && raceTxt.includes('Replay'), 'race panel with replay button');
+  await page.hover('#race-svg');
+  await page.waitForTimeout(120);
+  assert((await page.textContent('#race-tip')).trim().length > 0, 'race hover tip populates');
+  await page.evaluate(() => { HISTORY[3] = null; renderAll(); });
+  await page.waitForTimeout(150);
+  await page.screenshot({ path: OUT + '/shot-4-week.png' });
+  // week tab on a finalised week (podium)
+  await page.evaluate(() => { viewGw = 2; PREDS[2] = {}; renderAll(); });
+  await page.waitForTimeout(200);
+  assert((await page.textContent('#tab-week')).includes('Winner'), 'podium shows on finalised week');
+  await page.screenshot({ path: OUT + '/shot-5-week-final.png' });
+
+  // ---- leaderboard ----
+  await page.click('[data-tab=board]'); await page.waitForTimeout(200);
+  const board = await page.textContent('#tab-board');
+  assert(board.includes('Roll of honour'), 'roll of honour renders');
+  const seasonStrip = await page.textContent('#tab-board .pulsestrip');
+  assert(/weekly wins/i.test(seasonStrip), 'season pulse strip renders');
+  assert(/clear of|behind/i.test(seasonStrip), 'season strip shows gap to rival');
+  assert(/net this period/i.test(seasonStrip), 'season strip shows money net');
+  assert(board.includes('The pot'), 'money panel renders');
+  assert((await page.$$('#tab-board table tr')).length > 3, 'leaderboard has rows');
+  await page.screenshot({ path: OUT + '/shot-6-board.png' });
+
+  // ---- admin ----
+  await page.evaluate(() => { viewGw = 3; adminGw = 3; });
+  await page.click('[data-tab=admin]'); await page.waitForTimeout(200);
+  const adminTxt = await page.textContent('#tab-admin');
+  assert(adminTxt.includes('League settings'), 'admin league settings');
+  assert(!!(await page.$('#cfg-stake')), 'stake config input');
+  assert(!!(await page.$('#cfg-proxy')), 'live proxy URL setting');
+  assert(!!(await page.$('#gw-stake')), 'per-week stake control');
+  assert(adminTxt.includes('Wipe GW'), 'wipe-week tool present');
+  assert(adminTxt.includes('Banter messages'), 'banter message editor present');
+  assert(!!(await page.$('#msg-winner')), 'winner message textarea');
+  const banterOpts = await page.$$eval('#tab-admin select option', os => os.map(o => o.textContent));
+  assert(banterOpts.some(o => o.includes('Dave')), 'banter player dropdown lists roster');
+  assert(adminTxt.includes('AAAA-2222'), 'admin sees login codes');
+  assert(adminTxt.includes('Finalise GW'), 'finalise button');
+
+  // ---- player heads: upload a pre-cut head, then on the banter card ----
+  const photoBtns = await page.$$eval('#tab-admin .pcard button', bs => bs.filter(b => b.textContent.includes('Photo')).length);
+  assert(photoBtns === 4, 'photo button on every player card (' + photoBtns + ')');
+  await page.evaluate(() => openFaceEditor('gaz'));
+  await page.waitForTimeout(100);
+  assert(await page.isVisible('#face-overlay'), 'head upload opens');
+  if (FACE){
+    await page.setInputFiles('#face-file', FACE);
+  } else {
+    // stand-in cut-out on a plain white background, with a white "sticker"
+    // inside the head that must NOT be stripped along with the background
+    const png = await page.evaluate(() => {
+      const c = document.createElement('canvas'); c.width = 400; c.height = 520;
+      const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0,0,400,520);
+      g.fillStyle = '#e9b38f'; g.beginPath(); g.ellipse(200,230,110,140,0,0,Math.PI*2); g.fill();
+      g.fillStyle = '#fff'; g.fillRect(160,150,80,30);
+      return c.toDataURL('image/png').split(',')[1];
+    });
+    await page.setInputFiles('#face-file', { name:'head.png', mimeType:'image/png', buffer: Buffer.from(png, 'base64') });
+  }
+  await page.waitForTimeout(400);
+  assert(await page.evaluate(() => !!HEAD_EDIT.img), 'head processed and previewed');
+  if (!FACE){
+    const alpha = await page.evaluate(() => new Promise(res => {
+      const im = new Image();
+      im.onload = () => {
+        const c = document.createElement('canvas'); c.width = im.width; c.height = im.height;
+        const g = c.getContext('2d'); g.drawImage(im, 0, 0);
+        const a = (x, y) => g.getImageData(x, y, 1, 1).data[3];
+        res({ w: im.width, h: im.height, corner: a(1, 1), sticker: a(94, 64), cheek: a(Math.round(im.width/2), Math.round(im.height*0.75)) });
+      };
+      im.src = HEAD_EDIT.img;
+    }));
+    assert(alpha.corner === 0, 'white background stripped to transparent (' + JSON.stringify(alpha) + ')');
+    assert(alpha.sticker > 200 && alpha.cheek > 200, 'white sticker inside the head survives');
+    assert(Math.max(alpha.w, alpha.h) <= 240, 'head trimmed and scaled down');
+  }
+  await page.screenshot({ path: OUT + '/shot-14-face-upload.png' });
+  await page.click('#face-overlay .btn-gold');
+  await page.waitForTimeout(300);
+  const ava = await page.evaluate(() => AVATARS.gaz || '');
+  assert(/^data:image\/(webp|png)/.test(ava) && ava.length < 400000, 'head saved as a small transparent image (' + Math.round(ava.length/1024) + 'KB)');
+  assert(!(await page.isVisible('#face-overlay')), 'upload closes on save');
+  assert((await page.$$('#tab-admin .pcard .ava-btn')).length === 1, 'player card shows the saved head');
+  // the head lands on the roast card (Gaz bottom of GW2)
+  await page.evaluate(() => { try { localStorage.clear(); } catch(e){} roastChecked = false; winnerChecked = true; maybeShowRoast(); });
+  await page.waitForTimeout(300);
+  assert(await page.isVisible('#roast-overlay'), 'roast card shows');
+  assert((await page.$$('#roast-face img.bigface.ring-red')).length === 1, 'roast card shows the loser\'s head with a red glow');
+  assert((await page.textContent('#roast-face .facebadge')).includes('🥄'), 'wooden spoon badge on the head');
+  await page.screenshot({ path: OUT + '/shot-15-roast-face.png' });
+  await page.click('#roast-overlay .btn'); await page.waitForTimeout(100);
+  // ...and in the grid header and tables
+  await page.click('[data-tab=predict]'); await page.waitForTimeout(150);
+  assert((await page.$$('#tab-predict .predgrid th img.ava-th')).length === 0, 'out-this-week player has no column, so no head');
+  await page.evaluate(() => { GAMEWEEKS.gw3.out = []; renderAll(); });
+  await page.waitForTimeout(150);
+  assert((await page.$$('#tab-predict .predgrid th img.ava-th')).length === 1, 'head appears above the name in the grid');
+  await page.evaluate(() => { GAMEWEEKS.gw3.out = ['gaz']; renderAll(); });
+  await page.click('[data-tab=board]'); await page.waitForTimeout(150);
+  assert((await page.$$('#tab-board img.ava-sm')).length >= 1, 'head shown beside the name on the leaderboard');
+  await page.click('[data-tab=admin]'); await page.waitForTimeout(150);
+  await page.screenshot({ path: OUT + '/shot-7-admin.png' });
+
+  // ---- mobile ----
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.click('[data-tab=predict]'); await page.waitForTimeout(200);
+  await page.evaluate(() => { viewGw = 3; renderAll(); });
+  await page.waitForTimeout(200);
+  const colmeW = await page.$eval('#tab-predict .predgrid td.colme', el => el.getBoundingClientRect().width);
+  assert(colmeW <= 180, 'pinned column condensed for mobile (' + Math.round(colmeW) + 'px)');
+  const colInfo = await page.evaluate(() => {
+    const wrapR = document.querySelector('.predgrid-wrap').getBoundingClientRect().right;
+    const ths = [...document.querySelectorAll('.predgrid tr:first-child th:not(.colme)')];
+    return { wrapR: Math.round(wrapR),
+      cols: ths.map(t => ({ n: t.textContent.trim(), w: Math.round(t.getBoundingClientRect().width), r: Math.round(t.getBoundingClientRect().right) })) };
+  });
+  const visCols = colInfo.cols.filter(c => c.r <= colInfo.wrapR + 1).length;
+  assert(visCols === colInfo.cols.length && visCols >= 2, 'all other player columns visible without scrolling ' + JSON.stringify(colInfo));
+  const colSpace = colInfo.wrapR - 176 - 23;
+  assert(colSpace >= 4 * 40, '4 player columns worth of space free (' + colSpace + 'px)');
+  const gwnavJustify = await page.$eval('#tab-predict .gwnav', el => getComputedStyle(el).justifyContent);
+  assert(gwnavJustify === 'center', 'gameweek header centred');
+  const srOverflow = await page.evaluate(() => {
+    return [...document.querySelectorAll('#tab-predict .predgrid td.colme .subrow')]
+      .filter(sr => sr.getBoundingClientRect().right > sr.closest('td').getBoundingClientRect().right - 1).length;
+  });
+  assert(srOverflow === 0, 'sub-lines stay inside the pinned column (' + srOverflow + ' overflowing)');
+  const misaligned = await page.evaluate(() => {
+    let bad = 0;
+    for (const td of document.querySelectorAll('#tab-predict .predgrid td.colme')){
+      const boxes = [...td.querySelectorAll('.myrow input[type=number]')];
+      const chips = [...td.querySelectorAll('.subrow .ssc')];
+      if (boxes.length !== 2 || chips.length !== 2) continue;
+      for (let i = 0; i < 2; i++){
+        const b = boxes[i].getBoundingClientRect(), c = chips[i].getBoundingClientRect();
+        if (Math.abs((b.left + b.width/2) - (c.left + c.width/2)) > 1.5) bad++;
+      }
+    }
+    return bad;
+  });
+  assert(misaligned === 0, 'prediction digits centred under the score boxes (' + misaligned + ' off)');
+  await page.evaluate(() => { document.querySelector('.predgrid-wrap').scrollLeft = 500; });
+  await page.waitForTimeout(100);
+  const colmeX = await page.$eval('#tab-predict .predgrid td.colme', el => el.getBoundingClientRect().x);
+  assert(colmeX >= -5 && colmeX < 60, 'pinned column stays visible when scrolled (' + Math.round(colmeX) + 'px)');
+  await page.screenshot({ path: OUT + '/shot-8-mobile.png' });
+  await page.click('[data-tab=week]'); await page.waitForTimeout(200);
+  await page.screenshot({ path: OUT + '/shot-9-mobile-week.png' });
+  await page.click('[data-tab=predict]'); await page.waitForTimeout(200);
+  const hscroll = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 2);
+  assert(!hscroll, 'no horizontal scroll on mobile');
+
+  await browser.close();
+  const passed = errors.length === 0;
+  if (!passed){ console.log('\n' + errors.join('\n')); process.exit(1); }
+  console.log('\nALL BROWSER TESTS PASSED');
+})();
