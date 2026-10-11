@@ -176,16 +176,19 @@ const FIREBASE_STUB = `
   assert((await page.textContent('.signout-right')).includes('↻'), 'refresh button in the header');
   assert(await page.$('#ptr') !== null, 'pull-to-refresh pill exists');
   assert(await page.evaluate(() => typeof hardRefresh === 'function'), 'hardRefresh wired');
-  assert((await page.$$('#tab-predict .res-exact')).length === 1, 'exact-score marker (star) under my pick');
-  // played games: real score in the boxes, coloured prediction below
-  assert((await page.$$('#tab-predict .subrow .mypk.pk-exact')).length === 2, 'exact pick digits gold below the score');
-  assert((await page.$$('#tab-predict .subrow .mypk.pk-bad')).length === 2, 'wrong pick digits red below the score');
+  // played games: real score in the boxes; my pick is a lozenge in its own pinned YOU column
+  assert((await page.$$('#tab-predict td.colyou .pts-exact')).length === 1, 'my exact pick is a gold lozenge');
+  assert((await page.$$('#tab-predict td.colyou .pstar')).length === 1, 'with the star above it, like everyone else');
+  assert((await page.$$('#tab-predict td.colyou .pts-wrong')).length === 1, 'my wrong pick is a red lozenge');
+  assert((await page.$$('#tab-predict .subrow')).length === 0, 'no Pred line under the score any more');
+  assert((await page.$$('#tab-predict td.colme .tstack')).length === 10, 'badge with the team code stacked underneath');
+  const youSticky = await page.$eval('#tab-predict td.colyou', el => getComputedStyle(el).position + '@' + el.style.left);
+  assert(/^sticky@\d/.test(youSticky), 'YOU column pinned next to the fixture column (' + youSticky + ')');
   const ftBoxVals = await page.$$eval('#tab-predict input.pk-ftbox', els => els.map(e => e.value).join(''));
   assert(ftBoxVals === '2103', 'finished boxes show the real scores (' + ftBoxVals + ')');
   assert((await page.$$('#tab-predict input[type=number]:not([class*=pk-])')).length >= 2, 'unplayed games keep plain pick boxes');
-  assert((await page.$$('#tab-predict .res-bad')).length >= 1, 'wrong/no-pick marker under my picks');
   assert((await page.$$('#tab-predict .predgrid tr.done')).length === 2, 'finished games shaded (2 done rows)');
-  const myHead = await page.$eval('#tab-predict .predgrid th.colme', el => el.textContent);
+  const myHead = await page.$eval('#tab-predict .predgrid th.colyou', el => el.textContent);
   assert(myHead.includes('10') && myHead.includes('\u{1F947}'), 'header tally: my points and 1st medal');
   const headRow = await page.$eval('#tab-predict .predgrid tr', el => el.textContent);
   assert(headRow.includes('\u{1F480}'), 'eliminated player shows skull in header');
@@ -199,20 +202,15 @@ const FIREBASE_STUB = `
   const liveBoxes = await page.evaluate(() => [$('pk-303-h').value, $('pk-303-a').value].join('-'));
   assert(liveBoxes === '0-2', 'live score shown in the boxes (' + liveBoxes + ')');
   assert((await page.$$('#tab-predict input.pk-livebox')).length === 2, 'live boxes marked as in play');
-  const lscW = await page.$eval('#tab-predict .subrow.live .ssc', el => Math.round(el.getBoundingClientRect().width));
-  const inpW = await page.$eval('#tab-predict .predgrid input[type=number]', el => Math.round(el.getBoundingClientRect().width));
-  assert(lscW === inpW, 'prediction digits aligned to the input boxes (' + lscW + ' vs ' + inpW + ')');
-  const subrAlign = await page.$eval('#tab-predict .subrow.live .sub-r', el => getComputedStyle(el).textAlign);
-  assert(subrAlign === 'right', 'points marker fully right-justified');
   const anim = await page.$eval('#tab-predict input.pk-livebox', el => getComputedStyle(el).animationName);
   assert(anim === 'none', 'live boxes do not pulse');
   // minutes played / half-time (wall clock since kickoff, feed as floor)
   await page.evaluate(() => { const f = FEED.fixtures.find(x=>x.id===303); f.__ko = f.kickoff; f.kickoff = new Date(Date.now() - 70*60000).toISOString(); f.min = 40; renderAll(); });
   await page.waitForTimeout(150);
-  assert((await page.textContent('#tab-predict .strow .stmid.live')).includes('52′'), 'second-half minutes from the wall clock');
+  assert((await page.textContent('#tab-predict .strow2.live')).includes('52′'), 'second-half minutes from the wall clock');
   await page.evaluate(() => { const f = FEED.fixtures.find(x=>x.id===303); f.kickoff = new Date(Date.now() - 55*60000).toISOString(); f.min = 45; renderAll(); });
   await page.waitForTimeout(150);
-  assert((await page.textContent('#tab-predict .strow .stmid.live')).includes('HT'), 'half time shown around the interval');
+  assert((await page.textContent('#tab-predict .strow2.live')).includes('HT'), 'half time shown around the interval');
   // match-facts popup: tap the live score, see scorers / cards
   await page.evaluate(() => {
     FEED.players = { 101:'Haaland', 102:'Foden', 103:'Bruno G.' };
@@ -224,7 +222,7 @@ const FIREBASE_STUB = `
     renderAll();
   });
   await page.waitForTimeout(150);
-  await page.click('#tab-predict .subrow.live');
+  await page.click('#pk-303-h', { force: true });
   await page.waitForTimeout(150);
   assert(await page.isVisible('#facts-overlay'), 'facts popup opens from the live score');
   const factsTxt = await page.textContent('#facts-overlay');
@@ -244,17 +242,17 @@ const FIREBASE_STUB = `
   await page.waitForTimeout(100);
   await page.evaluate(() => { const f = FEED.fixtures.find(x=>x.id===303); f.kickoff = f.__ko; delete f.__ko; delete f.min; renderAll(); });
   await page.waitForTimeout(150);
-  const ftDigits = await page.$$eval('#tab-predict .subrow.ft', els => els.map(e => e.textContent.replace(/\s+/g,'')));
-  assert(ftDigits.length === 2 && ftDigits[0].startsWith('Prediction') && ftDigits[1].endsWith('✗'), 'finished games use the FT subrow, quiet zeros (' + ftDigits.join('|') + ')');
+  const ftYou = await page.$$eval('#tab-predict tr.done td.colyou', els => els.map(e => e.textContent.replace(/\s+/g,'')));
+  assert(ftYou.length === 2 && ftYou[0].includes('2–1') && ftYou[1].includes('1–1'), 'finished games show my pick in the YOU column (' + ftYou.join('|') + ')');
   const koAlign = await page.$eval('#tab-predict .predgrid .ko', el => getComputedStyle(el).textAlign);
-  assert(koAlign === 'left' || koAlign === 'start', 'upcoming kickoff dates stay left-justified');
+  assert(koAlign === 'center', 'upcoming kickoff dates centred under the boxes');
   // fixed-width lozenges; the exact-score star floats above without shifting them
   await page.evaluate(() => { PREDS[3].dave.picks[303] = { h:0, a:2 }; renderAll(); });
   await page.waitForTimeout(150);
   const badgeWs = await page.$$eval('#tab-predict .predgrid td .ptsbadge', els => [...new Set(els.map(e => Math.round(e.getBoundingClientRect().width)))]);
   assert(badgeWs.length === 1, 'grid lozenges uniform width (' + badgeWs.join(',') + ')');
   const realStars = await page.$$eval('#tab-predict .predgrid .pstar', els => els.length);
-  assert(realStars === 1, 'star above exact lozenge only (' + realStars + ')');
+  assert(realStars === 3, 'star above exact lozenges only — my two and Dave\'s (' + realStars + ')');
   const starAbove = await page.$eval('#tab-predict .predgrid .pstar', el => {
     const badge = el.parentElement.querySelector('.ptsbadge');
     return el.getBoundingClientRect().bottom <= badge.getBoundingClientRect().top + 1;
@@ -268,21 +266,20 @@ const FIREBASE_STUB = `
   assert(offCentre === 0, 'lozenges centred on their rows (' + offCentre + ' off-centre)');
   await page.evaluate(() => { delete PREDS[3].dave.picks[303]; FEED.fixtures.find(x=>x.id===303).hs = 0; FEED.fixtures.find(x=>x.id===303).as = 2; renderAll(); });
   await page.waitForTimeout(150);
-  const hstatAlign = await page.$eval('#tab-predict .predgrid th.colme .hstat', el => getComputedStyle(el).textAlign);
-  assert(hstatAlign === 'right', 'You points+medal right-justified in header');
-  assert((await page.$$('#tab-predict .res-exact')).length === 2, 'live exact counts provisionally in grid');
-  const liveHead = await page.$eval('#tab-predict .predgrid th.colme', el => el.textContent);
+  assert(!!(await page.$('#tab-predict .predgrid th.colyou .hstat')), 'my points+medal head the YOU column');
+  assert((await page.$$('#tab-predict td.colyou .pts-exact')).length === 2, 'live exact counts provisionally in grid');
+  const liveHead = await page.$eval('#tab-predict .predgrid th.colyou', el => el.textContent);
   assert(liveHead.includes('20'), 'header tally includes live points');
   assert((await page.$$('#tab-predict .predgrid tr.done')).length === 2, 'live game not shaded as done');
   // column order follows the live standings: as Sam, Tom (20) sits before Dave (6)
   await page.evaluate(() => { MYPID = 'sam'; ME = PLAYERS.sam; renderAll(); });
   await page.waitForTimeout(150);
   const colOrder = await page.$$eval('#tab-predict .predgrid tr:first-child th', ths => ths.map(t => t.textContent.trim()));
-  assert(colOrder[1].startsWith('Tom') && colOrder[2].startsWith('Dave'), 'other players ordered by who is winning (' + colOrder.join(',') + ')');
+  assert(colOrder[1].startsWith('You') && colOrder[2].startsWith('Tom') && colOrder[3].startsWith('Dave'), 'other players ordered by who is winning (' + colOrder.join(',') + ')');
   await page.evaluate(() => { MYPID = 'tom'; ME = PLAYERS.tom; renderAll(); });
   await page.waitForTimeout(150);
   const myrowJustify = await page.$eval('#tab-predict .predgrid .myrow', el => getComputedStyle(el).justifyContent);
-  assert(myrowJustify === 'flex-end', 'own picks right-justified against the divider');
+  assert(myrowJustify === 'center', 'badges and score boxes centred in the fixture column');
   await page.click('[data-tab=week]'); await page.waitForTimeout(200);
   const wkLive = await page.textContent('#tab-week');
   assert(wkLive.includes('LIVE'), 'week tab shows LIVE banner while a game is in play');
