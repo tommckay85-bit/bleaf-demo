@@ -343,6 +343,22 @@ tr.pos2 td{background:linear-gradient(90deg,rgba(154,167,181,.10),transparent 70
 .ava{object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6));cursor:zoom-in}
 .predgrid td.tapcell{cursor:pointer}
 .predgrid td.tapcell input:disabled{pointer-events:none}
+.predgrid.stk .myrow{justify-content:center}
+.tstack{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:38px;flex-shrink:0;font-family:"Oswald";font-size:12px;font-weight:600;color:var(--steel);line-height:1}
+.tstack .crest-sm{width:22px;height:22px}
+.predgrid tr.done .tstack{color:var(--steel-dim)}
+.strow2{text-align:center;font-size:10px;font-weight:700;color:var(--ink-faint);margin-bottom:2px}
+.strow2.live{color:var(--green)}
+.predgrid.stk .ko{text-align:center}
+.predgrid.hasyou .colme{border-right:none;width:auto;min-width:0;max-width:none}
+.predgrid .colyou{position:sticky;z-index:2;background:var(--panel);border-right:2px solid var(--steel);min-width:52px}
+.predgrid th.colyou{z-index:4}
+.predgrid tr.done td.colyou{background:var(--bg);border-right-color:var(--steel-dim)}
+@media(max-width:640px){
+  .tstack{width:32px;font-size:10.5px}
+  .tstack .crest-sm{width:18px;height:18px}
+  .predgrid .colyou{min-width:40px}
+}
 .deadwrap{position:relative;display:block;width:fit-content;margin:0 auto 2px}
 .deadwrap .ava{margin:0;filter:grayscale(.6) brightness(.85) drop-shadow(0 1px 2px rgba(0,0,0,.6))}
 th.colme .deadwrap{margin:0 0 2px auto}
@@ -2959,8 +2975,24 @@ function renderPredict(){
       return `<div class="hstat ${dead.has(pid)?"hdead":""}">${r.pts} ${mark}</div>`;
     };
     if (phase !== "pre" && fx.some(f => fixtureResultLive(gw, f))) html += hintHtml("scores", "Tap any score for scorers, cards &amp; the clock");
-    html += `<div class="predgrid-wrap"><table class="predgrid">
-      <tr><th class="colme">${faceOrDead(MYPID, "ava-th", dead.has(MYPID))}You${statFor(MYPID)}</th>${others.map(([pid,p])=>`<th>${faceOrDead(pid, "ava-th", dead.has(pid))}${esc(p.name.split(" ")[0])}${statFor(pid)}</th>`).join("")}</tr>`;
+    // once picks are revealed your own pick is a lozenge in its own pinned
+    // column, exactly like everyone else's; the fixture cell keeps the score
+    const youCol = revealed && !out;
+    const lozenge = (p, eff) => {
+      let cls = "pts-none", star = false;
+      const txt = p && p.h !== null && p.h !== undefined ? `${p.h}–${p.a}` : "—";
+      if (txt !== "—" && eff){
+        if (+p.h===eff.h && +p.a===eff.a){ cls = "pts-exact"; star = true; }
+        else if (Math.sign(p.h-p.a)===Math.sign(eff.h-eff.a)) cls = "pts-result";
+        else cls = "pts-wrong";
+      }
+      // fixed-width lozenge, centred on the row; the exact-score star
+      // overlays above it without shifting the layout
+      return `<span class="pickcell">${star?'<span class="pstar">★</span>':""}<span class="ptsbadge ${cls}">${txt}</span></span>`;
+    };
+    html += `<div class="predgrid-wrap"><table class="predgrid stk ${youCol ? "hasyou" : ""}">
+      <tr>${youCol ? `<th class="colme"></th><th class="colyou">${faceOrDead(MYPID, "ava-th", dead.has(MYPID))}You${statFor(MYPID)}</th>`
+        : `<th class="colme">${faceOrDead(MYPID, "ava-th", dead.has(MYPID))}You${statFor(MYPID)}</th>`}${others.map(([pid,p])=>`<th>${faceOrDead(pid, "ava-th", dead.has(pid))}${esc(p.name.split(" ")[0])}${statFor(pid)}</th>`).join("")}</tr>`;
     const ptsCfg = GAMEWEEKS["gw"+gw]?.finalized ? (GAMEWEEKS["gw"+gw].pointsUsed || CONFIG) : CONFIG;
     for (const f of fx){
       const pk = mine[f.id] || {};
@@ -2984,34 +3016,25 @@ function renderPredict(){
       const boxCls = swap ? (res ? "pk-ftbox" : "pk-livebox") : myCls;
       const chip = v => `<span class="ssc mypk ${myCls || "pk-none"}">${v ?? "–"}</span>`;
       // status (FT / live clock) sits centred ABOVE the score boxes
-      const statusRow = swap
-        ? `<div class="subrow strow"><span class="sub-l"></span><span class="stmid ${res?"":"live"}">${res ? "FT" : "● " + liveLabel(f)}</span><span class="sub-r"></span></div>`
-        : "";
+      const statusRow = swap ? `<div class="strow2 ${res?"":"live"}">${res ? "FT" : "● " + liveLabel(f)}</div>` : "";
       html += `<tr class="${res?"done":""}">
         <td class="colme ${swap ? "tapcell" : ""}" title="${esc(teamName(f.h))} v ${esc(teamName(f.a))}" ${swap ? `onclick="showFacts(${f.id})"` : ""}>
           ${statusRow}<div class="myrow">
-            <span class="tcode">${crestSm(f.h)}${esc(teamShort(f.h))}</span>
+            <span class="tstack">${crestSm(f.h)}<b>${esc(teamShort(f.h))}</b></span>
             <input type="number" min="0" max="15" id="pk-${f.id}-h" class="${boxCls}" value="${bH}" ${locked||out?"disabled":""}>
             <span class="dash">–</span>
             <input type="number" min="0" max="15" id="pk-${f.id}-a" class="${boxCls}" value="${bA}" ${locked||out?"disabled":""}>
-            <span class="tcode ta">${esc(teamShort(f.a))}${crestSm(f.a)}</span>
+            <span class="tstack">${crestSm(f.a)}<b>${esc(teamShort(f.a))}</b></span>
           </div>
-          ${res ? `<div class="subrow ft tapscore" onclick="showFacts(${f.id})"><span class="sub-l">Pred<span class="lbl-x">iction</span></span>${chip(pk.h)}<span class="sdash">–</span>${chip(pk.a)}<span class="sub-r">${marker}</span></div>`
+          ${youCol ? (swap ? "" : `<span class="ko">${fmtKo(f.kickoff)}</span>`)
+            : res ? `<div class="subrow ft tapscore" onclick="showFacts(${f.id})"><span class="sub-l">Pred<span class="lbl-x">iction</span></span>${chip(pk.h)}<span class="sdash">–</span>${chip(pk.a)}<span class="sub-r">${marker}</span></div>`
             : lv ? `<div class="subrow live tapscore" onclick="showFacts(${f.id})"><span class="sub-l">Pred<span class="lbl-x">iction</span></span>${chip(pk.h)}<span class="sdash">–</span>${chip(pk.a)}<span class="sub-r">${marker}</span></div>`
             : `<span class="ko">${fmtKo(f.kickoff)}</span>`}
-        </td>`;
+        </td>${youCol ? `<td class="colyou ${swap ? "tapcell" : ""}" ${swap ? `onclick="showFacts(${f.id})"` : ""}>${lozenge(mine[f.id], eff)}</td>` : ""}`;
       for (const [pid] of others){
         const opk = preds[pid]?.picks?.[f.id];
         if (revealed){
-          let cls = "pts-none", star = false, txt = opk ? `${opk.h}–${opk.a}` : "—";
-          if (opk && eff){
-            if (+opk.h===eff.h && +opk.a===eff.a){ cls = "pts-exact"; star = true; }
-            else if (Math.sign(opk.h-opk.a)===Math.sign(eff.h-eff.a)) cls = "pts-result";
-            else cls = "pts-wrong";
-          }
-          // fixed-width lozenge, centred on the row; the exact-score star
-          // overlays above it without shifting the layout
-          html += `<td><span class="pickcell">${star?'<span class="pstar">★</span>':""}<span class="ptsbadge ${cls}">${txt}</span></span></td>`;
+          html += `<td>${lozenge(opk, eff)}</td>`;
         } else {
           html += `<td>${opk ? '<span class="tick-ok">✓</span>' : '<span class="tick-no">—</span>'}</td>`;
         }
@@ -3050,6 +3073,9 @@ function renderPredict(){
   }
   if (phase === "pre") html += whoPredictedHtml(gw);
   el.innerHTML = html;
+  // the You column pins right after the fixture column, whatever its width
+  const fc = el.querySelector(".predgrid.hasyou td.colme");
+  if (fc){ const w = fc.getBoundingClientRect().width; el.querySelectorAll(".predgrid .colyou").forEach(c => c.style.left = w + "px"); }
   floatGridHead();
 }
 
