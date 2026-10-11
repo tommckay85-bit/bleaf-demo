@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-11T16:59:02Z",
+  "updated": "2026-10-11T16:59:38Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -199,6 +199,7 @@
     "397": "Semenyo",
     "398": "Foden",
     "399": "Cherki",
+    "400": "Doku",
     "411": "Haaland",
     "419": "Martinez",
     "426": "B.Fernandes",
@@ -2120,14 +2121,18 @@
       "h": 14,
       "a": 15,
       "hs": 0,
-      "as": 0,
-      "min": 62,
+      "as": 2,
+      "min": 70,
       "finished": false,
       "stats": [
         {
           "k": "goals_scored",
           "h": [],
           "a": [
+            {
+              "value": 1,
+              "element": 400
+            },
             {
               "value": 1,
               "element": 411
