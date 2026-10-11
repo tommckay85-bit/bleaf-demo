@@ -203,7 +203,8 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 .lock{font-size:11px;color:var(--ink-faint)}
 
 /* ---------- predictions grid (sticky own column) ---------- */
-.predgrid-wrap{overflow:auto;position:relative;max-height:68vh}
+.predgrid-wrap{overflow-x:auto;overflow-y:hidden;position:relative}
+.predgrid tr:first-child th{will-change:transform}
 .predgrid{width:auto;border-collapse:separate;border-spacing:0}
 .predgrid th,.predgrid td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
 .predgrid th{position:sticky;top:0;z-index:3;background:var(--panel);box-shadow:0 2px 6px rgba(0,0,0,.35);font-family:"Oswald";font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-dim);border-bottom:2px solid var(--line);max-width:72px;overflow:hidden;text-overflow:ellipsis}
@@ -374,6 +375,22 @@ th.colme .deadwrap{margin:0 0 2px auto}
 .lmswin .name{font-family:"Oswald";font-size:34px;font-weight:700;text-transform:uppercase;margin:2px 0 6px}
 .lmswinface{font-size:60px;line-height:1}
 .lmswinface .ava-h2h{height:110px;max-width:120px}
+.lms-brink{background:#3a2a10;color:var(--gold);border:1px dashed var(--gold)}
+/* one-time hints */
+.hint{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#0c1a2e;border:1px dashed var(--steel);color:#8fe3ff;border-radius:10px;padding:7px 8px 7px 12px;font-size:12.5px;font-weight:600;margin:0 0 10px}
+.hint button{background:none;border:none;color:var(--ink-dim);font-size:14px;cursor:pointer;padding:2px 4px}
+.hint.hint-bubble{position:absolute;right:0;top:calc(100% + 10px);width:200px;z-index:30;margin:0;font-size:12px;text-align:left;box-shadow:0 8px 24px rgba(0,0,0,.5);border-style:solid}
+.hint.hint-bubble::before{content:"";position:absolute;top:-7px;right:96px;width:12px;height:12px;background:#0c1a2e;border-left:1px solid var(--steel);border-top:1px solid var(--steel);transform:rotate(45deg)}
+/* collapsible admin */
+details.adm{padding:0}
+details.adm>summary{list-style:none;display:flex;align-items:center;gap:10px;padding:16px 18px;cursor:pointer}
+details.adm>summary::-webkit-details-marker{display:none}
+details.adm>summary .admtitle{font-family:"Oswald","Inter",sans-serif;font-size:17px;font-weight:600;letter-spacing:.02em;text-transform:uppercase;display:flex;align-items:center;gap:8px;min-width:0}
+details.adm>summary .admsum{margin-left:auto;color:var(--ink-dim);font-size:12px;text-align:right}
+details.adm>summary .admchev{color:var(--ink-dim);font-size:20px;transition:transform .15s;flex:none}
+details.adm[open]>summary .admchev{transform:rotate(90deg)}
+details.adm[open]>summary{border-bottom:1px solid var(--line)}
+details.adm>.admbody{padding:14px 18px 18px}
 .headzoom{position:fixed;inset:0;z-index:90;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer}
 .hzwrap{display:block;will-change:transform}
 .hzwrap.deadwrap{margin:0}
@@ -952,6 +969,7 @@ setInterval(refreshLiveProxy, 12 * 1000);
 // The home-screen app runs standalone with no browser reload control, and an
 // open tab doesn't pick up new app versions on its own — this is the way in.
 function hardRefresh(btn){
+  hintDone("refresh");
   if (btn) btn.textContent = "…";
   location.reload();
 }
@@ -1163,7 +1181,7 @@ function raceSvg(gw){
     const idx = order.indexOf(s.pid);
     const c = RACE_COLORS[((idx % RACE_COLORS.length) + RACE_COLORS.length) % RACE_COLORS.length];
     const me = s.pid === MYPID, foc = !raceFocus || raceFocus === s.pid;
-    const toggle = `raceFocus = raceFocus==='${s.pid}' ? null : '${s.pid}'; renderAll()`;
+    const toggle = `raceFocus = raceFocus==='${s.pid}' ? null : '${s.pid}'; hintDone('race'); renderAll()`;
     const dash = idx >= RACE_COLORS.length ? 'stroke-dasharray="5 3"' : "";
     lines += `<polyline points="${s.pts.map((v,i)=>x(i).toFixed(1)+","+y(v).toFixed(1)).join(" ")}" fill="none" stroke="${c}" stroke-width="${me?3:2}" ${dash} opacity="${foc?1:.15}" stroke-linejoin="round" stroke-linecap="round" style="cursor:pointer" onclick="${toggle}"/>`;
     const f = finals.find(fn => fn.s === s);
@@ -1255,6 +1273,7 @@ function fixtureFacts(f){
   return out;
 }
 function showFacts(fid){
+  hintDone("scores");
   const f = (FEED?.fixtures || []).find(x => x.id === fid);
   if (!f) return;
   if (!$("facts-overlay")){
@@ -1735,6 +1754,19 @@ async function removeFace(){
 
 // Overlays are funny once, annoying on every refresh: remember showings on
 // this device (survives reloads and home-screen app relaunches).
+// One-time coach marks for hidden gestures: shown until the feature is used
+// (or dismissed), and for at most three app opens.
+const HINTS_SHOWN = new Set();
+function hintHtml(key, text, cls){
+  const k = "lefuck_hint_" + key;
+  if (seenTimes(k + "_used") || (seenTimes(k) >= 3 && !HINTS_SHOWN.has(key))) return "";
+  if (!HINTS_SHOWN.has(key)){ HINTS_SHOWN.add(key); bumpSeen(k); }
+  return `<div class="hint ${cls || ""}" data-hint="${key}"><span>👆 ${text}</span><button onclick="event.stopPropagation();hintDone('${key}')" aria-label="Got it">✕</button></div>`;
+}
+function hintDone(key){
+  try { localStorage.setItem("lefuck_hint_" + key + "_used", "1"); } catch(e){}
+  document.querySelectorAll(`.hint[data-hint="${key}"]`).forEach(h => h.remove());
+}
 function seenTimes(key){ try { return +localStorage.getItem(key) || 0; } catch(e){ return 0; } }
 function bumpSeen(key){ try { localStorage.setItem(key, seenTimes(key) + 1); } catch(e){} }
 // Show an overlay once the listed ones have been dismissed.
@@ -2536,6 +2568,7 @@ function lmsState(){
   const gws = allGws().filter(g => g >= r.startGw);
   let alive = [...entrants];
   const out = {};     // pid -> { gw, team, outcome }
+  const brink = {};   // already lost/drew in a week still in play: out once it's done
   const weeks = [];   // { gw, res: {pid: {team, outcome}}, done, reprieve }
   let winners = null, endGw = null;
   if (entrants.length >= 2){
@@ -2551,7 +2584,10 @@ function lmsState(){
       }
       const wk = { gw, res, done: known, reprieve: false };
       weeks.push(wk);
-      if (!known) break; // in play — later weeks wait for this one
+      if (!known){ // in play — later weeks wait for this one
+        alive.filter(p => LMS_DEAD.includes(res[p].outcome)).forEach(p => brink[p] = { gw, ...res[p] });
+        break;
+      }
       const dead = alive.filter(p => LMS_DEAD.includes(res[p].outcome));
       if (dead.length && dead.length === alive.length){ wk.reprieve = true; continue; }
       dead.forEach(p => out[p] = { gw, ...res[p] });
@@ -2560,7 +2596,7 @@ function lmsState(){
     }
   }
   const pickGw = winners ? null : (gws.find(g => !gwLocked(g)) ?? null);
-  return { entrants, alive, out, weeks, winners, endGw, pickGw, pot: lmsPot() };
+  return { entrants, alive, out, brink, weeks, winners, endGw, pickGw, pot: lmsPot() };
 }
 function lmsUsedTeams(pid, exceptGw){
   const used = {};
@@ -2665,6 +2701,7 @@ function renderLms(){
     }
     const status = won ? `<span class="ptsbadge pts-exact">👑 winner</span>`
       : o ? `<span class="ptsbadge pts-wrong">out GW${o.gw}</span>`
+      : st.brink[pid] ? `<span class="ptsbadge lms-brink" title="Their team didn't win — out once GW${st.brink[pid].gw} finishes (unless everyone left goes out too)">going out</span>`
       : `<span class="ptsbadge pts-result">standing</span>`;
     html += `<div class="lmsrow ${o ? "lmsout" : ""} ${pid === MYPID ? "me" : ""}">
       <div class="lmsname">${faceOrDead(pid, "ava-sm", !!o, true)}<b>${esc(pid === MYPID ? "You" : (PLAYERS[pid]?.name || "?"))}</b> ${status}</div>
@@ -2766,6 +2803,8 @@ function renderChrome(){
   if (viewGw === null) viewGw = currentGw();
   if (adminGw === null) adminGw = viewGw;
   if (viewGw !== null && !PREDS[viewGw]) watchPreds(viewGw);
+  const rb = document.querySelector(".signout-right");
+  if (rb && !rb.querySelector(".hint")) rb.insertAdjacentHTML("beforeend", hintHtml("refresh", "Tap ↻ (or pull down) for the latest scores", "hint-bubble"));
   maybeShowWinner();
   maybeShowRoast();
   maybeShowStillIn();
@@ -2845,9 +2884,23 @@ function renderPredict(){
   if (out) html += `<div class="banner warn">You're <b>out</b> this gameweek — predictions won't count.</div>`;
   else if (gwUnlockedByAdmin(gw)) html += `<div class="banner warn">🔓 Admin unlocked — editable past the deadline.</div>`;
   else if (locked && !myCount) html += `<div class="banner err">🔒 Deadline passed — no picks in, you've missed this week.</div>`;
-  else if (locked) html += `<div class="banner info">🔒 Predictions are locked.</div>`;
-  else if (deadline) html += `<div class="banner ok">⏱ Locks at <b>${fmtKo(deadline.toISOString())}</b>.</div>`;
-  if (!locked) html += nagBannerHtml(gw);
+  // the tab follows the week: before kickoff it's for entering picks (entry
+  // strip, grid, save, who's in); once locked it's for following the action
+  const phase = !locked ? "pre" : (GAMEWEEKS["gw"+gw]?.finalized || fx.every(f => fixtureResult(gw, f))) ? "done" : "live";
+  if (phase === "pre" && fx.length && !out){
+    const done = Object.values(PREDS[gw] || {}).filter(p => Object.keys(p.picks || {}).length >= fx.length).length;
+    const field = Object.entries(PLAYERS).filter(([pid,p]) => p.active !== false && !isOut(gw, pid)).length;
+    const left = deadline ? deadline - Date.now() : null;
+    const potNow = gwMoney(gw, scoreWeek(gw)).pot;
+    const mc = myCount >= fx.length ? "var(--green)" : myCount ? "var(--gold)" : "var(--red)";
+    html += `<div class="panel pulsestrip">
+      <div class="pcell"><div class="pv" style="color:${mc}">${myCount}<small> / ${fx.length}</small></div><div class="pk">${myCount >= fx.length ? "all in ✓" : "your picks"}</div></div>
+      <div class="pcell"><div class="pv">${left !== null ? fmtLeft(left) : "—"}</div><div class="pk">${deadline ? "locks " + deadline.toLocaleDateString("en-GB",{weekday:"short"}) + " " + deadline.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}) : "no deadline"}</div></div>
+      <div class="pcell"><div class="pv">${done}<small> / ${field}</small></div><div class="pk">mates all in</div></div>
+      <div class="pcell"><div class="pv" style="color:var(--gold)">${fmtMoney(potNow)}</div><div class="pk">pot</div></div>
+    </div>`;
+  }
+  if (phase === "pre") html += nagBannerHtml(gw);
   html += lmsNudgeHtml();
   let potChip = "";
   if (fx.length){
@@ -2905,6 +2958,7 @@ function renderPredict(){
         : showMedals ? (r.rank===1 ? "🥇" : r.rank===2 ? "🥈" : r.rank===3 ? "🥉" : "") : "";
       return `<div class="hstat ${dead.has(pid)?"hdead":""}">${r.pts} ${mark}</div>`;
     };
+    if (phase !== "pre" && fx.some(f => fixtureResultLive(gw, f))) html += hintHtml("scores", "Tap any score for scorers, cards &amp; the clock");
     html += `<div class="predgrid-wrap"><table class="predgrid">
       <tr><th class="colme">${faceOrDead(MYPID, "ava-th", dead.has(MYPID))}You${statFor(MYPID)}</th>${others.map(([pid,p])=>`<th>${faceOrDead(pid, "ava-th", dead.has(pid))}${esc(p.name.split(" ")[0])}${statFor(pid)}</th>`).join("")}</tr>`;
     const ptsCfg = GAMEWEEKS["gw"+gw]?.finalized ? (GAMEWEEKS["gw"+gw].pointsUsed || CONFIG) : CONFIG;
@@ -2994,12 +3048,24 @@ function renderPredict(){
     }
     html += `<p class="faint" style="margin-top:6px">Anyone not listed can't win this week.</p></div>`;
   }
-  html += whoPredictedHtml(gw);
+  if (phase === "pre") html += whoPredictedHtml(gw);
   el.innerHTML = html;
+  floatGridHead();
 }
 
 // Names-only status board: shows WHO has predicted (and how many games),
 // never the scores themselves — those stay hidden until the deadline.
+// The page scrolls (no scroll box inside a scroll box to trap thumbs on iOS);
+// the names row rides down with you while the grid is on screen.
+function floatGridHead(){
+  const t = document.querySelector("#tab-predict .predgrid");
+  if (!t || curTab !== "predict" || !t.rows[0]) return;
+  const r = t.getBoundingClientRect(), hh = t.rows[0].getBoundingClientRect().height;
+  const lastH = t.rows[t.rows.length - 1].getBoundingClientRect().height;
+  const dy = Math.max(0, Math.min(-r.top, r.height - hh - lastH));
+  for (const th of t.rows[0].cells) th.style.transform = dy ? `translateY(${dy}px)` : "";
+}
+window.addEventListener("scroll", () => requestAnimationFrame(floatGridHead), { passive: true });
 function whoPredictedHtml(gw){
   const fx = gwFixtures(gw), preds = PREDS[gw] || {};
   if (!fx.length) return "";
@@ -3105,7 +3171,7 @@ function renderWeek(){
   const race = raceSvg(gw);
   if (race){
     html += `<div class="panel"><div class="panelhead"><h2>📈 How the weekend unfolded</h2>
-      <button class="btn" onclick="replayRace()">▶ Replay</button></div>${race}
+      <button class="btn" onclick="replayRace()">▶ Replay</button></div>${hintHtml("race", "Tap a line or a head to spotlight that player")}${race}
       <p class="faint" style="margin-top:6px;font-size:11px">Points as each goal went in. Tap a line or name to spotlight a player${raceFocus?` — <a href="#" onclick="raceFocus=null;renderAll();return false" style="color:var(--steel)">show everyone</a>`:""}.</p></div>`;
   }
 
@@ -3279,6 +3345,52 @@ function renderBoard(){
 }
 
 /* ---------- TAB: admin ---------- */
+// Admin as collapsible sections, match-day tool first and open by default;
+// open/closed is remembered per device.
+const ADMIN_ORDER = ["gameweek", "players", "lms", "settings", "banter", "add"];
+function adminOpenSet(){
+  try { const v = JSON.parse(localStorage.getItem("lefuck_admin_open")); if (Array.isArray(v)) return new Set(v); } catch(e){}
+  return new Set(["gameweek"]);
+}
+function adminToggle(key, open){
+  const s = adminOpenSet(); if (open) s.add(key); else s.delete(key);
+  try { localStorage.setItem("lefuck_admin_open", JSON.stringify([...s])); } catch(e){}
+}
+function adminKey(title){
+  const t = title.toLowerCase();
+  return t.startsWith("gameweek control") ? "gameweek" : t.startsWith("players") ? "players" : t.includes("last man") ? "lms"
+    : t.startsWith("league settings") ? "settings" : t.startsWith("banter") ? "banter" : t.startsWith("add a player") ? "add" : null;
+}
+function adminSections(el, sums){
+  const open = adminOpenSet();
+  const secs = [];
+  for (const p of [...el.children]){
+    if (!p.classList.contains("panel")) continue;
+    const h2 = p.querySelector("h2");
+    const key = h2 && adminKey(h2.textContent);
+    if (!key) continue;
+    const d = document.createElement("details");
+    d.className = "panel adm"; d.dataset.key = key;
+    if (open.has(key)) d.open = true;
+    const sm = document.createElement("summary");
+    sm.innerHTML = `<span class="admtitle">${h2.innerHTML}</span><span class="admsum">${sums[key] || ""}</span><span class="admchev">›</span>`;
+    h2.remove();
+    const head = p.querySelector(":scope > .panelhead");
+    if (head && !head.textContent.trim().length) head.remove();
+    d.appendChild(sm);
+    const body = document.createElement("div");
+    body.className = "admbody";
+    while (p.firstChild) body.appendChild(p.firstChild);
+    d.appendChild(body);
+    d.addEventListener("toggle", () => adminToggle(key, d.open));
+    p.replaceWith(d);
+    secs.push(d);
+  }
+  secs.sort((a,b) => ADMIN_ORDER.indexOf(a.dataset.key) - ADMIN_ORDER.indexOf(b.dataset.key));
+  const anchor = $("admin-msg");
+  let prev = anchor;
+  for (const d of secs){ prev.after(d); prev = d; }
+}
 function renderAdmin(){
   const el = $("tab-admin");
   const gw = adminGw ?? viewGw;
@@ -3429,6 +3541,14 @@ function renderAdmin(){
   }
   html += `<div class="savebar"><span id="ov-msg" class="faint"></span><button class="btn btn-primary" onclick="saveOverrides(${gw})">Save manual results</button></div></div>`;
   el.innerHTML = html;
+  const lst = LMS.enabled ? lmsState() : null;
+  adminSections(el, {
+    gameweek: `GW ${gw} · ${gwDoc?.finalized ? "finalised ✓" : !gwLocked(gw) ? "open for picks" : gwFixtures(gw).every(f => fixtureResult(gw, f)) ? "ready to finalise" : "in play"}`,
+    players: `${roster.length} active`,
+    lms: !LMS.enabled ? "off" : !LMS.round ? "on · no round" : lst?.winners?.length ? "won — start a new round" : `on · ${lst?.alive.length ?? 0} standing`,
+    settings: `${CONFIG.result}/${CONFIG.exact} pts · ${fmtMoney(CONFIG.stake)} stake`,
+    banter: `${["winner","loser","stillin","out"].reduce((n,k) => n + (MSGS[k]||[]).length, 0)} custom lines`,
+  });
 }
 
 /* confetti + fireworks for the weekly champion */
