@@ -416,6 +416,15 @@ const FIREBASE_STUB = `
   await page.waitForTimeout(2500);
   const midT = await page.$eval('#race-svg .race-headg', el => el.getAttribute('transform'));
   assert(midT !== restT, 'replay: heads ride the line tips (' + restT + ' -> ' + midT + ')');
+  // explosion when a player is knocked out mid-replay
+  const boomInfo = await page.evaluate(() => {
+    const h = RACE_ANIM.heads.find(x => x.pid === 'tom') || RACE_ANIM.heads[0];
+    raceExplode(document.getElementById('race-svg'), h, 200, 100);
+    const fx = document.querySelector('#race-svg .race-fx');
+    return fx ? { pieces: fx.querySelectorAll('.pc').length, sparks: fx.querySelectorAll('.sp').length } : null;
+  });
+  assert(boomInfo && boomInfo.sparks >= 10, 'knock-out explosion: sparks fly (' + JSON.stringify(boomInfo) + ')');
+  assert(boomInfo && boomInfo.pieces === 4, 'and a head with a photo breaks into four pieces');
   await page.click('#race-svg .race-headg image');
   await page.waitForTimeout(200);
   assert(await page.isVisible('.headzoom img'), 'race-chart heads zoom too');

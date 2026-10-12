@@ -93,6 +93,11 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 .race-guide{stroke:var(--steel-dim);stroke-width:1}
 .race-tick{fill:var(--ink-faint);font-size:10px;font-family:"Inter"}
 .race-name{fill:var(--ink-dim);font-size:12px;font-family:"Inter";font-weight:600}
+.race-boom{font-size:11px;text-anchor:middle;dominant-baseline:central;pointer-events:none}
+.race-headg .rh-skull{display:none;text-anchor:middle;dominant-baseline:central}
+#race-svg.replaying .rh-x{display:none}
+.race-headg.blown .rh-face{display:none}
+.race-headg.blown .rh-skull{display:inline}
 .race-me{fill:var(--ink);font-weight:700}
 .winline{font-size:13px;margin:7px 0;color:var(--ink-dim);line-height:1.45}
 .winline b{color:var(--ink)}
@@ -1134,10 +1139,11 @@ function pointsTimeline(gw, hist){
     .filter(([pid,p]) => p.active !== false && !isOut(gw, pid))
     .map(([pid,p]) => ({ pid, name: p.name, pts: [0] }));
   const state = {}; // fixture id -> current score
-  const times = [hist.events[0].t];
+  const times = [hist.events[0].t], states = [{}];
   for (const ev of hist.events){
-    for (const c of (ev.changes || [])) state[c.id] = { h: c.hs, a: c.as };
+    for (const c of (ev.changes || [])) state[c.id] = { h: c.hs, a: c.as, fin: !!c.finished };
     times.push(ev.t);
+    states.push({ ...state });
     for (const s of series){
       const picks = preds[s.pid]?.picks || {};
       let total = 0;
@@ -1150,7 +1156,26 @@ function pointsTimeline(gw, hist){
       s.pts.push(total);
     }
   }
-  return { times, series };
+  return { times, series, states };
+}
+// When did each player become mathematically out? Replay the weekend's
+// full-time results step by step through the normal eliminatedSet check.
+// pid -> timeline index of the step that killed them.
+function raceEliminations(gw, tl){
+  const fx = gwFixtures(gw), gd = GAMEWEEKS["gw"+gw];
+  const saved = fx.map(f => [f, f.hs, f.as, f.finished]), ov = gd?.overrides;
+  const elim = {};
+  try {
+    if (gd) gd.overrides = {}; // the history is the feed's story; manual fixes come later
+    tl.states.forEach((st, i) => {
+      for (const f of fx){ const c = st[f.id]; f.hs = c ? c.h : null; f.as = c ? c.a : null; f.finished = !!c?.fin; }
+      for (const pid of eliminatedSet(gw)) if (elim[pid] === undefined) elim[pid] = i;
+    });
+  } finally {
+    for (const [f,h,a,fin] of saved){ f.hs = h; f.as = a; f.finished = fin; }
+    if (gd) gd.overrides = ov;
+  }
+  return elim;
 }
 // Fixed, validated 9-colour categorical palette (dark surface); colours follow
 // the player (alphabetical among active), 10th+ reuse the palette dashed.
@@ -1193,6 +1218,7 @@ function raceSvg(gw){
     over = k > 0 ? finals[k-1].ly - (finals[k].ly - GAP) : 0;
   }
   const ex = x(n-1);
+  const elim = raceEliminations(gw, tl);
   RACE_ANIM = { W, xs: tl.times.map((_,i) => x(i)), ex, heads: [] };
   let lines = "", labels = "", heads = "", dots = "";
   for (const s of tl.series){
@@ -1202,17 +1228,21 @@ function raceSvg(gw){
     const toggle = `raceFocus = raceFocus==='${s.pid}' ? null : '${s.pid}'; hintDone('race'); renderAll()`;
     const dash = idx >= RACE_COLORS.length ? 'stroke-dasharray="5 3"' : "";
     lines += `<polyline points="${s.pts.map((v,i)=>x(i).toFixed(1)+","+y(v).toFixed(1)).join(" ")}" fill="none" stroke="${c}" stroke-width="${me?3:2}" ${dash} opacity="${foc?1:.15}" stroke-linejoin="round" stroke-linecap="round" style="cursor:pointer" onclick="${toggle}"/>`;
+    const ei = elim[s.pid];
+    if (ei !== undefined && ei < n - 1) lines += `<text x="${x(ei).toFixed(1)}" y="${y(s.pts[ei]).toFixed(1)}" class="race-boom" opacity="${foc?1:.2}">💥</text>`;
     const f = finals.find(fn => fn.s === s);
     const src = AVATARS[s.pid];
     const sz = me ? HS + 4 : HS;
     labels += `<g opacity="${foc?1:.25}" style="cursor:pointer" onclick="${toggle}">
       ${Math.abs(f.ly - f.fy) > 1 ? `<line x1="${ex}" x2="${ex}" y1="${f.fy}" y2="${f.ly}" stroke="${c}" stroke-width="1.5" opacity=".6"/>` : ""}
       <text x="${ex + sz/2 + 4}" y="${f.ly+4}" class="race-name ${me?"race-me":""}">${esc(s.name.split(" ")[0])} ${s.pts[n-1]}</text></g>`;
-    const hg = `<g class="race-headg" data-pid="${esc(s.pid)}" transform="translate(${ex},${f.ly})" opacity="${foc?1:.25}" style="cursor:pointer" onclick="${toggle}">${src
-      ? `<image href="${src}" x="${-sz/2}" y="${-sz/2}" width="${sz}" height="${sz}" preserveAspectRatio="xMidYMid meet" style="filter:drop-shadow(0 0 1.5px ${c}) drop-shadow(0 0 1.5px ${c})"/>`
-      : `<circle r="${me?5:4}" fill="${c}" stroke="#0b1322" stroke-width="1.5"/>`}</g>`;
+    const dead = ei !== undefined;
+    const hg = `<g class="race-headg" data-pid="${esc(s.pid)}" transform="translate(${ex},${f.ly})" opacity="${foc?1:.25}" style="cursor:pointer" onclick="${toggle}"><g class="rh-face">${src
+      ? `<image href="${src}" x="${-sz/2}" y="${-sz/2}" width="${sz}" height="${sz}" preserveAspectRatio="xMidYMid meet" style="filter:${dead ? "grayscale(.4) brightness(.9) " : ""}drop-shadow(0 0 1.5px ${c}) drop-shadow(0 0 1.5px ${c})"/>`
+        + (dead ? `<svg class="rh-x" x="${(-sz*.58).toFixed(1)}" y="${(-sz*.58).toFixed(1)}" width="${(sz*1.16).toFixed(1)}" height="${(sz*1.16).toFixed(1)}" viewBox="0 0 100 100" overflow="visible">${DEAD_X_INNER}</svg>` : "")
+      : `<circle r="${me?5:4}" fill="${c}" stroke="#0b1322" stroke-width="1.5"/>`}</g><text class="rh-skull" font-size="${(sz*.6).toFixed(0)}">💀</text></g>`;
     if (src) heads += hg; else dots += hg;
-    RACE_ANIM.heads.push({ pid: s.pid, ys: s.pts.map(v => y(v)), rest: [ex, f.ly] });
+    RACE_ANIM.heads.push({ pid: s.pid, ys: s.pts.map(v => y(v)), rest: [ex, f.ly], elim: ei, src, sz, c });
   }
   return `<svg id="race-svg" viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;touch-action:pan-y">
       <clipPath id="race-clip"><rect id="race-clip-rect" x="0" y="0" width="${W}" height="${H}"/></clipPath>
@@ -1239,20 +1269,76 @@ function raceHeadsAt(tipX){
   });
 }
 function replayRace(){
-  const r = $("race-clip-rect");
-  if (!r) return;
+  const r = $("race-clip-rect"), svg = $("race-svg");
+  if (!r || !svg) return;
   const start = performance.now();
+  const blown = new Set();
+  svg.classList.add("replaying");
+  svg.querySelectorAll(".race-headg.blown").forEach(g => g.classList.remove("blown"));
   const tick = now => {
     const p = Math.min(1, (now - start) / 6000);
-    const W = RACE_ANIM?.W || 680;
+    const A = RACE_ANIM, W = A?.W || 680;
     const tipX = 30 + (W - 30) * p;
     r.setAttribute("width", tipX);
-    raceHeadsAt(p < 1 && tipX < RACE_ANIM.ex ? tipX : null);
+    raceHeadsAt(p < 1 && tipX < A.ex ? tipX : null);
+    // the moment a player can no longer win the week, their head goes pop
+    for (const h of A?.heads || []){
+      if (h.elim === undefined || blown.has(h.pid) || tipX < A.xs[h.elim] - .5) continue;
+      blown.add(h.pid);
+      const g = svg.querySelector(`.race-headg[data-pid="${CSS.escape(h.pid)}"]`);
+      if (g) g.classList.add("blown");
+      raceExplode(svg, h, A.xs[h.elim], h.ys[h.elim]);
+    }
     if (p < 1) requestAnimationFrame(tick);
+    else { svg.classList.remove("replaying"); svg.querySelectorAll(".race-headg.blown").forEach(g => g.classList.remove("blown")); }
   };
   raceHeadsAt(RACE_ANIM?.xs?.[0] ?? null);
   r.setAttribute("width", 30);
   requestAnimationFrame(tick);
+}
+// Head bursts into four spinning pieces, sparks in the player's colour,
+// a flash and a 💥 — then the line rides on with a skull.
+function raceExplode(svg, h, hx, hy){
+  const NS = "http://www.w3.org/2000/svg", sz = h.sz || 24;
+  const fx = document.createElementNS(NS, "g");
+  fx.setAttribute("class", "race-fx"); fx.setAttribute("pointer-events", "none");
+  const id = "rx" + Math.random().toString(36).slice(2, 8);
+  let html = `<circle class="fl" cx="${hx}" cy="${hy}" r="1" fill="#ffd75e"/>`;
+  const parts = [];
+  if (h.src){
+    [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([qx,qy], k) => {
+      html += `<clipPath id="${id}${k}"><rect x="${qx < 0 ? -sz/2 : 0}" y="${qy < 0 ? -sz/2 : 0}" width="${sz/2}" height="${sz/2}"/></clipPath>
+        <g class="pc" transform="translate(${hx},${hy})"><image href="${h.src}" x="${-sz/2}" y="${-sz/2}" width="${sz}" height="${sz}" preserveAspectRatio="xMidYMid meet" clip-path="url(#${id}${k})"/></g>`;
+      parts.push({ vx: qx * (35 + Math.random() * 30), vy: qy * (25 + Math.random() * 20) - 45, rot: (Math.random() - .5) * 720 });
+    });
+  }
+  const cols = [h.c, "#ff3355", "#ffd75e", "#ff8a3d", "#ffffff"];
+  for (let k = 0; k < 18; k++){
+    const a = Math.random() * Math.PI * 2, sp = 45 + Math.random() * 80;
+    html += `<circle class="sp" cx="${hx}" cy="${hy}" r="${(1 + Math.random() * 2.2).toFixed(1)}" fill="${cols[k % cols.length]}"/>`;
+    parts.push({ spark: true, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 25 });
+  }
+  html += `<text class="bm" x="${hx}" y="${hy}" text-anchor="middle" dominant-baseline="central" font-size="1">💥</text>`;
+  fx.innerHTML = html;
+  svg.appendChild(fx);
+  const pcs = fx.querySelectorAll(".pc"), sps = fx.querySelectorAll(".sp"), fl = fx.querySelector(".fl"), bm = fx.querySelector(".bm");
+  const t0 = performance.now(), D = 1200, G = 170;
+  const frame = now => {
+    const t = (now - t0) / 1000, p = Math.min(1, (now - t0) / D);
+    fl.setAttribute("r", (sz * .2 + sz * 1.1 * Math.min(1, p * 4)).toFixed(1));
+    fl.setAttribute("opacity", Math.max(0, .85 - p * 2.6).toFixed(2));
+    bm.setAttribute("font-size", (sz * (p < .12 ? p / .12 * 1.4 : 1.4 - (p - .12) * .5)).toFixed(1));
+    bm.setAttribute("opacity", (p < .6 ? 1 : Math.max(0, (1 - p) / .4)).toFixed(2));
+    let pi = 0, si = 0;
+    for (const m of parts){
+      const X = hx + m.vx * t, Y = hy + m.vy * t + .5 * G * t * t;
+      if (m.spark){ const el = sps[si++]; el.setAttribute("cx", X.toFixed(1)); el.setAttribute("cy", Y.toFixed(1)); el.setAttribute("opacity", (1 - p).toFixed(2)); }
+      else { const el = pcs[pi++]; el.setAttribute("transform", `translate(${X.toFixed(1)},${Y.toFixed(1)}) rotate(${(m.rot * t).toFixed(0)})`);
+             el.setAttribute("opacity", (p < .55 ? 1 : Math.max(0, (1 - p) / .45)).toFixed(2)); }
+    }
+    if (p < 1) requestAnimationFrame(frame); else fx.remove();
+  };
+  requestAnimationFrame(frame);
 }
 function raceHover(gw, e){
   const svg = $("race-svg"), tl = pointsTimeline(gw, HISTORY[gw]);
@@ -1501,7 +1587,8 @@ function brushStroke(angle, seed){
   out += `<path d="M18 47.6 C36 45.6 58 45.3 78 46" stroke="rgba(255,205,212,.5)" stroke-width="1.1" fill="none" stroke-linecap="round"/>`;
   return `<g transform="rotate(${angle} 50 50)">${out}</g>`;
 }
-const DEAD_X_SVG = `<svg class="deadx" viewBox="0 0 100 100" aria-hidden="true">${brushStroke(45, 7)}${brushStroke(-45, 31)}</svg>`;
+const DEAD_X_INNER = brushStroke(45, 7) + brushStroke(-45, 31);
+const DEAD_X_SVG = `<svg class="deadx" viewBox="0 0 100 100" aria-hidden="true">${DEAD_X_INNER}</svg>`;
 const DEAD_STAMP_SVG = `<svg class="deadstamp" viewBox="0 0 100 100" aria-hidden="true"><g transform="rotate(-18 50 52)" filter="url(#lf-ink)">
   <rect x="8" y="33" width="84" height="38" rx="6" fill="rgba(10,0,4,.35)" stroke="#ff3355" stroke-width="7"/>
   <text x="50" y="64.5" text-anchor="middle" font-family="Oswald,Impact,sans-serif" font-weight="700" font-size="32" letter-spacing="4" fill="#ff3355">OUT</text></g></svg>`;

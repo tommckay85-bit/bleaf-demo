@@ -493,4 +493,28 @@ assert.strictEqual(run('lmsState()'), null);
 assert.strictEqual(run('lmsNudgeHtml()'), '', 'no nudge when switched off');
 console.log('LAST-MAN-STANDING TESTS PASSED');
 
+// --- race chart: when does each player get knocked out (explosion timing) ---
+// GW3: 301 LIV v ARS, 302 NEW v CHE, 303 MCI v MUN, 304 EVE v TOT, 305 WHU v AVL
+run(`GAMEWEEKS = {}; MYPID = 'tom';
+PLAYERS = { tom:{ name:'Tom', active:true }, dave:{ name:'Dave', active:true }, sam:{ name:'Sam', active:true } };
+PREDS[3] = {
+  tom:  { pid:'tom',  picks:{ 301:{h:1,a:0}, 302:{h:1,a:0}, 303:{h:1,a:0}, 304:{h:1,a:0}, 305:{h:1,a:0} } },
+  dave: { pid:'dave', picks:{ 301:{h:0,a:2}, 302:{h:2,a:2}, 303:{h:2,a:2}, 304:{h:0,a:1}, 305:{h:0,a:3} } },
+  sam:  { pid:'sam',  picks:{ 301:{h:1,a:0} } },
+};
+window_hist = { gw:3, events:[
+  { t:1, changes:[{ id:301, hs:1, as:0, finished:true }] },
+  { t:2, changes:[{ id:302, hs:1, as:0, finished:true }] },
+  { t:3, changes:[{ id:303, hs:1, as:0, finished:true }] },
+  { t:4, changes:[{ id:304, hs:1, as:0, finished:true }, { id:305, hs:1, as:0, finished:true }] },
+]};`);
+const el = runJ('raceEliminations(3, pointsTimeline(3, window_hist))');
+// after 301 & 302 tom has 20, sam 10 with nothing else picked: sam is dead at step 2;
+// dave (all wrong so far) dies at step 3 when 303 goes against him too
+assert.strictEqual(el.sam, 2, 'sam knocked out once he cannot catch up (' + JSON.stringify(el) + ')');
+assert.strictEqual(el.dave, 3, 'dave knocked out a step later');
+assert.strictEqual(el.tom, undefined, 'the winner never explodes');
+assert.ok(run(`FEED.fixtures.filter(f => f.gw === 3).every(f => f.hs === null && f.finished === false)`), 'feed restored after the replay maths');
+console.log('RACE-ELIMINATION TESTS PASSED');
+
 console.log('\nALL LOGIC SUITES PASSED');
