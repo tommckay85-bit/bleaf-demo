@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-12T15:44:31Z",
+  "updated": "2026-10-12T23:34:19Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -148,7 +148,11 @@
     "161": "Lavia",
     "165": "João Pedro",
     "176": "Dasilva",
+    "183": "Rudoni",
+    "195": "Simms",
     "492": "Awoniyi",
+    "599": "Cherif",
+    "656": "Mfuni",
     "153": "Disasi",
     "204": "Mitchell",
     "211": "Yeremy",
@@ -207,6 +211,7 @@
     "428": "Cunha",
     "439": "Šeško",
     "445": "Thiaw",
+    "447": "Botman",
     "449": "Hall",
     "453": "Barnes",
     "454": "Elanga",
@@ -2161,10 +2166,39 @@
       "kickoff": "2026-10-12T19:00:00Z",
       "h": 7,
       "a": 17,
-      "hs": null,
-      "as": null,
-      "min": 0,
-      "finished": false
+      "hs": 4,
+      "as": 1,
+      "min": 90,
+      "finished": true,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [
+            {
+              "value": 1,
+              "element": 183
+            },
+            {
+              "value": 1,
+              "element": 195
+            },
+            {
+              "value": 1,
+              "element": 599
+            },
+            {
+              "value": 1,
+              "element": 656
+            }
+          ],
+          "a": [
+            {
+              "value": 1,
+              "element": 447
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 64,
