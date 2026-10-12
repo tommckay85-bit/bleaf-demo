@@ -358,6 +358,8 @@ tr.pos2 td{background:linear-gradient(90deg,rgba(154,167,181,.10),transparent 70
 .predgrid.hasyou .colme{border-right:none;width:auto;min-width:0;max-width:none}
 .predgrid .colyou{position:sticky;z-index:2;background:var(--panel);border-right:2px solid var(--steel);min-width:52px}
 .predgrid th.colyou{z-index:4}
+.predgrid input.pk-tbc{opacity:1;border-style:dashed}
+.predgrid input.pk-tbc::placeholder{color:var(--ink-faint);opacity:1}
 .predgrid tr.done td.colyou{background:var(--bg);border-right-color:var(--steel-dim)}
 @media(max-width:640px){
   .tstack{width:32px;font-size:10.5px}
@@ -3121,8 +3123,11 @@ function renderPredict(){
       // once a game kicks off the big boxes carry the REAL score (live or FT)
       // and the prediction drops to the sub-line as a coloured chip
       const swap = !!eff && locked;
-      const bH = swap ? eff.h : vH, bA = swap ? eff.a : vA;
-      const boxCls = swap ? (res ? "pk-ftbox" : "pk-livebox") : myCls;
+      // once picks are locked your pick lives in the YOU lozenge, so a game
+      // that hasn't kicked off just shows empty boxes with a quiet dash
+      const tbc = youCol && !swap;
+      const bH = swap ? eff.h : tbc ? "" : vH, bA = swap ? eff.a : tbc ? "" : vA;
+      const boxCls = swap ? (res ? "pk-ftbox" : "pk-livebox") : tbc ? "pk-tbc" : myCls;
       const chip = v => `<span class="ssc mypk ${myCls || "pk-none"}">${v ?? "–"}</span>`;
       // status (FT / live clock) sits centred ABOVE the score boxes
       const statusRow = swap ? `<div class="strow2 ${res?"":"live"}">${res ? "FT" : "● " + liveLabel(f)}</div>` : "";
@@ -3130,9 +3135,9 @@ function renderPredict(){
         <td class="colme ${swap ? "tapcell" : ""}" title="${esc(teamName(f.h))} v ${esc(teamName(f.a))}" ${swap ? `onclick="showFacts(${f.id})"` : ""}>
           ${statusRow}<div class="myrow">
             <span class="tstack">${crestSm(f.h)}<b>${esc(teamShort(f.h))}</b></span>
-            <input type="number" min="0" max="15" id="pk-${f.id}-h" class="${boxCls}" value="${bH}" ${locked||out?"disabled":""}>
+            <input type="number" min="0" max="15" id="pk-${f.id}-h" class="${boxCls}" value="${bH}" ${tbc ? 'placeholder="–"' : ""} ${locked||out?"disabled":""}>
             <span class="dash">–</span>
-            <input type="number" min="0" max="15" id="pk-${f.id}-a" class="${boxCls}" value="${bA}" ${locked||out?"disabled":""}>
+            <input type="number" min="0" max="15" id="pk-${f.id}-a" class="${boxCls}" value="${bA}" ${tbc ? 'placeholder="–"' : ""} ${locked||out?"disabled":""}>
             <span class="tstack">${crestSm(f.a)}<b>${esc(teamShort(f.a))}</b></span>
           </div>
           ${youCol ? (swap ? "" : `<span class="ko">${fmtKo(f.kickoff)}</span>`)

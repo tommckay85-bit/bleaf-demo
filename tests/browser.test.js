@@ -186,7 +186,8 @@ const FIREBASE_STUB = `
   assert(/^sticky@\d/.test(youSticky), 'YOU column pinned next to the fixture column (' + youSticky + ')');
   const ftBoxVals = await page.$$eval('#tab-predict input.pk-ftbox', els => els.map(e => e.value).join(''));
   assert(ftBoxVals === '2103', 'finished boxes show the real scores (' + ftBoxVals + ')');
-  assert((await page.$$('#tab-predict input[type=number]:not([class*=pk-])')).length >= 2, 'unplayed games keep plain pick boxes');
+  const tbcVals = await page.$$eval('#tab-predict input.pk-tbc', els => els.map(e => e.value + '|' + e.placeholder));
+  assert(tbcVals.length >= 2 && tbcVals.every(v => v === '|–'), 'locked, not kicked off: empty boxes with a dash, pick lives in the lozenge (' + tbcVals.join(',') + ')');
   assert((await page.$$('#tab-predict .predgrid tr.done')).length === 2, 'finished games shaded (2 done rows)');
   const myHead = await page.$eval('#tab-predict .predgrid th.colyou', el => el.textContent);
   assert(myHead.includes('10') && myHead.includes('\u{1F947}'), 'header tally: my points and 1st medal');
