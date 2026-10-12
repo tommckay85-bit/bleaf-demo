@@ -544,12 +544,11 @@ const FIREBASE_STUB = `
   const deadHeads = await page.$$eval('#tab-predict .predgrid th .deadwrap img.ava', els => els.map(e => e.dataset.pid));
   const deadSet = await page.evaluate(() => [...eliminatedSet(viewGw)]);
   assert(deadSet.length > 0 && deadHeads.length > 0 && deadHeads.every(p => deadSet.includes(p)), 'dead players get a crossed-out head (' + deadHeads + ' / ' + deadSet + ')');
-  const crossColour = await page.$eval('#tab-predict .deadwrap', el => getComputedStyle(el, '::before').backgroundColor);
-  assert(/rgb\(2[0-9]{2}, /.test(crossColour), 'cross is red (' + crossColour + ')');
+  assert((await page.$$('#tab-predict .deadwrap svg.deadx path')).length > 30, 'paintbrush X (bristle strokes) over dead heads');
   await page.screenshot({ path: OUT + '/shot-22-dead-cross.png', clip: { x: 0, y: 380, width: 1180, height: 260 } });
   await page.click('#tab-predict .predgrid th .deadwrap img.ava');
   await page.waitForTimeout(900);
-  assert(!!(await page.$('.headzoom .hzwrap.deadwrap')), 'a dead head keeps its cross when zoomed');
+  assert(!!(await page.$('.headzoom .hzwrap.hzdead .deadstamp')), 'a dead head gets the OUT stamp when zoomed');
   await page.screenshot({ path: OUT + '/shot-23-dead-zoom.png' });
   await page.click('.headzoom');
   await page.evaluate(() => { GAMEWEEKS.gw3.out = ['gaz']; renderAll(); });
