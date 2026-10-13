@@ -2745,7 +2745,11 @@ async function saveLmsPick(gw, team){
     });
     LMS_PICKS[`${LMS.round.id}_gw${gw}_${MYPID}`] = { round: LMS.round.id, gw, pid: MYPID, team };
     renderAll();
-  } catch(e){ msg("Couldn't save: " + e.message); }
+  } catch(e){
+    msg(e.code === "permission-denied"
+      ? "Couldn't save — the league database isn't set up for Last Man picks yet. " + (ME.admin ? "Paste the lmsPicks block into your Firestore rules (see the README)." : "Give the admin a shout.")
+      : "Couldn't save: " + e.message);
+  }
 }
 const LMS_WORD = { win:"won", draw:"drew", lose:"lost", nopick:"no pick", pending:"playing", void:"postponed — survives" };
 function lmsChip(gw, pick, revealed){
