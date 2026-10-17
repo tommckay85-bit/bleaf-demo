@@ -723,6 +723,30 @@ const FIREBASE_STUB = `
   assert((await page.textContent('#tab-lms .lmswin')).includes('Tom'), 'winner card when one is left');
   await page.screenshot({ path: OUT + '/shot-25-lms-won.png', fullPage: true });
 
+  // ---- last man standing: admin late pass ----
+  await page.evaluate(() => {
+    FEED.fixtures.filter(f => f.gw === 3).forEach((f,i) => { f._ko2 = f.kickoff; f.kickoff = new Date(Date.now() + (i === 0 ? -3600e3 : (i + 1) * 3600e3)).toISOString(); f._h2 = f.hs; f._a2 = f.as; f.hs = null; f.as = null; f._f2 = f.finished; f.finished = false; });
+    window._ov2 = GAMEWEEKS.gw3.overrides; GAMEWEEKS.gw3.overrides = {};
+    LMS = { enabled:true, buyIn:5, history:[], round:{ id:'rLate', no:1, startGw:3, entrants:['tom','dave','sam'], paid:{} } };
+    LMS_PICKS = { rLate_gw3_dave: { round:'rLate', gw:3, pid:'dave', team:5 } };
+    setTab('admin');
+  });
+  await page.waitForTimeout(200);
+  assert((await page.textContent('#tab-admin')).includes('Late GW3'), 'admin gets a late-pass column once the deadline has passed');
+  assert((await page.$$('#tab-admin input[onchange^="lmsSetLate"]')).length >= 3, 'one late-pass tick per player');
+  await page.evaluate(() => { LMS.round.late = { gw:3, pids:['tom'] }; setTab('lms'); });
+  await page.waitForTimeout(200);
+  assert(await page.isVisible('#tab-lms .lmslate'), 'late-pass player gets a pick panel after the deadline');
+  const goneBtns = await page.$$eval('#tab-lms .lmslate .lmsteam:disabled', bs => bs.map(b => b.textContent).filter(t => t.includes('kicked off')).length);
+  assert(goneBtns === 2, 'teams whose game has kicked off are greyed out (' + goneBtns + ')');
+  await page.click('#tab-lms .lmslate .lmsteam:not(:disabled)');
+  await page.waitForTimeout(200);
+  assert((await page.$$('#tab-lms .lmslate .lmsteam.on')).length === 1, 'late pick saves');
+  await page.evaluate(() => {
+    FEED.fixtures.filter(f => f.gw === 3).forEach(f => { f.kickoff = f._ko2; f.hs = f._h2; f.as = f._a2; f.finished = f._f2; });
+    GAMEWEEKS.gw3.overrides = window._ov2; LMS = { enabled:false, buyIn:5, round:null, history:[] }; LMS_PICKS = {}; setTab('predict');
+  });
+
   // ---- mobile ----
   await page.setViewportSize({ width: 390, height: 844 });
   await page.click('[data-tab=predict]'); await page.waitForTimeout(200);
