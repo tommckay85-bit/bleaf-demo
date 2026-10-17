@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-17T14:38:23Z",
+  "updated": "2026-10-17T14:38:59Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -166,6 +166,7 @@
     "242": "George",
     "249": "Barry",
     "649": "Maitland-Niles",
+    "261": "Iwobi",
     "268": "King",
     "269": "Sessegnon",
     "569": "Gonzalo",
@@ -2232,7 +2233,7 @@
       "a": 14,
       "hs": 0,
       "as": 0,
-      "min": 31,
+      "min": 37,
       "finished": false
     },
     {
@@ -2241,10 +2242,22 @@
       "kickoff": "2026-10-17T14:00:00Z",
       "h": 10,
       "a": 11,
-      "hs": 0,
+      "hs": 1,
       "as": 0,
-      "min": 30,
-      "finished": false
+      "min": 36,
+      "finished": false,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [
+            {
+              "value": 1,
+              "element": 261
+            }
+          ],
+          "a": []
+        }
+      ]
     },
     {
       "id": 67,
@@ -2252,9 +2265,9 @@
       "kickoff": "2026-10-17T14:00:00Z",
       "h": 15,
       "a": 12,
-      "hs": 1,
+      "hs": 2,
       "as": 1,
-      "min": 29,
+      "min": 34,
       "finished": false,
       "stats": [
         {
@@ -2263,6 +2276,10 @@
             {
               "value": 1,
               "element": 398
+            },
+            {
+              "value": 1,
+              "element": 411
             }
           ],
           "a": [
