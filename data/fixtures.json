@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-17T16:03:31Z",
+  "updated": "2026-10-17T16:04:07Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -2233,7 +2233,7 @@
       "a": 14,
       "hs": 1,
       "as": 2,
-      "min": 89,
+      "min": 90,
       "finished": false,
       "stats": [
         {
@@ -2258,6 +2258,10 @@
         {
           "k": "red_cards",
           "h": [
+            {
+              "value": 1,
+              "element": 98
+            },
             {
               "value": 1,
               "element": 102
