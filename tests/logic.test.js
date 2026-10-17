@@ -517,4 +517,29 @@ assert.strictEqual(el.tom, undefined, 'the winner never explodes');
 assert.ok(run(`FEED.fixtures.filter(f => f.gw === 3).every(f => f.hs === null && f.finished === false)`), 'feed restored after the replay maths');
 console.log('RACE-ELIMINATION TESTS PASSED');
 
+// --- last man standing: admin late pass ---
+run(`GAMEWEEKS = {}; MYPID = 'sam';
+PLAYERS = { tom:{ name:'Tom', active:true }, sam:{ name:'Sam', active:true }, dave:{ name:'Dave', active:true } };
+FEED.fixtures.filter(f => f.gw === 3).forEach((f, i) => { f._ko = f.kickoff; f.kickoff = new Date(Date.now() + (i === 0 ? -3600e3 : (i + 1) * 3600e3)).toISOString(); });
+LMS = { enabled:true, buyIn:5, history:[], round:{ id:'rL', no:1, startGw:3, entrants:['tom','sam','dave'], paid:{} } };
+LMS_PICKS = { rL_gw3_tom: { round:'rL', gw:3, pid:'tom', team:5 } };`);
+assert.strictEqual(run('lmsLateGw()'), 3, 'GW3 locked with games still to kick off: late pass available');
+let lst = runJ('lmsState()');
+assert.ok(lst.brink.sam && lst.brink.sam.outcome === 'nopick', 'without a pass, no pick = going out');
+run(`LMS.round.late = { gw:3, pids:['sam'] }`);
+assert.strictEqual(run(`lmsLateOpen(3, 'sam')`), true, 'sam has a late pass');
+assert.strictEqual(run(`lmsLateOpen(3, 'dave')`), false, 'dave does not');
+lst = runJ('lmsState()');
+assert.strictEqual(lst.brink.sam, undefined, 'with a pass, sam is waited for, not knocked out');
+assert.ok(lst.brink.dave, 'dave (no pass, no pick) still going out');
+const panel = run('lmsPickPanel(3, true)');
+assert.ok(panel.includes('late pass') && panel.includes('kicked off'), 'late panel offers only games not yet kicked off');
+assert.ok(run('lmsNudgeHtml()').includes('let you in late'), 'predictions tab nudges the late-pass player');
+// once every game has started the pass lapses and a missing pick counts as out
+run(`FEED.fixtures.filter(f => f.gw === 3).forEach(f => { f.kickoff = new Date(Date.now() - 3600e3).toISOString(); })`);
+assert.strictEqual(run(`lmsLateOpen(3, 'sam')`), false, 'pass lapses when all games have kicked off');
+assert.strictEqual(run('lmsLateGw()'), null);
+run(`FEED.fixtures.filter(f => f.gw === 3).forEach(f => { f.kickoff = f._ko; delete f._ko; }); LMS = { enabled:false, buyIn:5, round:null, history:[] }; LMS_PICKS = {}`);
+console.log('LMS LATE-PASS TESTS PASSED');
+
 console.log('\nALL LOGIC SUITES PASSED');

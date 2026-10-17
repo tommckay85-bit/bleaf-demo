@@ -398,6 +398,7 @@ th.colme .deadwrap{margin:0 0 2px auto}
 .lmswin .name{font-family:"Oswald";font-size:34px;font-weight:700;text-transform:uppercase;margin:2px 0 6px}
 .lmswinface{font-size:60px;line-height:1}
 .lmswinface .ava-h2h{height:110px;max-width:120px}
+.lmslate{border-color:var(--gold)}
 .lms-brink{background:#3a2a10;color:var(--gold);border:1px dashed var(--gold)}
 /* one-time hints */
 .hint{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#0c1a2e;border:1px dashed var(--steel);color:#8fe3ff;border-radius:10px;padding:7px 8px 7px 12px;font-size:12.5px;font-weight:600;margin:0 0 10px}
@@ -2705,7 +2706,7 @@ function lmsState(){
       let known = true;
       for (const pid of alive){
         const team = lmsPickOf(pid, gw);
-        const outcome = team === null ? "nopick" : lmsOutcome(gw, team);
+        const outcome = team === null ? (lmsLateOpen(gw, pid) ? "pending" : "nopick") : lmsOutcome(gw, team);
         res[pid] = { team, outcome };
         if (outcome === "pending") known = false;
       }
@@ -2725,6 +2726,20 @@ function lmsState(){
   const pickGw = winners ? null : (gws.find(g => !gwLocked(g)) ?? null);
   return { entrants, alive, out, brink, weeks, winners, endGw, pickGw, pot: lmsPot() };
 }
+// Late pass: the admin can let named players pick for a gameweek whose
+// deadline has passed — only teams whose game hasn't kicked off, so nobody
+// picks a result they've already seen. The pass lapses once every game in
+// that week has started.
+function lmsLateGw(){
+  const r = LMS.round;
+  if (!r) return null;
+  const gws = allGws().filter(g => g >= r.startGw && gwLocked(g) && gwFixtures(g).some(f => !kickedOffLive(f)));
+  return gws.length ? gws[gws.length - 1] : null;
+}
+function lmsLateOpen(gw, pid){
+  const L = LMS.round?.late;
+  return !!L && L.gw === gw && (L.pids || []).includes(pid) && gwLocked(gw) && gwFixtures(gw).some(f => !kickedOffLive(f));
+}
 function lmsUsedTeams(pid, exceptGw){
   const used = {};
   for (const p of Object.values(LMS_PICKS))
@@ -2734,7 +2749,9 @@ function lmsUsedTeams(pid, exceptGw){
 async function saveLmsPick(gw, team){
   const st = lmsState();
   const msg = t => { const m = $("lms-msg"); if (m) m.textContent = t; };
-  if (!st || st.pickGw !== gw || gwLocked(gw)) return msg("Too late — that gameweek has locked.");
+  const late = lmsLateOpen(gw, MYPID);
+  if (!st || (!late && (st.pickGw !== gw || gwLocked(gw)))) return msg("Too late — that gameweek has locked.");
+  if (late && kickedOffLive(lmsTeamFixture(gw, team) || {})) return msg("Too late for that one — their game's already kicked off.");
   if (!st.entrants.includes(MYPID) || st.out[MYPID]) return msg("You're not in this round.");
   if (lmsUsedTeams(MYPID, gw)[team] !== undefined) return msg("You've already used them this round.");
   if (!lmsTeamFixture(gw, team)) return msg("They don't play this week.");
@@ -2754,6 +2771,7 @@ async function saveLmsPick(gw, team){
 const LMS_WORD = { win:"won", draw:"drew", lose:"lost", nopick:"no pick", pending:"playing", void:"postponed — survives" };
 function lmsChip(gw, pick, revealed){
   if (!revealed) return `<span class="lmschip lms-hidden" title="GW ${gw}">GW${gw} ${pick.team === null ? "—" : "✓"}</span>`;
+  if (pick.team === null && pick.outcome === "pending") return `<span class="lmschip lms-pend" title="GW ${gw}: late pass — still to pick">GW${gw} 🔓</span>`;
   const cls = pick.outcome === "win" || pick.outcome === "void" ? "lms-win" : pick.outcome === "pending" ? "lms-pend" : "lms-dead";
   return `<span class="lmschip ${cls}" title="GW ${gw}: ${pick.team === null ? "no pick" : esc(teamName(pick.team))} — ${LMS_WORD[pick.outcome]}">GW${gw} ${pick.team === null ? "✗" : esc(teamShort(pick.team))}</span>`;
 }
@@ -2761,9 +2779,30 @@ function lmsChip(gw, pick, revealed){
 function lmsNudgeHtml(){
   if (!LMS.enabled) return "";
   const st = lmsState();
-  if (!st || st.pickGw === null || !st.entrants.includes(MYPID) || st.out[MYPID]) return "";
-  if (lmsPickOf(MYPID, st.pickGw) !== null) return "";
+  if (!st || !st.entrants.includes(MYPID) || st.out[MYPID] || st.winners) return "";
+  const lateGw = lmsLateGw();
+  if (lateGw !== null && lmsLateOpen(lateGw, MYPID) && lmsPickOf(MYPID, lateGw) === null)
+    return `<div class="banner warn" style="cursor:pointer" onclick="setTab('lms')">🔓 Last Man Standing: the admin's let you in late for GW ${lateGw} — <b>pick a team before their game kicks off ›</b></div>`;
+  if (st.pickGw === null || lmsPickOf(MYPID, st.pickGw) !== null) return "";
   return `<div class="banner warn" style="cursor:pointer" onclick="setTab('lms')">🪓 Last Man Standing: you haven't picked a team for GW ${st.pickGw} yet — <b>pick now ›</b></div>`;
+}
+function lmsPickPanel(gw, late){
+  const mine = lmsPickOf(MYPID, gw), used = lmsUsedTeams(MYPID, gw), dl = gwDeadline(gw);
+  let html = `<div class="panel ${late ? "lmslate" : ""}"><h2>Your pick · GW ${gw}${late ? ` <span class="tag" style="color:var(--gold)">🔓 late pass</span>`
+      : dl ? ` <span class="tag">locks ${fmtKo(dl.toISOString())}</span>` : ""}</h2>
+    <p class="faint" style="margin-bottom:10px">${late ? "The admin's let you in after the deadline — you can only pick a team whose game <b>hasn't kicked off</b>. "
+      : ""}Pick one team to <b>win</b>. Draw or defeat and you're out. Each team once per round.${mine !== null ? ` You're on <b style="color:var(--gold)">${esc(teamName(mine))}</b> — tap another to switch.` : ""}</p>
+    <div class="lmsgrid">`;
+  for (const f of gwFixtures(gw)){
+    const gone = late && kickedOffLive(f);
+    const btn = (team, other, home) => {
+      const u = used[team], on = mine === team;
+      return `<button class="lmsteam ${on ? "on" : ""}" ${u !== undefined || (gone && !on) ? "disabled" : ""} onclick="saveLmsPick(${gw}, ${team})">
+        ${crestSm(team)}<b>${esc(teamShort(team))}</b><small>${u !== undefined ? `used GW${u}` : gone ? "kicked off" : `${home ? "v" : "@"} ${esc(teamShort(other))}`}</small></button>`;
+    };
+    html += `<div class="lmsfix">${btn(f.h, f.a, true)}${btn(f.a, f.h, false)}</div>`;
+  }
+  return html + `</div><div id="lms-msg" class="faint" style="margin-top:8px;color:var(--red)"></div></div>`;
 }
 function renderLms(){
   const el = $("tab-lms");
@@ -2794,22 +2833,10 @@ function renderLms(){
   const meIn = st.entrants.includes(MYPID), meOut = st.out[MYPID];
   if (meIn && meOut){
     html += `<div class="banner err">💀 You're out — GW ${meOut.gw}: ${meOut.team === null ? "no pick in time" : `${esc(teamName(meOut.team))} ${LMS_WORD[meOut.outcome]}`}. Spectator mode.</div>`;
-  } else if (meIn && st.pickGw !== null && !st.winners){
-    const gw = st.pickGw, mine = lmsPickOf(MYPID, gw), used = lmsUsedTeams(MYPID, gw);
-    const dl = gwDeadline(gw);
-    html += `<div class="panel"><h2>Your pick · GW ${gw}${dl ? ` <span class="tag">locks ${fmtKo(dl.toISOString())}</span>` : ""}</h2>
-      <p class="faint" style="margin-bottom:10px">Pick one team to <b>win</b>. Draw or defeat and you're out. Each team once per round.${mine !== null ? ` You're on <b style="color:var(--gold)">${esc(teamName(mine))}</b> — tap another to switch.` : ""}</p>
-      <div class="lmsgrid">`;
-    for (const f of gwFixtures(gw)){
-      const btn = (team, other, home) => {
-        const u = used[team];
-        const on = mine === team;
-        return `<button class="lmsteam ${on ? "on" : ""}" ${u !== undefined ? "disabled" : ""} onclick="saveLmsPick(${gw}, ${team})">
-          ${crestSm(team)}<b>${esc(teamShort(team))}</b><small>${u !== undefined ? `used GW${u}` : `${home ? "v" : "@"} ${esc(teamShort(other))}`}</small></button>`;
-      };
-      html += `<div class="lmsfix">${btn(f.h, f.a, true)}${btn(f.a, f.h, false)}</div>`;
-    }
-    html += `</div><div id="lms-msg" class="faint" style="margin-top:8px;color:var(--red)"></div></div>`;
+  } else if (meIn && !st.winners && (st.pickGw !== null || lmsLateGw() !== null)){
+    const lateGw = lmsLateGw();
+    if (lateGw !== null && lmsLateOpen(lateGw, MYPID)) html += lmsPickPanel(lateGw, true);
+    if (st.pickGw !== null) html += lmsPickPanel(st.pickGw, false);
   } else if (!meIn){
     html += `<div class="banner info">You're not in this round — speak to the admin if you want in next time.</div>`;
   }
@@ -2872,13 +2899,16 @@ function lmsAdminHtml(roster){
     return html;
   }
   const paid = r.paid || {}, ins = new Set(r.entrants || []);
+  const lateGw = lmsLateGw(), latePids = r.late?.gw === lateGw ? (r.late.pids || []) : [];
   const nIn = ins.size, nPaid = [...ins].filter(p => paid[p]).length;
   html += `<p class="muted" style="margin:10px 0 6px">Round ${r.no || 1} · from GW ${r.startGw} · pot <b style="color:var(--gold)">${fmtMoney(lmsPot())}</b> · collected ${fmtMoney(nPaid * (+LMS.buyIn || 0))} (${nPaid}/${nIn} paid)
     ${st?.winners?.length ? ` · <b style="color:var(--green)">won by ${esc(st.winners.map(p => PLAYERS[p]?.name).join(" & "))} (GW ${st.endGw})</b>` : st ? ` · ${st.alive.length} standing` : ""}</p>
-    <div class="tbl-scroll"><table><tr><th>Player</th><th class="num">In</th><th class="num">Paid</th><th>Status</th></tr>
+    ${lateGw !== null ? `<p class="faint" style="margin:6px 0">🔓 <b style="color:var(--ink)">Late pass</b> — GW ${lateGw}'s deadline has passed. Tick anyone who forgot to let them pick now (only teams whose game hasn't kicked off; it lapses once every game has started).${latePids.length ? ` <b style="color:var(--gold)">Open for ${esc(latePids.map(p => PLAYERS[p]?.name.split(" ")[0]).join(", "))}.</b>` : ""}</p>` : ""}
+    <div class="tbl-scroll"><table><tr><th>Player</th><th class="num">In</th><th class="num">Paid</th>${lateGw !== null ? `<th class="num">Late GW${lateGw}</th>` : ""}<th>Status</th></tr>
     ${roster.map(([pid,p]) => `<tr><td>${avatarImg(pid, "ava-sm")}${esc(p.name)}</td>
       <td class="num"><input type="checkbox" ${ins.has(pid) ? "checked" : ""} onchange="lmsSetIn('${pid}', this.checked)"></td>
       <td class="num"><input type="checkbox" ${paid[pid] ? "checked" : ""} ${ins.has(pid) ? "" : "disabled"} onchange="lmsSetPaid('${pid}', this.checked)"></td>
+      ${lateGw !== null ? `<td class="num"><input type="checkbox" ${latePids.includes(pid) ? "checked" : ""} ${ins.has(pid) && !st?.out[pid] && !st?.winners ? "" : "disabled"} onchange="lmsSetLate('${pid}', ${lateGw}, this.checked)">${ins.has(pid) && !st?.out[pid] && lmsPickOf(pid, lateGw) === null ? ' <span class="faint" title="no pick for this week">⚠</span>' : ""}</td>` : ""}
       <td>${!ins.has(pid) ? '<span class="faint">—</span>' : st?.winners?.includes(pid) ? "👑 winner" : st?.out[pid] ? `💀 out GW${st.out[pid].gw}` : "standing"}${ins.has(pid) && !paid[pid] ? ' <span class="ptsbadge pts-wrong">owes</span>' : ""}</td></tr>`).join("")}
     </table></div>
     <div class="cfgrow" style="margin-top:12px"><div class="field"><label>New round starts</label>${startSel}</div>
@@ -2897,6 +2927,12 @@ function lmsSetIn(pid, on){
   const paid = { ...(r.paid || {}) };
   if (!on) delete paid[pid];
   saveLms({ round: { ...r, entrants: [...s], paid } });
+}
+function lmsSetLate(pid, gw, on){
+  const r = LMS.round; if (!r) return;
+  const s = new Set(r.late?.gw === gw ? (r.late.pids || []) : []);
+  if (on) s.add(pid); else s.delete(pid);
+  saveLms({ round: { ...r, late: { gw, pids: [...s] } } });
 }
 function lmsSetPaid(pid, on){
   const r = LMS.round; if (!r) return;
