@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-17T14:28:37Z",
+  "updated": "2026-10-17T14:29:14Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -184,6 +184,7 @@
     "315": "Fatawu",
     "316": "Emersonn",
     "320": "Akpom",
+    "562": "Maeda",
     "592": "Ouattara",
     "640": "Flemming",
     "330": "Bogle",
@@ -2231,7 +2232,7 @@
       "a": 14,
       "hs": 0,
       "as": 0,
-      "min": 22,
+      "min": 26,
       "finished": false
     },
     {
@@ -2242,7 +2243,7 @@
       "a": 11,
       "hs": 0,
       "as": 0,
-      "min": 21,
+      "min": 26,
       "finished": false
     },
     {
@@ -2252,8 +2253,8 @@
       "h": 15,
       "a": 12,
       "hs": 1,
-      "as": 0,
-      "min": 20,
+      "as": 1,
+      "min": 24,
       "finished": false,
       "stats": [
         {
@@ -2264,7 +2265,12 @@
               "element": 398
             }
           ],
-          "a": []
+          "a": [
+            {
+              "value": 1,
+              "element": 562
+            }
+          ]
         }
       ]
     },
