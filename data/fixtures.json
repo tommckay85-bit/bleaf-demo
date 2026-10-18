@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-18T13:07:27Z",
+  "updated": "2026-10-18T13:08:03Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -154,6 +154,7 @@
     "599": "Cherif",
     "656": "Mfuni",
     "153": "Disasi",
+    "203": "Canvot",
     "204": "Mitchell",
     "211": "Yeremy",
     "213": "Lerma",
@@ -2369,10 +2370,22 @@
       "kickoff": "2026-10-18T13:00:00Z",
       "h": 3,
       "a": 20,
-      "hs": null,
-      "as": null,
-      "min": 0,
-      "finished": false
+      "hs": 1,
+      "as": 0,
+      "min": 6,
+      "finished": false,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [
+            {
+              "value": 1,
+              "element": 68
+            }
+          ],
+          "a": []
+        }
+      ]
     },
     {
       "id": 63,
@@ -2380,10 +2393,22 @@
       "kickoff": "2026-10-18T13:00:00Z",
       "h": 5,
       "a": 8,
-      "hs": null,
-      "as": null,
-      "min": 0,
-      "finished": false
+      "hs": 1,
+      "as": 0,
+      "min": 6,
+      "finished": false,
+      "stats": [
+        {
+          "k": "own_goals",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 203
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 66,
@@ -2391,9 +2416,9 @@
       "kickoff": "2026-10-18T13:00:00Z",
       "h": 13,
       "a": 16,
-      "hs": null,
-      "as": null,
-      "min": 0,
+      "hs": 0,
+      "as": 0,
+      "min": 5,
       "finished": false
     },
     {
