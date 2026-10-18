@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-18T13:22:00Z",
+  "updated": "2026-10-18T13:22:36Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -232,6 +232,7 @@
     "516": "Bentancur",
     "519": "Gallagher",
     "526": "Solanke",
+    "501": "Danso",
     "536": "Reinildo",
     "542": "E.Le Fée",
     "551": "N.Angulo",
@@ -2373,7 +2374,7 @@
       "a": 20,
       "hs": 1,
       "as": 0,
-      "min": 16,
+      "min": 21,
       "finished": false,
       "stats": [
         {
@@ -2385,6 +2386,16 @@
             }
           ],
           "a": []
+        },
+        {
+          "k": "red_cards",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 501
+            }
+          ]
         }
       ]
     },
@@ -2396,7 +2407,7 @@
       "a": 8,
       "hs": 3,
       "as": 0,
-      "min": 16,
+      "min": 20,
       "finished": false,
       "stats": [
         {
@@ -2433,7 +2444,7 @@
       "a": 16,
       "hs": 0,
       "as": 0,
-      "min": 15,
+      "min": 20,
       "finished": false
     },
     {
