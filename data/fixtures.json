@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-23T19:46:50Z",
+  "updated": "2026-10-23T19:47:26Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -189,6 +189,7 @@
     "316": "Emersonn",
     "320": "Akpom",
     "562": "Maeda",
+    "591": "Enciso",
     "592": "Ouattara",
     "640": "Flemming",
     "330": "Bogle",
@@ -2546,14 +2547,19 @@
       "kickoff": "2026-10-23T19:00:00Z",
       "h": 12,
       "a": 18,
-      "hs": 0,
+      "hs": 1,
       "as": 1,
-      "min": 40,
+      "min": 43,
       "finished": false,
       "stats": [
         {
           "k": "goals_scored",
-          "h": [],
+          "h": [
+            {
+              "value": 1,
+              "element": 591
+            }
+          ],
           "a": [
             {
               "value": 1,
