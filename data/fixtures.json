@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-23T19:16:27Z",
+  "updated": "2026-10-23T19:17:03Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -226,6 +226,7 @@
     "461": "Touré",
     "464": "Wissa",
     "167": "Delap",
+    "469": "N.Williams",
     "480": "Gibbs-White",
     "483": "Ndoye",
     "491": "Igor Jesus",
@@ -2546,9 +2547,21 @@
       "h": 12,
       "a": 18,
       "hs": 0,
-      "as": 0,
-      "min": 9,
-      "finished": false
+      "as": 1,
+      "min": 14,
+      "finished": false,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 469
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 72,
