@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-24T15:32:38Z",
+  "updated": "2026-10-24T15:33:15Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -105,6 +105,7 @@
   },
   "players": {
     "1": "Raya",
+    "4": "Gabriel",
     "8": "Calafiori",
     "12": "Saka",
     "15": "Ødegaard",
@@ -2604,14 +2605,18 @@
       "kickoff": "2026-10-24T14:00:00Z",
       "h": 1,
       "a": 9,
-      "hs": 1,
+      "hs": 2,
       "as": 0,
-      "min": 68,
+      "min": 72,
       "finished": false,
       "stats": [
         {
           "k": "goals_scored",
           "h": [
+            {
+              "value": 1,
+              "element": 4
+            },
             {
               "value": 1,
               "element": 31
@@ -2629,7 +2634,7 @@
       "a": 10,
       "hs": 0,
       "as": 0,
-      "min": 67,
+      "min": 72,
       "finished": false
     },
     {
