@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-24T15:42:27Z",
+  "updated": "2026-10-24T15:43:04Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -172,6 +172,7 @@
     "249": "Barry",
     "649": "Maitland-Niles",
     "261": "Iwobi",
+    "264": "Bobb",
     "268": "King",
     "269": "Sessegnon",
     "569": "Gonzalo",
@@ -2607,7 +2608,7 @@
       "a": 9,
       "hs": 2,
       "as": 0,
-      "min": 77,
+      "min": 83,
       "finished": false,
       "stats": [
         {
@@ -2633,9 +2634,21 @@
       "h": 7,
       "a": 10,
       "hs": 0,
-      "as": 0,
-      "min": 78,
-      "finished": false
+      "as": 1,
+      "min": 82,
+      "finished": false,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 264
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 73,
