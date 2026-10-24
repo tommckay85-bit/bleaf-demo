@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-24T18:18:08Z",
+  "updated": "2026-10-24T18:18:45Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -238,6 +238,7 @@
     "112": "Van Hecke",
     "401": "Marmoush",
     "508": "Davies",
+    "514": "Tel",
     "515": "Maddison",
     "516": "Bentancur",
     "519": "Gallagher",
@@ -2658,10 +2659,20 @@
       "h": 6,
       "a": 19,
       "hs": 0,
-      "as": 1,
-      "min": 84,
+      "as": 2,
+      "min": 89,
       "finished": false,
       "stats": [
+        {
+          "k": "goals_scored",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 514
+            }
+          ]
+        },
         {
           "k": "own_goals",
           "h": [
