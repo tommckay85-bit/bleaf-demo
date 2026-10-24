@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-24T14:11:37Z",
+  "updated": "2026-10-24T14:12:14Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -110,6 +110,7 @@
     "15": "Ødegaard",
     "16": "Madueke",
     "26": "Havertz",
+    "31": "Konsa",
     "452": "Bruno G.",
     "37": "Lindelöf",
     "41": "Buendía",
@@ -2603,10 +2604,22 @@
       "kickoff": "2026-10-24T14:00:00Z",
       "h": 1,
       "a": 9,
-      "hs": 0,
+      "hs": 1,
       "as": 0,
-      "min": 6,
-      "finished": false
+      "min": 10,
+      "finished": false,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [
+            {
+              "value": 1,
+              "element": 31
+            }
+          ],
+          "a": []
+        }
+      ]
     },
     {
       "id": 74,
@@ -2616,7 +2629,7 @@
       "a": 10,
       "hs": 0,
       "as": 0,
-      "min": 5,
+      "min": 10,
       "finished": false
     },
     {
