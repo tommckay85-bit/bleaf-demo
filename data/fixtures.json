@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-24T18:08:22Z",
+  "updated": "2026-10-24T18:08:58Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -151,6 +151,7 @@
     "156": "Neto",
     "161": "Lavia",
     "165": "João Pedro",
+    "560": "Penders",
     "176": "Dasilva",
     "183": "Rudoni",
     "195": "Simms",
@@ -2657,9 +2658,21 @@
       "h": 6,
       "a": 19,
       "hs": 0,
-      "as": 0,
-      "min": 74,
-      "finished": false
+      "as": 1,
+      "min": 79,
+      "finished": false,
+      "stats": [
+        {
+          "k": "own_goals",
+          "h": [
+            {
+              "value": 1,
+              "element": 560
+            }
+          ],
+          "a": []
+        }
+      ]
     },
     {
       "id": 75,
