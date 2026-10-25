@@ -357,6 +357,32 @@
           "finished": false
         }
       ]
+    },
+    {
+      "t": 1792937466,
+      "changes": [
+        {
+          "id": 75,
+          "hs": 0,
+          "as": 0,
+          "min": 6,
+          "finished": false
+        },
+        {
+          "id": 76,
+          "hs": 0,
+          "as": 0,
+          "min": 5,
+          "finished": false
+        },
+        {
+          "id": 78,
+          "hs": 0,
+          "as": 0,
+          "min": 6,
+          "finished": false
+        }
+      ]
     }
   ]
 }
