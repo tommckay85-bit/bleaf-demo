@@ -505,6 +505,25 @@
           "finished": true
         }
       ]
+    },
+    {
+      "t": 1792944266,
+      "changes": [
+        {
+          "id": 75,
+          "hs": 0,
+          "as": 2,
+          "min": 90,
+          "finished": true
+        },
+        {
+          "id": 78,
+          "hs": 2,
+          "as": 0,
+          "min": 90,
+          "finished": true
+        }
+      ]
     }
   ]
 }
