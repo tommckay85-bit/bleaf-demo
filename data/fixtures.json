@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-25T14:27:58Z",
+  "updated": "2026-10-25T14:28:35Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -181,6 +181,7 @@
     "279": "Ajayi",
     "286": "Belloumi",
     "287": "Millar",
+    "295": "McBurnie",
     "340": "Gelhardt",
     "572": "Tzolakis",
     "586": "Mendy",
@@ -2704,7 +2705,7 @@
       "a": 17,
       "hs": 0,
       "as": 0,
-      "min": 20,
+      "min": 26,
       "finished": false
     },
     {
@@ -2713,10 +2714,22 @@
       "kickoff": "2026-10-25T14:00:00Z",
       "h": 11,
       "a": 4,
-      "hs": 0,
+      "hs": 1,
       "as": 0,
-      "min": 20,
-      "finished": false
+      "min": 25,
+      "finished": false,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [
+            {
+              "value": 1,
+              "element": 295
+            }
+          ],
+          "a": []
+        }
+      ]
     },
     {
       "id": 78,
@@ -2724,9 +2737,9 @@
       "kickoff": "2026-10-25T14:00:00Z",
       "h": 14,
       "a": 5,
-      "hs": 1,
+      "hs": 2,
       "as": 0,
-      "min": 21,
+      "min": 24,
       "finished": false,
       "stats": [
         {
@@ -2735,6 +2748,10 @@
             {
               "value": 1,
               "element": 366
+            },
+            {
+              "value": 1,
+              "element": 379
             }
           ],
           "a": []
@@ -2749,7 +2766,7 @@
       "a": 3,
       "hs": 0,
       "as": 0,
-      "min": 19,
+      "min": 26,
       "finished": false
     },
     {
