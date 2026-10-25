@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-25T14:32:51Z",
+  "updated": "2026-10-25T14:33:28Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -202,7 +202,6 @@
     "335": "Stach",
     "336": "Okafor",
     "346": "Calvert-Lewin",
-    "366": "Wirtz",
     "367": "Gakpo",
     "368": "Szoboszlai",
     "371": "Gravenberch",
@@ -2705,7 +2704,7 @@
       "a": 17,
       "hs": 0,
       "as": 0,
-      "min": 26,
+      "min": 32,
       "finished": false
     },
     {
@@ -2716,7 +2715,7 @@
       "a": 4,
       "hs": 1,
       "as": 0,
-      "min": 25,
+      "min": 30,
       "finished": false,
       "stats": [
         {
@@ -2739,7 +2738,7 @@
       "a": 5,
       "hs": 2,
       "as": 0,
-      "min": 24,
+      "min": 31,
       "finished": false,
       "stats": [
         {
@@ -2747,14 +2746,20 @@
           "h": [
             {
               "value": 1,
-              "element": 366
-            },
-            {
-              "value": 1,
               "element": 379
             }
           ],
           "a": []
+        },
+        {
+          "k": "own_goals",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 124
+            }
+          ]
         }
       ]
     },
@@ -2766,7 +2771,7 @@
       "a": 3,
       "hs": 0,
       "as": 0,
-      "min": 26,
+      "min": 30,
       "finished": false
     },
     {
