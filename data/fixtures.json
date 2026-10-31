@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-31T15:19:29Z",
+  "updated": "2026-10-31T15:20:06Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -156,6 +156,7 @@
     "560": "Penders",
     "176": "Dasilva",
     "183": "Rudoni",
+    "185": "Sakamoto",
     "195": "Simms",
     "492": "Awoniyi",
     "599": "Cherif",
@@ -2873,21 +2874,9 @@
       "h": 3,
       "a": 13,
       "hs": 0,
-      "as": 1,
-      "min": 11,
-      "finished": false,
-      "stats": [
-        {
-          "k": "goals_scored",
-          "h": [],
-          "a": [
-            {
-              "value": 1,
-              "element": 346
-            }
-          ]
-        }
-      ]
+      "as": 0,
+      "min": 19,
+      "finished": false
     },
     {
       "id": 83,
@@ -2897,7 +2886,7 @@
       "a": 18,
       "hs": 0,
       "as": 0,
-      "min": 13,
+      "min": 15,
       "finished": false
     },
     {
@@ -2906,10 +2895,22 @@
       "kickoff": "2026-10-31T15:00:00Z",
       "h": 7,
       "a": 20,
-      "hs": 0,
+      "hs": 1,
       "as": 0,
-      "min": 12,
-      "finished": false
+      "min": 17,
+      "finished": false,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [
+            {
+              "value": 1,
+              "element": 185
+            }
+          ],
+          "a": []
+        }
+      ]
     },
     {
       "id": 86,
@@ -2919,7 +2920,7 @@
       "a": 12,
       "hs": 0,
       "as": 0,
-      "min": 11,
+      "min": 14,
       "finished": false
     },
     {
@@ -2930,7 +2931,7 @@
       "a": 5,
       "hs": 0,
       "as": 1,
-      "min": 12,
+      "min": 17,
       "finished": false,
       "stats": [
         {
