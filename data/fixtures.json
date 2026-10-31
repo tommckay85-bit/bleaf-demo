@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-31T17:03:38Z",
+  "updated": "2026-10-31T17:04:15Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -124,6 +124,7 @@
     "68": "Tavernier",
     "69": "Scott",
     "70": "Kluivert",
+    "77": "Adli",
     "79": "Evanilson",
     "86": "Lewis-Potter",
     "87": "Ajer",
@@ -252,6 +253,7 @@
     "519": "Gallagher",
     "526": "Solanke",
     "501": "Danso",
+    "535": "Alderete",
     "536": "Reinildo",
     "542": "E.Le Fée",
     "551": "N.Angulo",
@@ -2876,14 +2878,18 @@
       "kickoff": "2026-10-31T15:00:00Z",
       "h": 3,
       "a": 13,
-      "hs": 1,
+      "hs": 2,
       "as": 0,
       "min": 90,
-      "finished": false,
+      "finished": true,
       "stats": [
         {
           "k": "goals_scored",
           "h": [
+            {
+              "value": 1,
+              "element": 77
+            },
             {
               "value": 1,
               "element": 79
@@ -2959,6 +2965,16 @@
               "element": 542
             }
           ]
+        },
+        {
+          "k": "red_cards",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 535
+            }
+          ]
         }
       ]
     },
@@ -2971,7 +2987,7 @@
       "hs": 2,
       "as": 2,
       "min": 90,
-      "finished": false,
+      "finished": true,
       "stats": [
         {
           "k": "goals_scored",
