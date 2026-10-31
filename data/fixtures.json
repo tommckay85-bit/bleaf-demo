@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-31T18:00:22Z",
+  "updated": "2026-10-31T18:00:58Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -252,6 +252,7 @@
     "515": "Maddison",
     "516": "Bentancur",
     "519": "Gallagher",
+    "522": "Gray",
     "526": "Solanke",
     "501": "Danso",
     "535": "Alderete",
@@ -3044,11 +3045,21 @@
       "kickoff": "2026-10-31T17:30:00Z",
       "h": 19,
       "a": 8,
-      "hs": 0,
+      "hs": 1,
       "as": 0,
-      "min": 23,
+      "min": 27,
       "finished": false,
       "stats": [
+        {
+          "k": "goals_scored",
+          "h": [
+            {
+              "value": 1,
+              "element": 522
+            }
+          ],
+          "a": []
+        },
         {
           "k": "red_cards",
           "h": [],
