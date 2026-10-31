@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-31T21:30:49Z",
+  "updated": "2026-10-31T21:31:26Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -120,6 +120,7 @@
     "53": "Manzambi",
     "54": "Gomes",
     "166": "N.Jackson",
+    "597": "Suzuki",
     "67": "Rayan",
     "68": "Tavernier",
     "69": "Scott",
@@ -3083,8 +3084,8 @@
       "h": 2,
       "a": 10,
       "hs": 1,
-      "as": 0,
-      "min": 63,
+      "as": 1,
+      "min": 68,
       "finished": false,
       "stats": [
         {
@@ -3093,6 +3094,16 @@
             {
               "value": 1,
               "element": 166
+            }
+          ],
+          "a": []
+        },
+        {
+          "k": "own_goals",
+          "h": [
+            {
+              "value": 1,
+              "element": 597
             }
           ],
           "a": []
