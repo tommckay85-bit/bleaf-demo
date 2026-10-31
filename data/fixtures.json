@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-31T17:45:07Z",
+  "updated": "2026-10-31T17:45:44Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -169,6 +169,7 @@
     "213": "Lerma",
     "214": "Kamada",
     "222": "Strand Larsen",
+    "223": "Mateta",
     "588": "Khalaili",
     "643": "Chilwell",
     "229": "Tarkowski",
@@ -3045,8 +3046,20 @@
       "a": 8,
       "hs": 0,
       "as": 0,
-      "min": 7,
-      "finished": false
+      "min": 12,
+      "finished": false,
+      "stats": [
+        {
+          "k": "red_cards",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 223
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 81,
