@@ -542,4 +542,23 @@ assert.strictEqual(run('lmsLateGw()'), null);
 run(`FEED.fixtures.filter(f => f.gw === 3).forEach(f => { f.kickoff = f._ko; delete f._ko; }); LMS = { enabled:false, buyIn:5, round:null, history:[] }; LMS_PICKS = {}`);
 console.log('LMS LATE-PASS TESTS PASSED');
 
+// --- LMS nudge waits until the current week is over ---
+// round from GW2 (all finished) -> GW3 is the pick week: nudge. Round from GW3 with
+// GW3 unfinished and GW4 the open pick week: no nudge until GW3 is done.
+run(`GAMEWEEKS = {}; MYPID = 'tom';
+PLAYERS = { tom:{ name:'Tom', active:true }, sam:{ name:'Sam', active:true } };
+FEED.fixtures.filter(f => f.gw === 3).forEach(f => { f._ko3 = f.kickoff; f.kickoff = new Date(Date.now() + 86400e3).toISOString(); });
+LMS = { enabled:true, buyIn:5, history:[], round:{ id:'rN', no:1, startGw:2, entrants:['tom','sam'], paid:{} } };
+LMS_PICKS = { rN_gw2_tom:{ round:'rN', gw:2, pid:'tom', team:5 }, rN_gw2_sam:{ round:'rN', gw:2, pid:'sam', team:6 } };`);
+assert.strictEqual(run('lmsState().pickGw'), 3);
+assert.ok(run('lmsNudgeHtml()').includes('GW 3'), 'previous week finished: nudge to pick');
+run(`FEED.fixtures.push({ id:401, gw:4, kickoff:new Date(Date.now() + 5*86400e3).toISOString(), h:1, a:2, hs:null, as:null, finished:false });
+FEED.fixtures.filter(f => f.gw === 3).forEach(f => { f.kickoff = new Date(Date.now() - 3600e3).toISOString(); });
+LMS.round.startGw = 3; LMS_PICKS = { rN_gw3_tom:{ round:'rN', gw:3, pid:'tom', team:5 }, rN_gw3_sam:{ round:'rN', gw:3, pid:'sam', team:6 } };`);
+assert.strictEqual(run('lmsState().pickGw'), 4, 'GW4 open for picks while GW3 is in play');
+assert.strictEqual(run('lmsNudgeHtml()'), '', 'no nag about GW4 while GW3 is still being played');
+run(`FEED.fixtures = FEED.fixtures.filter(f => f.id !== 401); FEED.fixtures.filter(f => f.gw === 3).forEach(f => { f.kickoff = f._ko3; delete f._ko3; });
+LMS = { enabled:false, buyIn:5, round:null, history:[] }; LMS_PICKS = {}`);
+console.log('LMS NUDGE-TIMING TESTS PASSED');
+
 console.log('\nALL LOGIC SUITES PASSED');
