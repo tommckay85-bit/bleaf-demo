@@ -2784,6 +2784,11 @@ function lmsNudgeHtml(){
   if (lateGw !== null && lmsLateOpen(lateGw, MYPID) && lmsPickOf(MYPID, lateGw) === null)
     return `<div class="banner warn" style="cursor:pointer" onclick="setTab('lms')">🔓 Last Man Standing: the admin's let you in late for GW ${lateGw} — <b>pick a team before their game kicks off ›</b></div>`;
   if (st.pickGw === null || lmsPickOf(MYPID, st.pickGw) !== null) return "";
+  // don't nag about next week while this week's LMS games are still to be
+  // played (you may not even survive it) — only once they've all finished
+  const prev = allGws().filter(g => g < st.pickGw && g >= LMS.round.startGw).pop();
+  if (prev !== undefined && gwFixtures(prev).some(f => !fixtureResult(prev, f))) return "";
+  if (st.brink[MYPID]) return "";
   return `<div class="banner warn" style="cursor:pointer" onclick="setTab('lms')">🪓 Last Man Standing: you haven't picked a team for GW ${st.pickGw} yet — <b>pick now ›</b></div>`;
 }
 function lmsPickPanel(gw, late){
