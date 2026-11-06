@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-06T14:25:24Z",
+  "updated": "2026-11-06T21:26:57Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -162,6 +162,7 @@
     "195": "Simms",
     "492": "Awoniyi",
     "599": "Cherif",
+    "655": "Gboho",
     "656": "Mfuni",
     "153": "Disasi",
     "203": "Canvot",
@@ -3182,10 +3183,27 @@
       "kickoff": "2026-11-06T20:00:00Z",
       "h": 9,
       "a": 7,
-      "hs": null,
-      "as": null,
-      "min": 0,
-      "finished": false
+      "hs": 2,
+      "as": 1,
+      "min": 61,
+      "finished": false,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [
+            {
+              "value": 2,
+              "element": 249
+            }
+          ],
+          "a": [
+            {
+              "value": 1,
+              "element": 655
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 97,
