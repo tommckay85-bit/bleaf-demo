@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-07T16:41:55Z",
+  "updated": "2026-11-07T16:42:32Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -236,6 +236,7 @@
     "453": "Barnes",
     "454": "Elanga",
     "456": "J.Ramsey",
+    "457": "J.Murphy",
     "459": "L.Miley",
     "460": "Willock",
     "461": "Touré",
@@ -3240,7 +3241,7 @@
       "a": 11,
       "hs": 1,
       "as": 0,
-      "min": 75,
+      "min": 80,
       "finished": false,
       "stats": [
         {
@@ -3262,9 +3263,21 @@
       "h": 10,
       "a": 17,
       "hs": 0,
-      "as": 0,
-      "min": 75,
-      "finished": false
+      "as": 1,
+      "min": 80,
+      "finished": false,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 457
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 99,
