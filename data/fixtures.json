@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-07T17:41:34Z",
+  "updated": "2026-11-07T17:42:11Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -246,6 +246,7 @@
     "167": "Delap",
     "469": "N.Williams",
     "471": "Milenković",
+    "474": "Jair Cunha",
     "480": "Gibbs-White",
     "483": "Ndoye",
     "491": "Igor Jesus",
@@ -3291,10 +3292,22 @@
       "kickoff": "2026-11-07T17:30:00Z",
       "h": 18,
       "a": 15,
-      "hs": null,
-      "as": null,
-      "min": 0,
-      "finished": false
+      "hs": 1,
+      "as": 0,
+      "min": 7,
+      "finished": false,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [
+            {
+              "value": 1,
+              "element": 474
+            }
+          ],
+          "a": []
+        }
+      ]
     },
     {
       "id": 92,
