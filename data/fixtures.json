@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-07T16:46:47Z",
+  "updated": "2026-11-07T16:47:24Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -183,6 +183,7 @@
     "264": "Bobb",
     "268": "King",
     "269": "Sessegnon",
+    "271": "Muniz",
     "569": "Gonzalo",
     "570": "Palacios",
     "240": "Iroegbunam",
@@ -3241,7 +3242,7 @@
       "a": 11,
       "hs": 1,
       "as": 0,
-      "min": 80,
+      "min": 83,
       "finished": false,
       "stats": [
         {
@@ -3262,14 +3263,19 @@
       "kickoff": "2026-11-07T15:00:00Z",
       "h": 10,
       "a": 17,
-      "hs": 0,
+      "hs": 1,
       "as": 1,
-      "min": 80,
+      "min": 85,
       "finished": false,
       "stats": [
         {
           "k": "goals_scored",
-          "h": [],
+          "h": [
+            {
+              "value": 1,
+              "element": 271
+            }
+          ],
           "a": [
             {
               "value": 1,
