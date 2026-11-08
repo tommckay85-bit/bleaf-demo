@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-08T17:46:12Z",
+  "updated": "2026-11-08T17:46:49Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -121,6 +121,7 @@
     "54": "Gomes",
     "166": "N.Jackson",
     "597": "Suzuki",
+    "618": "Goretzka",
     "67": "Rayan",
     "68": "Tavernier",
     "69": "Scott",
@@ -3463,8 +3464,8 @@
       "h": 16,
       "a": 2,
       "hs": 2,
-      "as": 3,
-      "min": 48,
+      "as": 4,
+      "min": 53,
       "finished": false,
       "stats": [
         {
@@ -3491,6 +3492,10 @@
             {
               "value": 1,
               "element": 166
+            },
+            {
+              "value": 1,
+              "element": 618
             }
           ]
         }
