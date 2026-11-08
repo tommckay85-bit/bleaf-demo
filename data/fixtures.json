@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-08T18:31:27Z",
+  "updated": "2026-11-08T18:32:03Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -231,6 +231,7 @@
     "400": "Doku",
     "411": "Haaland",
     "43": "Tielemans",
+    "415": "Dorgu",
     "419": "Martinez",
     "426": "B.Fernandes",
     "427": "Mbeumo",
@@ -3464,7 +3465,7 @@
       "kickoff": "2026-11-08T16:30:00Z",
       "h": 16,
       "a": 2,
-      "hs": 3,
+      "hs": 4,
       "as": 4,
       "min": 90,
       "finished": false,
@@ -3475,6 +3476,10 @@
             {
               "value": 1,
               "element": 43
+            },
+            {
+              "value": 1,
+              "element": 415
             },
             {
               "value": 1,
