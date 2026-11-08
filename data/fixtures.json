@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-08T14:46:20Z",
+  "updated": "2026-11-08T14:46:57Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -215,6 +215,7 @@
     "367": "Gakpo",
     "368": "Szoboszlai",
     "371": "Gravenberch",
+    "372": "Mac Allister",
     "377": "Munoz",
     "379": "Isak",
     "155": "Enzo",
@@ -3324,14 +3325,18 @@
       "kickoff": "2026-11-08T14:00:00Z",
       "h": 5,
       "a": 4,
-      "hs": 1,
+      "hs": 2,
       "as": 0,
-      "min": 38,
+      "min": 43,
       "finished": false,
       "stats": [
         {
           "k": "goals_scored",
           "h": [
+            {
+              "value": 1,
+              "element": 124
+            },
             {
               "value": 1,
               "element": 127
@@ -3358,9 +3363,21 @@
       "h": 8,
       "a": 14,
       "hs": 0,
-      "as": 0,
-      "min": 39,
-      "finished": false
+      "as": 1,
+      "min": 43,
+      "finished": false,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 372
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 96,
@@ -3370,7 +3387,7 @@
       "a": 3,
       "hs": 0,
       "as": 1,
-      "min": 39,
+      "min": 42,
       "finished": false,
       "stats": [
         {
@@ -3393,7 +3410,7 @@
       "a": 6,
       "hs": 1,
       "as": 0,
-      "min": 37,
+      "min": 41,
       "finished": false,
       "stats": [
         {
