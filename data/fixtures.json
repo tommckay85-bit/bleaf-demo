@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-08T18:26:33Z",
+  "updated": "2026-11-08T18:27:10Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -236,6 +236,7 @@
     "427": "Mbeumo",
     "428": "Cunha",
     "439": "Šeško",
+    "440": "Zirkzee",
     "445": "Thiaw",
     "447": "Botman",
     "449": "Hall",
@@ -3463,9 +3464,9 @@
       "kickoff": "2026-11-08T16:30:00Z",
       "h": 16,
       "a": 2,
-      "hs": 2,
+      "hs": 3,
       "as": 4,
-      "min": 89,
+      "min": 90,
       "finished": false,
       "stats": [
         {
@@ -3478,6 +3479,10 @@
             {
               "value": 1,
               "element": 426
+            },
+            {
+              "value": 1,
+              "element": 440
             }
           ],
           "a": [
