@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-08T16:01:28Z",
+  "updated": "2026-11-08T16:02:04Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -172,6 +172,7 @@
     "214": "Kamada",
     "222": "Strand Larsen",
     "223": "Mateta",
+    "224": "Nketiah",
     "588": "Khalaili",
     "643": "Chilwell",
     "229": "Tarkowski",
@@ -3329,7 +3330,7 @@
       "hs": 2,
       "as": 0,
       "min": 90,
-      "finished": false,
+      "finished": true,
       "stats": [
         {
           "k": "goals_scored",
@@ -3363,14 +3364,19 @@
       "kickoff": "2026-11-08T14:00:00Z",
       "h": 8,
       "a": 14,
-      "hs": 0,
+      "hs": 1,
       "as": 3,
       "min": 90,
-      "finished": false,
+      "finished": true,
       "stats": [
         {
           "k": "goals_scored",
-          "h": [],
+          "h": [
+            {
+              "value": 1,
+              "element": 224
+            }
+          ],
           "a": [
             {
               "value": 1,
