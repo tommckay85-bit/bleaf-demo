@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-08T17:21:07Z",
+  "updated": "2026-11-08T17:21:44Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -229,6 +229,7 @@
     "399": "Cherki",
     "400": "Doku",
     "411": "Haaland",
+    "43": "Tielemans",
     "419": "Martinez",
     "426": "B.Fernandes",
     "427": "Mbeumo",
@@ -3461,14 +3462,18 @@
       "kickoff": "2026-11-08T16:30:00Z",
       "h": 16,
       "a": 2,
-      "hs": 1,
+      "hs": 2,
       "as": 2,
-      "min": 43,
+      "min": 45,
       "finished": false,
       "stats": [
         {
           "k": "goals_scored",
           "h": [
+            {
+              "value": 1,
+              "element": 43
+            },
             {
               "value": 1,
               "element": 426
