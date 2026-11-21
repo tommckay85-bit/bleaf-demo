@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-21T18:08:19Z",
+  "updated": "2026-11-21T18:08:55Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -108,6 +108,7 @@
     "4": "Gabriel",
     "8": "Calafiori",
     "12": "Saka",
+    "14": "Eze",
     "15": "Ødegaard",
     "16": "Madueke",
     "26": "Havertz",
@@ -3698,9 +3699,21 @@
       "h": 17,
       "a": 1,
       "hs": 0,
-      "as": 0,
-      "min": 31,
-      "finished": false
+      "as": 1,
+      "min": 35,
+      "finished": false,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 14
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 106,
