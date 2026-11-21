@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-21T03:16:46Z",
+  "updated": "2026-11-21T14:47:17Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -230,6 +230,7 @@
     "399": "Cherki",
     "400": "Doku",
     "411": "Haaland",
+    "481": "Anderson",
     "43": "Tielemans",
     "415": "Dorgu",
     "419": "Martinez",
@@ -3517,10 +3518,27 @@
       "kickoff": "2026-11-21T12:30:00Z",
       "h": 15,
       "a": 10,
-      "hs": null,
-      "as": null,
-      "min": 0,
-      "finished": false
+      "hs": 1,
+      "as": 1,
+      "min": 90,
+      "finished": true,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [
+            {
+              "value": 1,
+              "element": 481
+            }
+          ],
+          "a": [
+            {
+              "value": 1,
+              "element": 271
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 101,
