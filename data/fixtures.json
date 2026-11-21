@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-21T15:27:52Z",
+  "updated": "2026-11-21T15:28:28Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -156,6 +156,7 @@
     "156": "Neto",
     "161": "Lavia",
     "165": "João Pedro",
+    "170": "Emegha",
     "560": "Penders",
     "176": "Dasilva",
     "183": "Rudoni",
@@ -3549,7 +3550,7 @@
       "a": 20,
       "hs": 0,
       "as": 0,
-      "min": 21,
+      "min": 26,
       "finished": false
     },
     {
@@ -3560,7 +3561,7 @@
       "a": 18,
       "hs": 1,
       "as": 0,
-      "min": 21,
+      "min": 26,
       "finished": false,
       "stats": [
         {
@@ -3581,10 +3582,22 @@
       "kickoff": "2026-11-21T15:00:00Z",
       "h": 6,
       "a": 13,
-      "hs": 0,
+      "hs": 1,
       "as": 0,
-      "min": 21,
-      "finished": false
+      "min": 26,
+      "finished": false,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [
+            {
+              "value": 1,
+              "element": 170
+            }
+          ],
+          "a": []
+        }
+      ]
     },
     {
       "id": 105,
@@ -3594,7 +3607,7 @@
       "a": 8,
       "hs": 1,
       "as": 1,
-      "min": 21,
+      "min": 24,
       "finished": false,
       "stats": [
         {
@@ -3622,7 +3635,7 @@
       "a": 12,
       "hs": 1,
       "as": 0,
-      "min": 21,
+      "min": 25,
       "finished": false,
       "stats": [
         {
