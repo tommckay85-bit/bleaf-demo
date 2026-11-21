@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-21T15:17:33Z",
+  "updated": "2026-11-21T15:18:10Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -267,6 +267,7 @@
     "519": "Gallagher",
     "522": "Gray",
     "526": "Solanke",
+    "601": "Williams-Barnett",
     "501": "Danso",
     "535": "Alderete",
     "536": "Reinildo",
@@ -3548,7 +3549,7 @@
       "a": 20,
       "hs": 0,
       "as": 0,
-      "min": 10,
+      "min": 15,
       "finished": false
     },
     {
@@ -3559,7 +3560,7 @@
       "a": 18,
       "hs": 0,
       "as": 0,
-      "min": 11,
+      "min": 16,
       "finished": false
     },
     {
@@ -3570,7 +3571,7 @@
       "a": 13,
       "hs": 0,
       "as": 0,
-      "min": 10,
+      "min": 14,
       "finished": false
     },
     {
@@ -3580,8 +3581,8 @@
       "h": 7,
       "a": 8,
       "hs": 1,
-      "as": 0,
-      "min": 10,
+      "as": 1,
+      "min": 16,
       "finished": false,
       "stats": [
         {
@@ -3592,7 +3593,12 @@
               "element": 492
             }
           ],
-          "a": []
+          "a": [
+            {
+              "value": 1,
+              "element": 211
+            }
+          ]
         }
       ]
     },
@@ -3602,10 +3608,22 @@
       "kickoff": "2026-11-21T15:00:00Z",
       "h": 19,
       "a": 12,
-      "hs": 0,
+      "hs": 1,
       "as": 0,
-      "min": 10,
-      "finished": false
+      "min": 15,
+      "finished": false,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [
+            {
+              "value": 1,
+              "element": 601
+            }
+          ],
+          "a": []
+        }
+      ]
     },
     {
       "id": 109,
