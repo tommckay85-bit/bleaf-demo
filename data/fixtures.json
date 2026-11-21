@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-21T16:53:17Z",
+  "updated": "2026-11-21T16:53:53Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -175,6 +175,7 @@
     "222": "Strand Larsen",
     "223": "Mateta",
     "224": "Nketiah",
+    "241": "McNeil",
     "588": "Khalaili",
     "643": "Chilwell",
     "229": "Tarkowski",
@@ -3550,7 +3551,7 @@
       "a": 20,
       "hs": 0,
       "as": 0,
-      "min": 89,
+      "min": 90,
       "finished": false
     },
     {
@@ -3561,7 +3562,7 @@
       "a": 18,
       "hs": 2,
       "as": 0,
-      "min": 87,
+      "min": 90,
       "finished": false,
       "stats": [
         {
@@ -3588,7 +3589,7 @@
       "a": 13,
       "hs": 1,
       "as": 3,
-      "min": 85,
+      "min": 90,
       "finished": false,
       "stats": [
         {
@@ -3618,9 +3619,9 @@
       "kickoff": "2026-11-21T15:00:00Z",
       "h": 7,
       "a": 8,
-      "hs": 2,
+      "hs": 3,
       "as": 2,
-      "min": 84,
+      "min": 89,
       "finished": false,
       "stats": [
         {
@@ -3645,6 +3646,16 @@
               "element": 222
             }
           ]
+        },
+        {
+          "k": "own_goals",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 241
+            }
+          ]
         }
       ]
     },
@@ -3656,7 +3667,7 @@
       "a": 12,
       "hs": 2,
       "as": 0,
-      "min": 89,
+      "min": 90,
       "finished": false,
       "stats": [
         {
