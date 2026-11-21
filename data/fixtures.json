@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-21T16:07:51Z",
+  "updated": "2026-11-21T16:08:27Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -3550,7 +3550,7 @@
       "a": 20,
       "hs": 0,
       "as": 0,
-      "min": 45,
+      "min": 49,
       "finished": false
     },
     {
@@ -3561,7 +3561,7 @@
       "a": 18,
       "hs": 2,
       "as": 0,
-      "min": 45,
+      "min": 48,
       "finished": false,
       "stats": [
         {
@@ -3652,7 +3652,7 @@
       "a": 12,
       "hs": 1,
       "as": 0,
-      "min": 45,
+      "min": 47,
       "finished": false,
       "stats": [
         {
