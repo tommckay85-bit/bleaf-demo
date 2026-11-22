@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-22T15:53:49Z",
+  "updated": "2026-11-22T15:54:26Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -141,6 +141,7 @@
     "106": "Thiago",
     "115": "De Cuyper",
     "116": "Dunk",
+    "119": "Costinha",
     "123": "Hinshelwood",
     "124": "Groß",
     "127": "Gomez",
@@ -3736,8 +3737,20 @@
       "a": 5,
       "hs": 0,
       "as": 0,
-      "min": 86,
-      "finished": false
+      "min": 90,
+      "finished": false,
+      "stats": [
+        {
+          "k": "red_cards",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 119
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 107,
