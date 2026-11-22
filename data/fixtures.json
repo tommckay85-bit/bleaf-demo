@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-22T17:59:10Z",
+  "updated": "2026-11-22T17:59:47Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -222,6 +222,7 @@
     "366": "Wirtz",
     "367": "Gakpo",
     "368": "Szoboszlai",
+    "369": "Ngumoha",
     "371": "Gravenberch",
     "372": "Mac Allister",
     "377": "Munoz",
@@ -3769,9 +3770,9 @@
       "kickoff": "2026-11-22T16:30:00Z",
       "h": 14,
       "a": 16,
-      "hs": 2,
+      "hs": 3,
       "as": 0,
-      "min": 62,
+      "min": 68,
       "finished": false,
       "stats": [
         {
@@ -3784,6 +3785,10 @@
             {
               "value": 1,
               "element": 368
+            },
+            {
+              "value": 1,
+              "element": 369
             }
           ],
           "a": []
