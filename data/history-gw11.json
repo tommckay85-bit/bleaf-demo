@@ -334,6 +334,18 @@
           "finished": false
         }
       ]
+    },
+    {
+      "t": 1795363482,
+      "changes": [
+        {
+          "id": 106,
+          "hs": 2,
+          "as": 0,
+          "min": 90,
+          "finished": true
+        }
+      ]
     }
   ]
 }
