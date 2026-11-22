@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-22T16:44:01Z",
+  "updated": "2026-11-22T16:44:38Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -239,6 +239,7 @@
     "43": "Tielemans",
     "415": "Dorgu",
     "419": "Martinez",
+    "420": "Yoro",
     "426": "B.Fernandes",
     "427": "Mbeumo",
     "428": "Cunha",
@@ -3768,10 +3769,32 @@
       "kickoff": "2026-11-22T16:30:00Z",
       "h": 14,
       "a": 16,
-      "hs": 0,
+      "hs": 1,
       "as": 0,
-      "min": 7,
-      "finished": false
+      "min": 13,
+      "finished": false,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [
+            {
+              "value": 1,
+              "element": 368
+            }
+          ],
+          "a": []
+        },
+        {
+          "k": "red_cards",
+          "h": [],
+          "a": [
+            {
+              "value": 1,
+              "element": 420
+            }
+          ]
+        }
+      ]
     },
     {
       "id": 103,
