@@ -418,6 +418,144 @@ details.adm>summary .admchev{color:var(--ink-dim);font-size:20px;transition:tran
 details.adm[open]>summary .admchev{transform:rotate(90deg)}
 details.adm[open]>summary{border-bottom:1px solid var(--line)}
 details.adm>.admbody{padding:14px 18px 18px}
+/* ===== head animations: play once (class .play), tap to replay ===== */
+.animtap{cursor:pointer}
+/* --- flushed (loser card) --- */
+.flush{position:relative;width:230px;height:222px;margin:0 auto 6px}
+.flush .fl-head{position:absolute;left:50%;top:4px;translate:-50% 0;transform-origin:50% 60%;z-index:2}
+.flush .bigface{height:130px;max-width:140px}
+.flush .fl-toilet{position:absolute;left:50%;bottom:8px;translate:-50% 0;font-size:118px;line-height:1;opacity:0;z-index:1}
+.flush .fl-swirl{position:absolute;left:50%;bottom:30px;width:66px;height:66px;margin-left:-33px;border-radius:50%;opacity:0;z-index:3;
+  background:conic-gradient(from 0deg,#bfe9ff,#2a7fd4,#e8f7ff,#1d5fae,#bfe9ff);transform:rotateX(72deg)}
+.flush .fl-word{position:absolute;left:50%;top:38%;translate:-50% -50%;font:700 34px "Oswald",sans-serif;letter-spacing:.08em;color:#7fd8ff;
+  text-shadow:0 2px 0 #0b2a4a,0 0 14px rgba(95,208,255,.7);opacity:0;z-index:4;white-space:nowrap}
+.flush .fl-drop{position:absolute;top:96px;font-size:18px;opacity:0;z-index:3}
+.flush .fl-drop.d1{left:62px}.flush .fl-drop.d2{right:60px}.flush .fl-drop.d3{left:50%}
+.flush .facebadge{z-index:4}
+.flush.play .fl-toilet{animation:flToilet 3.8s ease both}
+.flush.play .fl-head{animation:flHead 3.8s cubic-bezier(.5,0,.5,1) both}
+.flush.play .fl-swirl{animation:flSwirl 3.8s linear both}
+.flush.play .fl-word{animation:flWord 3.8s ease both}
+.flush.play .fl-drop{animation:flDrop 3.8s ease-in both}
+.flush.play .fl-drop.d2{animation-delay:.15s}.flush.play .fl-drop.d3{animation-delay:.3s}
+.flush.play .facebadge{animation:flBadge 3.8s ease both}
+@keyframes flToilet{0%{opacity:0;transform:translateY(50px)}10%{opacity:1;transform:none}74%{opacity:1;transform:none}86%,100%{opacity:0;transform:translateY(40px)}}
+@keyframes flHead{0%,12%{transform:none;opacity:1}46%{transform:translateY(96px) rotate(900deg) scale(.1);opacity:.35}50%,72%{transform:translateY(96px) rotate(900deg) scale(.08);opacity:0}
+  84%{transform:translateY(-16px) scale(1.12) rotate(-8deg);opacity:1}91%{transform:translateY(0) scale(.95) rotate(5deg)}100%{transform:none;opacity:1}}
+@keyframes flSwirl{0%,10%{opacity:0;transform:rotateX(72deg) rotate(0deg)}18%,55%{opacity:.95}66%,100%{opacity:0;transform:rotateX(72deg) rotate(1440deg)}}
+@keyframes flWord{0%,42%{opacity:0;transform:scale(.4)}47%{opacity:1;transform:scale(1.25)}52%,62%{opacity:1;transform:scale(1)}69%,100%{opacity:0;transform:scale(1.5)}}
+@keyframes flDrop{0%,84%{opacity:0;transform:translateY(0)}88%{opacity:1}100%{opacity:0;transform:translateY(70px)}}
+@keyframes flBadge{0%,90%{opacity:0;transform:scale(.3)}96%{opacity:1;transform:scale(1.25)}100%{opacity:1;transform:none}}
+/* --- crown & champagne (winner card) --- */
+.crownst{position:relative;width:230px;height:206px;margin:0 auto 6px}
+.crownst .cr-head{position:absolute;left:50%;bottom:0;translate:-50% 0;transform-origin:50% 100%}
+.crownst .cr-crown{position:absolute;left:50%;top:24px;translate:-50% 0;font-size:58px;line-height:1;transform:rotate(-12deg);z-index:3;
+  filter:drop-shadow(0 4px 6px rgba(0,0,0,.6)) drop-shadow(0 0 10px rgba(255,215,94,.6))}
+.crownst .cr-bottle{position:absolute;bottom:6px;font-size:46px;line-height:1;opacity:0;z-index:3}
+.crownst .cr-bottle.l{left:-6px;transform:rotate(-30deg)}.crownst .cr-bottle.r{right:-6px;transform:scaleX(-1) rotate(-30deg)}
+.crownst .cr-spray{position:absolute;bottom:50px;width:6px;height:6px;border-radius:50%;opacity:0;z-index:2}
+.crownst .cr-cash{position:absolute;top:-40px;font-size:24px;opacity:0;z-index:4;pointer-events:none}
+.crownst.play .cr-crown{animation:crDrop 1.5s cubic-bezier(.3,.6,.4,1) both}
+.crownst.play .cr-head{animation:crSquash 1.5s ease both}
+.crownst.play .cr-bottle{animation:crBottle 3s ease both}
+.crownst.play .cr-spray{animation:crSpray 1.4s ease-out both;animation-delay:var(--d)}
+.crownst.play .cr-cash{animation:crCash 2.4s linear both;animation-delay:var(--d)}
+@keyframes crDrop{0%{transform:translateY(-230px) rotate(-220deg);opacity:0}12%{opacity:1}55%{transform:translateY(10px) rotate(-12deg)}70%{transform:translateY(-16px) rotate(-12deg)}85%{transform:translateY(3px) rotate(-12deg)}100%{transform:rotate(-12deg);opacity:1}}
+@keyframes crSquash{0%,52%{transform:none}57%{transform:scale(1.06,.9)}66%{transform:scale(.97,1.04)}76%,100%{transform:none}}
+@keyframes crBottle{0%,30%{opacity:0;margin-bottom:-30px}40%{opacity:1;margin-bottom:0}85%{opacity:1}100%{opacity:0}}
+@keyframes crSpray{0%{opacity:0;transform:none}8%{opacity:1}100%{opacity:0;transform:translate(var(--dx),var(--dy))}}
+@keyframes crCash{0%{opacity:0;transform:translateY(0) rotate(0)}8%{opacity:1}90%{opacity:1}100%{opacity:0;transform:translateY(290px) rotate(var(--r))}}
+/* --- goal toast reactions --- */
+.tfaces{display:flex;gap:12px;margin-top:8px;flex-wrap:wrap}
+.tface{position:relative;display:flex;flex-direction:column;align-items:center;font-size:10px;color:var(--ink-dim);min-width:40px}
+.tface img{height:40px;max-width:44px;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6))}
+.tface .tf-fx{position:absolute;top:-8px;right:-8px;font-size:16px;font-style:normal;opacity:0}
+.tface.joy img{animation:tfJoy .6s ease 3}
+.tface.joy .tf-fx{animation:tfPop 1.8s ease both}
+.tface.sad img{animation:tfSad 1.3s ease .2s both}
+.tface.sad .tf-fx{top:18px;right:auto;left:-6px;animation:tfTear 1.6s ease-in .7s both}
+.tface.lead .tf-fx{top:-20px;right:auto;left:50%;margin-left:-9px;font-size:18px;animation:tfCrown 1.2s ease both}
+@keyframes tfJoy{0%,100%{transform:none}35%{transform:translateY(-14px) rotate(-10deg)}65%{transform:translateY(0) rotate(8deg)}}
+@keyframes tfPop{0%{opacity:0;transform:scale(.2)}20%{opacity:1;transform:scale(1.3)}80%{opacity:1;transform:none}100%{opacity:0}}
+@keyframes tfSad{0%{transform:none}25%{transform:rotate(-14deg)}100%{transform:translateY(8px) rotate(80deg);filter:grayscale(.7) drop-shadow(0 1px 2px rgba(0,0,0,.6))}}
+@keyframes tfTear{0%{opacity:0;transform:none}15%{opacity:1}100%{opacity:0;transform:translateY(26px)}}
+@keyframes tfCrown{0%{opacity:0;transform:translateY(-40px) rotate(-90deg)}60%{opacity:1;transform:translateY(2px) rotate(-10deg)}80%{transform:translateY(-4px) rotate(-10deg)}100%{opacity:1;transform:rotate(-10deg)}}
+/* --- head-to-head boxing --- */
+.fighter{position:relative;display:inline-block}
+.fighter .glove{position:absolute;top:34%;font-size:30px;line-height:1;z-index:3;filter:drop-shadow(0 2px 3px rgba(0,0,0,.6))}
+.fa .glove{right:-22px}.fb .glove{left:-22px;transform:scaleX(-1)}
+.fighter .fhead{display:block;transform-origin:50% 100%}
+.fighter .stars,.fighter .boom{position:absolute;left:50%;top:-14px;translate:-50% 0;font-size:22px;opacity:0;z-index:4;pointer-events:none}
+.fighter .boom{top:30%;font-size:34px}
+.fightword{font:700 22px "Oswald",sans-serif;letter-spacing:.1em;color:var(--red);opacity:0;margin-top:4px;text-shadow:0 2px 8px rgba(0,0,0,.7)}
+.h2hcard.play .fighter{animation:bob .45s ease-in-out 7 alternate}
+.h2hcard.play.fight-a .fa .glove{animation:punchR 3.4s ease both}
+.h2hcard.play.fight-b .fb .glove{animation:punchL 3.4s ease both}
+.h2hcard.play.fight-a .fb .fhead{animation:hitR 3.4s ease both}
+.h2hcard.play.fight-b .fa .fhead{animation:hitL 3.4s ease both}
+.h2hcard.ko .fhead{transform-origin:50% 50%}
+.h2hcard.play.fight-a.ko .fb .fhead{animation-name:koR}
+.h2hcard.play.fight-b.ko .fa .fhead{animation-name:koL}
+.h2hcard.play.fight-a .fb .stars,.h2hcard.play.fight-b .fa .stars{animation:stars 3.4s linear both}
+.h2hcard.play.fight-a .fb .boom,.h2hcard.play.fight-b .fa .boom{animation:boom 3.4s ease both}
+.h2hcard.play.fight-draw .fa .glove{animation:punchR2 3.4s ease both}
+.h2hcard.play.fight-draw .fb .glove{animation:punchL2 3.4s ease both}
+.h2hcard.play.fight-draw .fa .fhead{animation:wobL 3.4s ease both}
+.h2hcard.play.fight-draw .fb .fhead{animation:wobR 3.4s ease both}
+.h2hcard.play .fightword{animation:fword 3.4s ease both}
+@keyframes bob{from{transform:translateY(0)}to{transform:translateY(-6px)}}
+@keyframes punchR{0%,14%{transform:none}18%{transform:translateX(54px) scale(1.2)}24%,32%{transform:none}36%{transform:translateX(54px) scale(1.2)}42%,50%{transform:none}54%{transform:translateX(64px) scale(1.4)}62%,100%{transform:none}}
+@keyframes punchL{0%,14%{transform:scaleX(-1)}18%{transform:translateX(-54px) scaleX(-1.2) scaleY(1.2)}24%,32%{transform:scaleX(-1)}36%{transform:translateX(-54px) scaleX(-1.2) scaleY(1.2)}42%,50%{transform:scaleX(-1)}54%{transform:translateX(-64px) scaleX(-1.4) scaleY(1.4)}62%,100%{transform:scaleX(-1)}}
+@keyframes hitR{0%,17%{transform:none}20%{transform:translateX(10px) rotate(10deg)}28%,35%{transform:none}38%{transform:translateX(12px) rotate(12deg)}46%,53%{transform:none}57%{transform:translateX(16px) rotate(18deg)}68%,100%{transform:translateX(4px) rotate(9deg)}}
+@keyframes hitL{0%,17%{transform:none}20%{transform:translateX(-10px) rotate(-10deg)}28%,35%{transform:none}38%{transform:translateX(-12px) rotate(-12deg)}46%,53%{transform:none}57%{transform:translateX(-16px) rotate(-18deg)}68%,100%{transform:translateX(-4px) rotate(-9deg)}}
+@keyframes koR{0%,17%{transform:none}20%{transform:translateX(10px) rotate(10deg)}28%,35%{transform:none}38%{transform:translateX(12px) rotate(12deg)}46%,53%{transform:none}57%{transform:translateX(18px) rotate(24deg)}72%,100%{transform:translateX(6px) translateY(24px) rotate(84deg)}}
+@keyframes koL{0%,17%{transform:none}20%{transform:translateX(-10px) rotate(-10deg)}28%,35%{transform:none}38%{transform:translateX(-12px) rotate(-12deg)}46%,53%{transform:none}57%{transform:translateX(-18px) rotate(-24deg)}72%,100%{transform:translateX(-6px) translateY(24px) rotate(-84deg)}}
+@keyframes stars{0%,60%{opacity:0;transform:rotate(0)}66%{opacity:1}100%{opacity:1;transform:rotate(720deg)}}
+@keyframes boom{0%,53%{opacity:0;transform:scale(.2)}56%{opacity:1;transform:scale(1.3)}64%{opacity:0;transform:scale(1.6)}100%{opacity:0}}
+@keyframes punchR2{0%,14%{transform:none}18%{transform:translateX(54px) scale(1.2)}24%,50%{transform:none}54%{transform:translateX(54px) scale(1.2)}60%,100%{transform:none}}
+@keyframes punchL2{0%,32%{transform:scaleX(-1)}36%{transform:translateX(-54px) scaleX(-1.2) scaleY(1.2)}42%,68%{transform:scaleX(-1)}72%{transform:translateX(-54px) scaleX(-1.2) scaleY(1.2)}78%,100%{transform:scaleX(-1)}}
+@keyframes wobL{0%,35%{transform:none}38%{transform:translateX(-10px) rotate(-10deg)}46%,71%{transform:none}74%{transform:translateX(-10px) rotate(-10deg)}82%,100%{transform:rotate(-4deg)}}
+@keyframes wobR{0%,17%{transform:none}20%{transform:translateX(10px) rotate(10deg)}28%,53%{transform:none}56%{transform:translateX(10px) rotate(10deg)}64%,100%{transform:rotate(4deg)}}
+@keyframes fword{0%,66%{opacity:0;transform:scale(.3)}72%{opacity:1;transform:scale(1.3)}80%,100%{opacity:1;transform:none}}
+/* --- last man standing trapdoor --- */
+.trapstage{position:relative;padding:18px 6px 8px;margin:0 0 4px;overflow:hidden;border-radius:10px;background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(0,0,0,.25))}
+.trapline{display:flex;flex-wrap:wrap;justify-content:center;gap:16px 8px}
+.trapguy{position:relative;width:54px;display:flex;flex-direction:column;align-items:center}
+.trapguy .tg-head{height:46px;max-width:50px;object-fit:contain;filter:drop-shadow(0 2px 3px rgba(0,0,0,.6));position:relative;z-index:2}
+.trapguy .tg-blank{height:46px;font-size:30px;line-height:46px}
+.trapguy .tg-floor{display:flex;width:54px;height:7px;margin-top:2px}
+.trapguy .door{flex:1;background:#6b4a2b;border-top:2px solid #9a6d40}
+.trapguy .door.l{transform-origin:0 50%;border-radius:2px 0 0 2px}.trapguy .door.r{transform-origin:100% 50%;border-radius:0 2px 2px 0}
+.trapguy .tg-name{font-size:10px;color:var(--ink-dim);margin-top:3px;max-width:54px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trapguy .tg-shout{position:absolute;top:-16px;left:50%;translate:-50% 0;font:700 10px "Inter",sans-serif;background:#fff;color:#111;border-radius:8px;padding:2px 6px;opacity:0;z-index:3;white-space:nowrap}
+.trapguy .tg-crown{position:absolute;top:-22px;left:50%;translate:-50% 0;font-size:22px;opacity:0;z-index:3}
+.trapguy .tg-spot{position:absolute;bottom:20px;left:50%;width:120px;height:170px;margin-left:-60px;opacity:0;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 100%,rgba(255,236,170,.45),rgba(255,236,170,0) 70%);clip-path:polygon(40% 0,60% 0,100% 100%,0 100%)}
+.trapguy.fall.gone{display:none}
+.trapstage.play .trapguy.fall.gone{display:flex}
+.trapstage.play .fall .tg-head,.trapstage.play .fall .tg-blank{animation:tgFall 3.2s ease-in both}
+.trapstage.play .fall .door.l{animation:doorL 3.2s ease both}
+.trapstage.play .fall .door.r{animation:doorR 3.2s ease both}
+.trapstage.play .fall .tg-shout{animation:tgShout 3.2s ease both}
+.trapstage.play .fall .tg-name{animation:tgFade 3.2s ease both}
+.trapstage.play .stay .tg-head,.trapstage.play .stay .tg-blank{animation:tgHop 3.2s ease both}
+.trapstage.play .champ .tg-spot{animation:tgSpot 3.6s ease both}
+.trapstage.play .champ .tg-crown{animation:tgCrown 3.6s ease both}
+.trapstage .champ .tg-spot,.trapstage .champ .tg-crown{opacity:1}
+.trapcap{text-align:center;font-size:12.5px;color:var(--ink-dim);margin:8px 0 2px}
+.trapcap b{color:var(--ink)}
+@keyframes tgFall{0%,14%{transform:none}18%{transform:translateX(-3px) rotate(-6deg)}22%{transform:translateX(3px) rotate(6deg)}26%,34%{transform:none}70%{transform:translateY(130px) rotate(40deg);opacity:.2}72%,100%{transform:translateY(130px);opacity:0}}
+@keyframes doorL{0%,32%{transform:none}40%{transform:rotate(88deg)}46%{transform:rotate(74deg)}52%,100%{transform:rotate(84deg)}}
+@keyframes doorR{0%,32%{transform:none}40%{transform:rotate(-88deg)}46%{transform:rotate(-74deg)}52%,100%{transform:rotate(-84deg)}}
+@keyframes tgShout{0%,14%{opacity:0;transform:scale(.3)}20%{opacity:1;transform:scale(1.1)}44%{opacity:1;transform:translateY(8px)}56%,100%{opacity:0;transform:translateY(40px)}}
+@keyframes tgFade{0%,60%{opacity:1}80%,100%{opacity:.25}}
+@keyframes tgHop{0%,72%{transform:none}78%{transform:translateY(-12px)}84%{transform:none}89%{transform:translateY(-6px)}94%,100%{transform:none}}
+@keyframes tgSpot{0%,70%{opacity:0}85%,100%{opacity:1}}
+@keyframes tgCrown{0%,76%{opacity:0;transform:translateY(-40px) rotate(-60deg)}88%{opacity:1;transform:translateY(2px) rotate(-8deg)}94%{transform:translateY(-3px) rotate(-8deg)}100%{opacity:1;transform:rotate(-8deg)}}
+@media (prefers-reduced-motion: reduce){
+  .flush.play *,.crownst.play *,.h2hcard.play *,.trapstage.play *,.tface *{animation:none !important}
+  .trapstage.play .trapguy.fall.gone{display:none}
+}
 .headzoom{position:fixed;inset:0;z-index:90;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer}
 .hzwrap{display:block;position:relative;will-change:transform}
 .hzwrap.hzdead img{filter:grayscale(.6) brightness(.9) drop-shadow(0 0 3px rgba(255,255,255,.3)) drop-shadow(0 18px 30px rgba(0,0,0,.7))}
@@ -1659,6 +1797,77 @@ function setFace(elId, pids, emoji, ring){
   el.innerHTML = `<span class="facestack">${faces.map(p => `<img class="bigface ring-${ring}" src="${AVATARS[p]}" alt="">`).join("")}<span class="facebadge">${emoji}</span></span>`;
 }
 
+// ---- head animations ----
+// Each plays once when it appears (CSS classes under .play); tap to replay.
+function replayAnim(el){
+  if (!el) return;
+  el.classList.remove("play"); void el.offsetWidth; el.classList.add("play");
+}
+// Roast card: the loser's head goes round the U-bend and pops back up dripping.
+function flushFace(elId, pids){
+  const el = $(elId);
+  const faces = (pids || []).filter(p => AVATARS[p]).slice(0, 3);
+  if (!el || !faces.length) return setFace(elId, pids, "🥄", "red");
+  el.classList.add("hasface");
+  el.innerHTML = `<div class="flush play animtap" onclick="replayAnim(this)" title="Tap to flush again">
+    <div class="fl-toilet">🚽</div><div class="fl-swirl"></div>
+    <div class="fl-head"><span class="facestack">${faces.map(p => `<img class="bigface ring-red" src="${AVATARS[p]}" alt="">`).join("")}<span class="facebadge">🥄</span></span></div>
+    <div class="fl-word">FLUSH!</div>
+    <span class="fl-drop d1">💧</span><span class="fl-drop d2">💧</span><span class="fl-drop d3">💧</span></div>`;
+}
+// Winner card: a crown drops onto their head, champagne sprays, money rains.
+function crownFace(elId, pids){
+  const el = $(elId);
+  const faces = (pids || []).filter(p => AVATARS[p]).slice(0, 3);
+  if (!el || !faces.length) return setFace(elId, pids, "🏆", "gold");
+  el.classList.add("hasface");
+  let spray = "";
+  const cols = ["#ffd75e", "#fff6d0", "#ffffff", "#ffe08a"];
+  for (let k = 0; k < 16; k++){
+    const left = k % 2 === 0, d = (1.2 + (k >> 1) * .08).toFixed(2);
+    const dx = (left ? 1 : -1) * (40 + (k * 37) % 70), dy = -(90 + (k * 53) % 90);
+    spray += `<span class="cr-spray" style="${left ? "left:26px" : "right:26px"};background:${cols[k % 4]};--dx:${dx}px;--dy:${dy}px;--d:${d}s"></span>`;
+  }
+  let cash = "";
+  for (let k = 0; k < 9; k++)
+    cash += `<span class="cr-cash" style="left:${(k * 29) % 220}px;--d:${(1.1 + (k * .23) % 1.4).toFixed(2)}s;--r:${(k % 2 ? 1 : -1) * (120 + k * 30)}deg">💷</span>`;
+  el.innerHTML = `<div class="crownst play animtap" onclick="replayAnim(this)" title="Tap to crown them again">
+    ${spray}<span class="cr-bottle l">🍾</span><span class="cr-bottle r">🍾</span>
+    <div class="cr-head"><span class="facestack">${faces.map(p => `<img class="bigface ring-gold" src="${AVATARS[p]}" alt="">`).join("")}</span></div>
+    <span class="cr-crown">👑</span>${cash}</div>`;
+}
+// Head-to-head: whoever finishes above the other more often lands the punches.
+const FIGHTS_SEEN = new Set();
+// Last Man trapdoor: who fell through in the latest settled week.
+function lmsTrapHtml(st){
+  const r = LMS.round;
+  if (!r || !st || st.entrants.length < 2) return "";
+  const done = st.weeks.filter(w => w.done);
+  const last = done[done.length - 1];
+  const fell = last ? st.entrants.filter(p => st.out[p]?.gw === last.gw) : [];
+  const standing = st.entrants.filter(p => !st.out[p] || (last && st.out[p].gw === last.gw));
+  if (!standing.length) return "";
+  const champ = st.winners && st.winners.length === 1 ? st.winners[0] : null;
+  const key = `lefuck_trap_${r.id}_${last ? last.gw : 0}`;
+  const play = last && (fell.length || champ) && !seenTimes(key);
+  if (play) bumpSeen(key);
+  const guy = pid => {
+    const f = fell.includes(pid);
+    const cls = f ? "fall" + (play ? "" : " gone") : pid === champ ? "stay champ" : "stay";
+    const head = AVATARS[pid] ? `<img class="tg-head" src="${AVATARS[pid]}" alt="">` : `<div class="tg-blank">🙂</div>`;
+    const shout = ["AAARGH!", "NOOO!", "WHY?!", "BOLLOCKS", "MUMMY!"][Math.abs([...pid].reduce((a,c) => a + c.charCodeAt(0), 0)) % 5];
+    return `<div class="trapguy ${cls}">${pid === champ ? `<div class="tg-spot"></div><div class="tg-crown">👑</div>` : ""}${f ? `<div class="tg-shout">${shout}</div>` : ""}
+      ${head}<div class="tg-floor"><span class="door l"></span><span class="door r"></span></div><div class="tg-name">${esc(pid === MYPID ? "You" : (PLAYERS[pid]?.name || "?").split(" ")[0])}</div></div>`;
+  };
+  const order = [...standing].sort((a,b) => (fell.includes(a) - fell.includes(b)) || (PLAYERS[a]?.name || "").localeCompare(PLAYERS[b]?.name || ""));
+  const cap = !last ? `<b>${standing.length}</b> on the trapdoors — first results decide who drops.`
+    : st.wipeout ? `💥 <b>GW ${last.gw}: everyone fell through.</b> Pot rolls over.`
+    : champ ? `👑 <b>${esc(champ === MYPID ? "You" : PLAYERS[champ]?.name || "")}</b> — last man standing.`
+    : fell.length ? `🪤 <b>GW ${last.gw}:</b> ${esc(fell.map(p => p === MYPID ? "You" : (PLAYERS[p]?.name || "").split(" ")[0]).join(", "))} fell through. ${standing.length - fell.length} still standing.`
+    : `GW ${last.gw}: nobody fell. ${standing.length} still standing.`;
+  return `<div class="trapstage ${play ? "play" : ""} animtap" onclick="replayAnim(this)" title="Tap to replay">
+    <div class="trapline">${order.map(guy).join("")}</div></div><div class="trapcap">${cap}${last && (fell.length || champ) ? ' <span class="faint">· tap to replay</span>' : ""}</div>`;
+}
 // Admin head upload: the admin pre-cuts each head (transparent PNG, or on a
 // plain white/flat background which is stripped here), so the app just
 // cleans, trims and shrinks it. Stored in Firestore — behind the login,
@@ -1942,7 +2151,7 @@ function maybeShowWinner(){
   CARD_GW = g.gw;
   $("win-title").textContent = `GW ${g.gw} · you won the week`;
   $("win-msg").textContent = pickMsg("winner", WINNER_MSGS, g.gw, { name: ME.name, pts: me.pts, amount }, MYPID);
-  setFace("win-face", [MYPID], "🏆", "gold");
+  crownFace("win-face", [MYPID]);
   $("win-overlay").classList.remove("hidden");
   celebrate();
 }
@@ -1970,7 +2179,7 @@ function maybeShowRoast(){
   $("roast-name").textContent = names;
   $("roast-msg").textContent = pickMsg("loser", ROASTS, g.gw, { name: names, pts: losers[0].pts },
     losers.length === 1 ? losers[0].pid : null);
-  setFace("roast-face", losers.map(l => l.pid), "🥄", "red");
+  flushFace("roast-face", losers.map(l => l.pid));
   showAfter(["win-overlay"], "roast-overlay");
 }
 
@@ -2263,8 +2472,15 @@ function goalFlash(gw, f, before, after){
     else { lines.push(`📉 You drop to ${ordinal(ma.rank)}`); bad = true; }
   }
   const scorer = after.h > before.h ? f.h : f.a;
+  // heads that react in the toast: new leader crowned, exacts landing jump,
+  // exacts dying face-plant
+  const faces = [];
+  const addFace = (pid, mood) => { if (!faces.some(x => x.pid === pid)) faces.push({ pid, mood }); };
+  if (leadLine && ta.length === 1) addFace(ta[0], "lead");
+  landed.forEach(p => addFace(p, "joy"));
+  died.forEach(p => addFace(p, "sad"));
   return {
-    fid: f.id,
+    fid: f.id, faces: faces.slice(0, 5),
     title: `⚽ ${teamShort(scorer)} score! ${teamShort(f.h)} ${after.h}–${after.a} ${teamShort(f.a)}`,
     lines: lines.length ? lines : ["Nobody's week changes. Yet."],
     good: good && !bad, bad,
@@ -2299,7 +2515,10 @@ function showToast(t){
   if (!box){ box = document.createElement("div"); box.id = "toasts"; document.body.appendChild(box); }
   const el = document.createElement("div");
   el.className = "toast" + (t.good ? " good" : t.bad ? " bad" : "");
-  el.innerHTML = `<b>${esc(t.title)}</b>${t.lines.map(l => `<div>${esc(l)}</div>`).join("")}`;
+  const fx = { joy: "✨", sad: "💧", lead: "👑" };
+  const faces = (t.faces || []).filter(x => AVATARS[x.pid]);
+  el.innerHTML = `<b>${esc(t.title)}</b>${t.lines.map(l => `<div>${esc(l)}</div>`).join("")}` +
+    (faces.length ? `<div class="tfaces">${faces.map(x => `<span class="tface ${x.mood}"><img src="${AVATARS[x.pid]}" alt=""><i class="tf-fx">${fx[x.mood]}</i>${esc(firstName(x.pid))}</span>`).join("")}</div>` : "");
   el.onclick = () => { el.remove(); if (t.fid) showFacts(t.fid); };
   box.appendChild(el);
   while (box.children.length > 3) box.firstChild.remove();
@@ -2467,10 +2686,18 @@ function h2hHtml(){
     const fa = money ? fmtMoney(a) : a, fb = money ? fmtMoney(b) : b;
     return `<tr><td class="h2ha ${a>b?"h2hwin":""}">${fa}</td><td class="h2hl">${label}</td><td class="h2hb ${b>a?"h2hwin":""}">${fb}</td></tr>`;
   };
-  html += `<div class="h2hcard">
-    <div class="h2hside">${avatarImg(MYPID, "ava-h2h") || '<div class="h2hblank">🙂</div>'}<div class="h2hname">You</div></div>
-    <div class="h2hscore"><div class="h2hbig">${h.aAbove}<span>–</span>${h.bAbove}</div><div class="faint">weeks finished above${h.level ? ` · ${h.level} level` : ""}</div></div>
-    <div class="h2hside">${avatarImg(opp, "ava-h2h") || '<div class="h2hblank">😐</div>'}<div class="h2hname">${fn(opp)}</div></div>
+  const res = h.aAbove > h.bAbove ? "a" : h.bAbove > h.aAbove ? "b" : "draw";
+  const ko = Math.abs(h.aAbove - h.bAbove) >= 3;
+  const fightKey = MYPID + ":" + opp + ":" + h.aAbove + "-" + h.bAbove;
+  const play = h.weeks > 0 && !FIGHTS_SEEN.has(fightKey);
+  if (play) FIGHTS_SEEN.add(fightKey);
+  const word = res === "draw" ? "DRAW!" : ko ? "K.O.!" : "ON POINTS";
+  const fighter = (pid, side, blank) => `<span class="fighter ${side}"><span class="fhead">${avatarImg(pid, "ava-h2h") || `<div class="h2hblank">${blank}</div>`}</span>
+    <span class="glove">🥊</span><span class="stars">💫</span><span class="boom">💥</span></span>`;
+  html += `<div class="h2hcard fight-${res} ${ko ? "ko" : ""} ${play ? "play" : ""} animtap" onclick="replayAnim(this)" title="Tap for a rematch">
+    <div class="h2hside">${fighter(MYPID, "fa", "🙂")}<div class="h2hname">You</div></div>
+    <div class="h2hscore"><div class="h2hbig">${h.aAbove}<span>–</span>${h.bAbove}</div><div class="faint">weeks finished above${h.level ? ` · ${h.level} level` : ""}</div>${h.weeks ? `<div class="fightword">${word}</div>` : ""}</div>
+    <div class="h2hside">${fighter(opp, "fb", "😐")}<div class="h2hname">${fn(opp)}</div></div>
   </div>
   <table class="h2htbl">${row("weekly wins", h.aWins, h.bWins)}${row("points", h.aPts, h.bPts)}${row("exact scores", h.aExact, h.bExact)}${row("£ won", h.aWon, h.bWon, true)}</table>
   <p class="faint" style="margin-top:6px">${h.weeks} finalised week${h.weeks===1?"":"s"} you've both played.</p></div>`;
@@ -2891,7 +3118,7 @@ function renderLms(){
     if (oa && ob && oa.gw !== ob.gw) return ob.gw - oa.gw;
     return (PLAYERS[a]?.name || "").localeCompare(PLAYERS[b]?.name || "");
   });
-  html += `<div class="panel"><h2>The field</h2>`;
+  html += `<div class="panel"><h2>The field</h2>${lmsTrapHtml(st)}`;
   for (const pid of order){
     const o = st.out[pid];
     const won = st.winners?.includes(pid);
