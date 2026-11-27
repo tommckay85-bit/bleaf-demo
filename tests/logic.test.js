@@ -605,6 +605,17 @@ console.log('\nALL LOGIC SUITES PASSED');
     rX2_gw1_tom:{ round:'rX2', gw:1, pid:'tom', team:1 }, rX2_gw1_sam:{ round:'rX2', gw:1, pid:'sam', team:5 } }`);
   await run('lmsNewRound()');
   assert.strictEqual(runJ('saved').round.rollover, 0, 'a reset with survivors does not roll the pot over');
+  // start clean after a wipeout: £0 pot, recorded as settled
+  // (the app's own boot finishes in the background by now and blanks the feed — put it back)
+  run(`FEED = ${JSON.stringify(feed)}`);
+  run(`LMS = { enabled:true, buyIn:5, history:[], round:{ id:'rW2', no:7, startGw:1, entrants:['tom','sam'], paid:{}, rollover:55, chainStart:5 } };
+  LMS_PICKS = { rW2_gw1_tom:{ round:'rW2', gw:1, pid:'tom', team:4 }, rW2_gw1_sam:{ round:'rW2', gw:1, pid:'sam', team:6 } };`);
+  assert.strictEqual(runJ('lmsState()').wipeout, true, 'wiped-out round');
+  await run('lmsNewRound(true)');
+  const sc = runJ('saved');
+  assert.strictEqual(sc.round.rollover, 0, 'start clean: nothing rolls over');
+  assert.strictEqual(sc.round.chainStart, 8, 'rollover chain ends');
+  assert.ok(sc.history[0].settled && !sc.history[0].rolled, 'old round recorded as settled, not rolled');
   run(`LMS = { enabled:false, buyIn:5, round:null, history:[] }; LMS_PICKS = {}`);
   console.log('LMS ROLLOVER TESTS PASSED');
   console.log('\nALL LOGIC SUITES PASSED (incl. async)');

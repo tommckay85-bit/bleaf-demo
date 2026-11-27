@@ -3145,7 +3145,7 @@ function lmsHistoryHtml(){
   return `<div class="panel"><h2>Past rounds</h2><div class="tbl-scroll"><table>
     <tr><th>Round</th><th>Gameweeks</th><th>Winner</th><th class="num">Pot</th></tr>
     ${h.map(x => `<tr><td>${x.no}</td><td>GW ${x.startGw}${x.endGw ? "–" + x.endGw : ""}</td>
-      <td>${x.winners?.length ? esc(x.winners.map(w => w.name).join(" & ")) : x.rolled ? `💥 everyone out — <b style="color:var(--gold)">rolled over</b>` : '<span class="faint">no winner (reset)</span>'}</td>
+      <td>${x.winners?.length ? esc(x.winners.map(w => w.name).join(" & ")) : x.rolled ? `💥 everyone out — <b style="color:var(--gold)">rolled over</b>` : x.settled ? '<span class="faint">no winner — settled up, fresh start</span>' : '<span class="faint">no winner (reset)</span>'}</td>
       <td class="num">${fmtMoney(x.pot || 0)}</td></tr>`).join("")}</table></div></div>`;
 }
 // ---- admin ----
@@ -3181,7 +3181,8 @@ function lmsAdminHtml(roster){
       <td>${!ins.has(pid) ? '<span class="faint">—</span>' : st?.winners?.includes(pid) ? "👑 winner" : st?.out[pid] ? `💀 out GW${st.out[pid].gw}` : "standing"}${ins.has(pid) && !paid[pid] ? ' <span class="ptsbadge pts-wrong">owes</span>' : ""}</td>${lmsChainRounds().length ? `<td class="num">${(() => { const pi = lmsPutIn(pid); return pi.n ? `${fmtMoney(pi.amt)} <span class="faint">· ${pi.n}×</span>` : '<span class="faint">—</span>'; })()}</td>` : ""}</tr>`).join("")}
     </table></div>
     <div class="cfgrow" style="margin-top:12px"><div class="field"><label>New round starts</label>${startSel}</div>
-      <button class="btn ${st?.winners ? "btn-gold" : ""}" onclick="lmsNewRound()">${st?.wipeout ? `🔁 Roll over ${fmtMoney(st.pot)} & start round ${(r.no || 1) + 1}` : st?.winners?.length ? "🏁 Bank it & start round " + ((r.no || 1) + 1) : "↺ Reset — start a new round"}</button></div>
+      <button class="btn ${st?.winners ? "btn-gold" : ""}" onclick="lmsNewRound()">${st?.wipeout ? `🔁 Roll over ${fmtMoney(st.pot)} & start round ${(r.no || 1) + 1}` : st?.winners?.length ? "🏁 Bank it & start round " + ((r.no || 1) + 1) : "↺ Reset — start a new round"}</button>
+      ${st?.wipeout || st?.rollover ? `<button class="btn" onclick="lmsNewRound(true)">🧹 Start clean — £0 pot</button>` : ""}</div>
     <p class="faint">Starting a new round records this one in Past rounds, keeps the same players ticked in (untick anyone not buying back in) and clears who's paid. Picks start from scratch.
       If everyone went out, the whole pot rolls into the new round. A reset mid-round (no winner, not everyone out) does <b>not</b> roll the pot over — settle that one yourselves.</p></div>`;
   return html;
@@ -3210,18 +3211,19 @@ function lmsSetPaid(pid, on){
   if (on) paid[pid] = true; else delete paid[pid];
   saveLms({ round: { ...r, paid } });
 }
-async function lmsNewRound(){
+async function lmsNewRound(clean){
   const gws = allGws();
   const startGw = lmsAdminStartGw ?? (gws.find(g => !gwLocked(g)) ?? gws[gws.length - 1]);
   const r = LMS.round, st = lmsState();
   const history = [...(LMS.history || [])];
   if (r){
-    const won = st?.winners?.length, wiped = !!st?.wipeout;
-    if (!confirm(wiped ? `Everyone went out in GW ${st.endGw}. Roll the ${fmtMoney(st.pot)} pot into round ${(r.no || 1) + 1}, starting GW ${startGw}?\n\nEveryone stays ticked In — untick anyone not buying back in.`
+    const won = st?.winners?.length, wiped = !!st?.wipeout && !clean;
+    if (!confirm(clean ? `Start round ${(r.no || 1) + 1} from GW ${startGw} with a clean £0 pot?\n\nThe ${fmtMoney(st?.pot ?? 0)} in round ${r.no || 1} does NOT roll over — it's recorded as settled outside the app. Everyone stays ticked In; paid ticks clear.`
+               : wiped ? `Everyone went out in GW ${st.endGw}. Roll the ${fmtMoney(st.pot)} pot into round ${(r.no || 1) + 1}, starting GW ${startGw}?\n\nEveryone stays ticked In — untick anyone not buying back in.`
                : won ? `Bank round ${r.no || 1} (won by ${st.winners.map(p => PLAYERS[p]?.name).join(" & ")}, ${fmtMoney(st.pot)}) and start round ${(r.no || 1) + 1} from GW ${startGw}?`
                      : `Round ${r.no || 1} has no winner yet. Reset it anyway and start round ${(r.no || 1) + 1} from GW ${startGw}? (Recorded as "no winner"; the pot does NOT roll over.)`)) return;
     history.push({ no: r.no || 1, startGw: r.startGw, endGw: st?.endGw ?? null, pot: st?.pot ?? 0,
-      rollover: st?.rollover || 0, buyIn: +LMS.buyIn || 0, rolled: wiped,
+      rollover: st?.rollover || 0, buyIn: +LMS.buyIn || 0, rolled: wiped, settled: !!clean,
       entrants: (r.entrants || []).length, pids: [...(r.entrants || [])],
       winners: (st?.winners || []).map(p => ({ pid: p, name: PLAYERS[p]?.name || p })) });
     var rolledPot = wiped ? (st.pot || 0) : 0, chainStart = wiped ? (r.chainStart ?? r.no ?? 1) : (r.no || 0) + 1;
