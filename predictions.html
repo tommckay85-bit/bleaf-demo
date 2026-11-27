@@ -176,6 +176,9 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 .h2hwin{color:var(--green);font-weight:700}
 .sharebtn{margin-left:6px}
 .cardprev{max-width:440px;padding:16px}
+.vidbar{height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:10px}
+.vidbar span{display:block;height:100%;width:0;background:var(--gold);transition:width .2s linear}
+.vidcanvas{width:100%;border-radius:10px;display:block}
 .cardprev img{width:100%;border-radius:10px;display:block}
 
 /* ---------- gameweek nav ---------- */
@@ -2741,97 +2744,278 @@ function wrapLines(ctx, text, maxW){
   if (line) lines.push(line);
   return lines;
 }
-async function drawResultCard(gw){
+// The result card is painted as a function of time: t = Infinity gives the
+// finished still (the PNG), and the video plays t from 0 to CARD_VIDEO_SECS.
+const CARD_VIDEO_SECS = 7;
+const clamp01 = v => v < 0 ? 0 : v > 1 ? 1 : v;
+const easeOut = v => 1 - Math.pow(1 - v, 3);
+const easeBack = v => { const c = 1.70158; return 1 + (c + 1) * Math.pow(v - 1, 3) + c * Math.pow(v - 1, 2); };
+const easeBounce = v => {
+  const n = 7.5625, d = 2.75;
+  if (v < 1 / d) return n * v * v;
+  if (v < 2 / d) return n * (v -= 1.5 / d) * v + .75;
+  if (v < 2.5 / d) return n * (v -= 2.25 / d) * v + .9375;
+  return n * (v -= 2.625 / d) * v + .984375;
+};
+async function cardAssets(gw){
   const d = resultCardData(gw);
   if (!d) return null;
+  const logo = await loadImg("data:image/svg+xml;charset=utf-8," + encodeURIComponent(
+    LOGO_SVG.replace("<svg ", '<svg width="200" height="228" ').replace("<g filter", LOGO_DEFS + "<g filter")));
+  const heads = (await Promise.all(d.winners.slice(0, 3).map(w => loadImg(AVATARS[w.pid])))).filter(Boolean);
+  const loserHead = d.losers.length === 1 ? await loadImg(AVATARS[d.losers[0]]) : null;
+  return { gw, d, logo, heads, loserHead };
+}
+function paintCard(x, A, t){
+  const { gw, d, logo, heads, loserHead } = A;
   const W = 1080, H = 1350, F = "'Inter','Helvetica Neue',Arial,sans-serif";
-  const c = document.createElement("canvas");
-  c.width = W; c.height = H;
-  const x = c.getContext("2d");
+  const at = (t0, dur) => clamp01((t - t0) / dur); // 0..1 progress of a beat (1 when t = Infinity)
+  const live = Number.isFinite(t);
+  x.save();
+  x.clearRect(0, 0, W, H);
   const bg = x.createLinearGradient(0, 0, 0, H);
   bg.addColorStop(0, "#142440"); bg.addColorStop(.55, "#0b1322"); bg.addColorStop(1, "#06080e");
   x.fillStyle = bg; x.fillRect(0, 0, W, H);
   const glow = x.createRadialGradient(W/2, 380, 20, W/2, 380, 520);
-  glow.addColorStop(0, "rgba(255,215,94,.22)"); glow.addColorStop(1, "rgba(255,215,94,0)");
+  glow.addColorStop(0, `rgba(255,215,94,${(.22 * at(.3, .8)).toFixed(3)})`); glow.addColorStop(1, "rgba(255,215,94,0)");
   x.fillStyle = glow; x.fillRect(0, 0, W, H);
-  x.textAlign = "center"; x.textBaseline = "alphabetic";
+  x.textBaseline = "alphabetic";
   // header: crest + title
-  const logo = await loadImg("data:image/svg+xml;charset=utf-8," + encodeURIComponent(
-    LOGO_SVG.replace("<svg ", '<svg width="200" height="228" ').replace("<g filter", LOGO_DEFS + "<g filter")));
+  x.globalAlpha = at(0, .4);
   if (logo) x.drawImage(logo, 60, 44, 96, 110);
   x.textAlign = "left";
   x.fillStyle = "#ffd75e"; x.font = `900 64px ${F}`; x.fillText("LEFUCK", 176, 106);
   x.fillStyle = "#8fa3c0"; x.font = `600 34px ${F}`; x.fillText(`GAMEWEEK ${gw} · FULL TIME`, 178, 148);
-  // winner hero
+  x.globalAlpha = 1;
+  // winner hero: head pops in, crown drops on
   x.textAlign = "center";
-  const heads = await Promise.all(d.winners.slice(0, 3).map(w => loadImg(AVATARS[w.pid])));
   let y = 200;
   const HH = 300;
-  const imgs = heads.filter(Boolean);
-  if (imgs.length){
+  const pop = at(.3, .6), sc = pop <= 0 ? 0 : easeBack(pop);
+  let headTop = y;
+  if (sc > 0){
     x.save();
-    x.shadowColor = "rgba(255,215,94,.7)"; x.shadowBlur = 40;
-    const ws = imgs.map(i => Math.min(HH * i.width / i.height, 320));
-    const total = ws.reduce((a,b) => a + b, 0) - (imgs.length - 1) * 60;
-    let hx = W/2 - total/2;
-    imgs.forEach((i, k) => { x.drawImage(i, hx, y, ws[k], HH); hx += ws[k] - 60; });
+    x.translate(W/2, y + HH/2); x.scale(sc, sc); x.translate(-W/2, -(y + HH/2));
+    if (heads.length){
+      x.shadowColor = "rgba(255,215,94,.7)"; x.shadowBlur = 40;
+      const ws = heads.map(i => Math.min(HH * i.width / i.height, 320));
+      const total = ws.reduce((a,b) => a + b, 0) - (heads.length - 1) * 60;
+      let hx = W/2 - total/2;
+      heads.forEach((i, k) => { x.drawImage(i, hx, y, ws[k], HH); hx += ws[k] - 60; });
+    } else {
+      x.font = `220px ${F}`; x.fillText("🏆", W/2, y + 240);
+    }
     x.restore();
-  } else {
-    x.font = `220px ${F}`; x.fillText("🏆", W/2, y + 240);
+  }
+  if (heads.length){
+    const cp = at(1.0, .7);
+    if (cp > 0){
+      const cy = headTop + 18 - (1 - easeBounce(cp)) * 380;
+      x.save(); x.translate(W/2, cy); x.rotate(-.2); x.font = `120px ${F}`; x.textBaseline = "middle";
+      x.shadowColor = "rgba(255,215,94,.8)"; x.shadowBlur = 24; x.fillText("👑", 0, 0); x.restore();
+    }
   }
   y += HH + 60;
+  // champion line, name, points
+  const tp = easeOut(at(1.5, .5));
+  x.globalAlpha = tp;
   x.fillStyle = "#ffd75e"; x.font = `800 36px ${F}`;
-  x.fillText(d.winners.length > 1 ? "🏆 JOINT CHAMPIONS" : "🏆 CHAMPION", W/2, y);
+  x.fillText(d.winners.length > 1 ? "🏆 JOINT CHAMPIONS" : "🏆 CHAMPION", W/2, y + (1 - tp) * 30);
   y += 78;
   x.fillStyle = "#ffffff";
   let wn = d.winners.map(w => w.name).join(" & ");
   let fs = 76; x.font = `900 ${fs}px ${F}`;
   while (x.measureText(wn).width > W - 120 && fs > 40){ fs -= 4; x.font = `900 ${fs}px ${F}`; }
-  x.fillText(wn, W/2, y);
+  x.fillText(wn, W/2, y + (1 - tp) * 40);
   y += 54;
   x.fillStyle = "#c9d6ea"; x.font = `600 36px ${F}`;
   const wPts = d.winners[0]?.pts ?? 0;
-  x.fillText(`${wPts} pts${d.share != null ? ` · takes ${fmtMoney(d.share)}${d.winners.length > 1 ? " each" : ""}` : ""}${d.pot != null ? `  (pot ${fmtMoney(d.pot)})` : ""}`, W/2, y);
+  x.fillText(`${wPts} pts${d.share != null ? ` · takes ${fmtMoney(d.share)}${d.winners.length > 1 ? " each" : ""}` : ""}${d.pot != null ? `  (pot ${fmtMoney(d.pot)})` : ""}`, W/2, y + (1 - tp) * 50);
+  x.globalAlpha = 1;
   y += 46;
-  // table
+  // table: rows slide in one by one
   const rows = d.table;
   const footer = (d.roast ? 170 : 0) + (d.sups.length ? 44 * d.sups.length + 10 : 0) + 70;
   const rh = Math.max(34, Math.min(58, Math.floor((H - y - footer) / Math.max(1, rows.length))));
   const tx = 120, tw = W - 240;
+  x.globalAlpha = at(2.0, .3);
   x.fillStyle = "rgba(255,255,255,.05)";
   x.beginPath(); (x.roundRect ? x.roundRect(tx - 24, y, tw + 48, rh * rows.length + 20, 22) : x.rect(tx - 24, y, tw + 48, rh * rows.length + 20)); x.fill();
+  x.globalAlpha = 1;
   y += 10;
   const lose = new Set(d.losers);
-  for (const r of rows){
+  let loserRow = null;
+  rows.forEach((r, i) => {
+    const rp = easeOut(at(2.1 + i * .12, .4));
     const cy = y + rh * 0.68;
-    const medal = r.rank === 1 ? "🥇" : r.rank === 2 ? "🥈" : r.rank === 3 ? "🥉" : lose.has(r.pid) ? "🥄" : String(r.rank);
-    x.font = `700 ${Math.round(rh * .55)}px ${F}`;
-    x.textAlign = "center"; x.fillStyle = "#8fa3c0"; x.fillText(medal, tx + 22, cy);
-    x.textAlign = "left"; x.fillStyle = r.rank === 1 ? "#ffd75e" : lose.has(r.pid) ? "#ff8a9c" : "#e8eef8";
-    x.fillText(r.name, tx + 70, cy);
-    x.textAlign = "right"; x.fillText(String(r.pts), tx + tw, cy);
-    if (r.exact){ x.fillStyle = "#8fa3c0"; x.font = `600 ${Math.round(rh * .4)}px ${F}`; x.fillText(`${r.exact}★`, tx + tw - 100, cy); }
+    if (rp > 0){
+      x.save(); x.globalAlpha = rp; x.translate((1 - rp) * 700, 0);
+      const medal = r.rank === 1 ? "🥇" : r.rank === 2 ? "🥈" : r.rank === 3 ? "🥉" : lose.has(r.pid) ? "🥄" : String(r.rank);
+      x.font = `700 ${Math.round(rh * .55)}px ${F}`;
+      x.textAlign = "center"; x.fillStyle = "#8fa3c0"; x.fillText(medal, tx + 22, cy);
+      x.textAlign = "left"; x.fillStyle = r.rank === 1 ? "#ffd75e" : lose.has(r.pid) ? "#ff8a9c" : "#e8eef8";
+      x.fillText(r.name, tx + 70, cy);
+      if (lose.has(r.pid)) loserRow = { x: tx + 70 + x.measureText(r.name).width + 30, cy, rh };
+      x.textAlign = "right"; x.fillText(String(r.pts), tx + tw, cy);
+      if (r.exact){ x.fillStyle = "#8fa3c0"; x.font = `600 ${Math.round(rh * .4)}px ${F}`; x.fillText(`${r.exact}★`, tx + tw - 100, cy); }
+      x.restore();
+    }
     y += rh;
-  }
+  });
   y += 50;
   // superlatives
   x.textAlign = "center";
-  for (const s of d.sups){
+  d.sups.forEach((sp, i) => {
+    x.globalAlpha = at(3.4 + i * .25, .4);
     x.fillStyle = "#8fe3ff"; x.font = `600 30px ${F}`;
-    const t = `${s.e} ${s.t}: ${s.txt}`;
-    x.fillText(wrapLines(x, t, W - 140)[0], W/2, y);
+    x.fillText(wrapLines(x, `${sp.e} ${sp.t}: ${sp.txt}`, W - 140)[0], W/2, y);
     y += 44;
-  }
+  });
+  x.globalAlpha = 1;
   // roast
   if (d.roast){
     y += 8;
+    x.globalAlpha = at(4.0, .5);
     x.fillStyle = "#ff8a9c"; x.font = `italic 600 32px ${F}`;
     const ls = wrapLines(x, "🥄 " + d.roast, W - 160).slice(0, 3);
     for (const l of ls){ x.fillText(l, W/2, y); y += 42; }
+    x.globalAlpha = 1;
   }
-  x.fillStyle = "#4f6280"; x.font = `600 26px ${F}`;
+  // the loser's head pops up on their row and gets flushed (video only)
+  if (live && loserRow && t > 4.0 && t < 6.2){
+    const { cy, rh: h } = loserRow, size = h * 1.9, hx = loserRow.x + size / 2, base = cy - h * .3;
+    const tIn = at(4.0, .35), tGo = at(4.8, .8), tOut = at(5.8, .4);
+    x.save();
+    x.textAlign = "center"; x.textBaseline = "middle";
+    x.globalAlpha = 1 - tOut;
+    x.font = `${Math.round(size * 1.05)}px ${F}`;
+    x.fillText("🚽", hx + size * .1, base + size * .55 + (1 - easeOut(tIn)) * 40);
+    if (tGo < 1 && loserHead){
+      const s2 = easeBack(tIn) * (1 - tGo * .92);
+      x.translate(hx, base - size * .15 + tGo * size * .55); x.rotate(tGo * Math.PI * 5); x.scale(s2, s2);
+      x.globalAlpha = (1 - tOut) * (1 - tGo * .6);
+      x.drawImage(loserHead, -size / 2, -size / 2, size, size * loserHead.height / loserHead.width);
+    }
+    x.restore();
+    const fw = at(5.0, .3), fo = at(5.7, .4);
+    if (fw > 0 && fo < 1){
+      x.save(); x.globalAlpha = fw * (1 - fo); x.textAlign = "left"; x.textBaseline = "middle";
+      x.font = `900 ${Math.round(h * .62)}px ${F}`; x.fillStyle = "#7fd8ff";
+      x.fillText("FLUSH!", hx + size * .75, base); x.restore();
+    }
+  }
+  // money rain (video only)
+  if (live && t > 1.2 && t < 3.8){
+    x.save(); x.textAlign = "center"; x.textBaseline = "middle"; x.font = `56px ${F}`;
+    for (let k = 0; k < 16; k++){
+      const st = 1.2 + (k * .37) % 1.3, el = t - st;
+      if (el < 0 || el > 1.6) continue;
+      x.save(); x.globalAlpha = el > 1.3 ? (1.6 - el) / .3 : 1;
+      x.translate(60 + (k * 157) % (W - 120), -60 + el * 760); x.rotate((k % 2 ? 1 : -1) * el * 3);
+      x.fillText("💷", 0, 0); x.restore();
+    }
+    x.restore();
+  }
+  // footer
+  x.globalAlpha = at(5.2, .5);
+  x.fillStyle = "#4f6280"; x.font = `600 26px ${F}`; x.textAlign = "center";
   x.fillText("Think you can do better? Get in the league.", W/2, H - 36);
+  x.restore();
+}
+async function drawResultCard(gw){
+  const A = await cardAssets(gw);
+  if (!A) return null;
+  const c = document.createElement("canvas");
+  c.width = 1080; c.height = 1350;
+  paintCard(c.getContext("2d"), A, Infinity);
   return c;
+}
+// Record the animated card as a short video on the phone itself
+// (MediaRecorder on the canvas: mp4 on iPhones, mp4 or webm elsewhere).
+function cardVideoType(){
+  if (typeof MediaRecorder === "undefined" || !MediaRecorder.isTypeSupported) return null;
+  return ["video/mp4;codecs=avc1.42E01E", "video/mp4;codecs=avc1", "video/mp4", "video/webm;codecs=vp9", "video/webm"]
+    .find(t => { try { return MediaRecorder.isTypeSupported(t); } catch(e){ return false; } }) || null;
+}
+async function recordCardVideo(gw, canvas, onProgress){
+  const A = await cardAssets(gw);
+  const mime = cardVideoType();
+  if (!A || !mime || !canvas.captureStream) return null;
+  const S = canvas.width / 1080;
+  const x = canvas.getContext("2d");
+  const frame = t => { x.setTransform(S, 0, 0, S, 0, 0); paintCard(x, A, t); };
+  frame(0);
+  const rec = new MediaRecorder(canvas.captureStream(30), { mimeType: mime, videoBitsPerSecond: 5000000 });
+  const chunks = [];
+  rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+  const stopped = new Promise(r => rec.onstop = r);
+  rec.start(200);
+  const t0 = performance.now();
+  await new Promise(res => {
+    const tick = now => {
+      const t = (now - t0) / 1000;
+      frame(Math.min(t, CARD_VIDEO_SECS));
+      if (onProgress) onProgress(Math.min(1, t / CARD_VIDEO_SECS));
+      if (t < CARD_VIDEO_SECS + .3) requestAnimationFrame(tick); else res();
+    };
+    requestAnimationFrame(tick);
+  });
+  rec.stop();
+  await stopped;
+  const type = mime.split(";")[0], ext = type === "video/mp4" ? "mp4" : "webm";
+  const blob = new Blob(chunks, { type });
+  return { blob, url: URL.createObjectURL(blob), ext,
+    file: typeof File === "function" ? new File([blob], `lefuck-gw${gw}.${ext}`, { type }) : null };
+}
+let CARD_VIDEO = {}; // gw -> recorded video (per page load)
+async function shareResultVideo(gw){
+  if (!$("vid-overlay")){
+    document.body.insertAdjacentHTML("beforeend", `
+      <div id="vid-overlay" class="roast-overlay hidden">
+        <div class="roast-card cardprev" onclick="event.stopPropagation()">
+          <div id="vid-stage"></div>
+          <div id="vid-bar" class="vidbar"><span></span></div>
+          <p id="vid-msg" class="faint" style="margin:10px 0">Making your video…</p>
+          <div class="nagbtns" style="justify-content:center">
+            <button id="vid-share" class="btn btn-gold hidden">📤 Share video</button>
+            <a id="vid-dl" class="btn hidden">⬇ Save</a>
+            <button class="btn" onclick="$('vid-overlay').classList.add('hidden')">Close</button></div>
+        </div>
+      </div>`);
+  }
+  const ov = $("vid-overlay"), stage = $("vid-stage"), bar = $("vid-bar").firstElementChild, msg = $("vid-msg");
+  const shareBtn = $("vid-share"), dl = $("vid-dl");
+  shareBtn.classList.add("hidden"); dl.classList.add("hidden");
+  ov.classList.remove("hidden");
+  let v = CARD_VIDEO[gw];
+  if (!v || v.sig !== cardSig(gw)){
+    if (!cardVideoType()){
+      msg.textContent = "This phone can't make videos in the browser — here's the picture instead.";
+      const card = await prepCard(gw);
+      if (card) stage.innerHTML = `<img src="${card.url}" alt="" style="width:100%;border-radius:10px">`;
+      return;
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = 720; canvas.height = 900; canvas.className = "vidcanvas";
+    stage.innerHTML = ""; stage.appendChild(canvas);
+    msg.textContent = "Making your video… (keep this screen open)";
+    $("vid-bar").classList.remove("hidden");
+    v = await recordCardVideo(gw, canvas, p => { bar.style.width = Math.round(p * 100) + "%"; });
+    if (!v){ msg.textContent = "Couldn't make the video on this phone — try 📤 Share result card instead."; return; }
+    v.sig = cardSig(gw); CARD_VIDEO[gw] = v;
+  }
+  $("vid-bar").classList.add("hidden");
+  stage.innerHTML = `<video src="${v.url}" autoplay loop muted playsinline style="width:100%;border-radius:10px;display:block"></video>`;
+  msg.textContent = "Done — share it to the group, or save it to your phone.";
+  dl.href = v.url; dl.download = `lefuck-gw${gw}.${v.ext}`; dl.classList.remove("hidden");
+  // a fresh tap shares it (phones only allow the share sheet straight from a tap)
+  if (v.file && navigator.canShare && navigator.canShare({ files: [v.file] })){
+    shareBtn.classList.remove("hidden");
+    shareBtn.onclick = async () => {
+      try { await navigator.share({ files: [v.file], text: `LEFUCK · GW ${gw} results` }); }
+      catch(e){ if (e.name !== "AbortError") msg.textContent = "Couldn't open the share sheet — use ⬇ Save, then send it from your photos."; }
+    };
+  }
 }
 let CARD_CACHE = {}; // gw -> { sig, file, url }
 function cardSig(gw){
@@ -3598,7 +3782,7 @@ function renderWeek(){
     const maxRank = Math.max(...(gwDoc.table||[]).map(x=>x.rank||1));
     const spoons = (gwDoc.table||[]).filter(x=>x.rank===maxRank && maxRank>1);
     if (spoons.length) html += `<div class="banner err">🥄 Wooden spoon: <b>${esc(spoons.map(s=>s.name).join(" & "))}</b> — ${spoons[0].pts} pts. Shameful scenes.</div>`;
-    html += `<div class="sharerow"><button class="btn btn-gold" onclick="shareResult(${gw}, this)">📤 Share result card</button><span class="faint">One image for the group chat — winner, table, pot and the roast.</span></div>`;
+    html += `<div class="sharerow"><button class="btn btn-gold" onclick="shareResultVideo(${gw})">🎬 Share video</button><button class="btn" onclick="shareResult(${gw}, this)">📤 Share picture</button><span class="faint">For the group chat — winner, table, pot and the roast. The video's got the crown drop and the flush.</span></div>`;
     const sups = weekSuperlatives(gw);
     if (sups.length) html += `<div class="panel"><h2>🏅 Superlatives</h2>${sups.map(x => `<div class="supline"><span class="supe">${x.e}</span><b>${esc(x.t)}</b> — ${esc(x.txt)}</div>`).join("")}</div>`;
     setTimeout(() => prepCard(gw), 0); // pre-draw so the share sheet opens straight from the tap
