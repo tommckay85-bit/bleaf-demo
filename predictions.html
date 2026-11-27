@@ -1458,7 +1458,13 @@ function watchPreds(gw){
 }
 
 /* ---------- scoring ---------- */
-function isOut(gw, pid){ return (GAMEWEEKS["gw"+gw]?.out || []).includes(pid); }
+// Out for a week: on that week's out list, or sitting out from an earlier
+// week (sticky — stays out until the admin brings them back in).
+function isOut(gw, pid){
+  if ((GAMEWEEKS["gw"+gw]?.out || []).includes(pid)) return true;
+  const from = PLAYERS[pid]?.outFrom;
+  return from !== undefined && from !== null && gw >= from;
+}
 function scoreWeek(gw, opts){
   const fx = gwFixtures(gw), preds = PREDS[gw] || {};
   const pts = GAMEWEEKS["gw"+gw]?.finalized ? (GAMEWEEKS["gw"+gw].pointsUsed || CONFIG) : CONFIG;
@@ -2168,7 +2174,7 @@ const NAG_LINES = [
   "Your mum's already done hers.",
 ];
 function nagText(gw, s){
-  const who = s.list.map(r => `${r.name.split(" ")[0]} (${r.n ? r.n + "/" + s.total : "nothing"})`).join(", ");
+  const who = s.list.map(r => r.name.split(" ")[0]).join(", ");
   return `🚨 LEFUCK GW ${gw} locks in ${fmtLeft(s.left)} (${fmtKo(s.deadline.toISOString())}).\n` +
     `Still waiting on: ${who}.\n${NAG_LINES[gw % NAG_LINES.length]}\n👉 ${location.origin}${location.pathname}`;
 }
@@ -3642,7 +3648,7 @@ function renderAdmin(){
     <p class="faint">A unique login code is generated for each player — copy it from the table below and send it to them on WhatsApp. They sign in by picking their name and entering the code.</p></div>`;
 
   /* players & weekly in/out */
-  html += `<div class="panel"><div class="panelhead"><h2>Players ${gw!==null?`<span class="tag">In / out applies to GW ${gw}</span>`:""}</h2><button class="btn btn-sm" onclick="openBulkHeads()">📷 Upload heads</button></div>
+  html += `<div class="panel"><div class="panelhead"><h2>Players ${gw!==null?`<span class="tag">In / out from GW ${gw} on</span>`:""}</h2><button class="btn btn-sm" onclick="openBulkHeads()">📷 Upload heads</button></div>
     <div class="pgrid">`;
   for (const [pid,p] of roster){
     const out = gw!==null && isOut(gw,pid);
@@ -3652,7 +3658,7 @@ function renderAdmin(){
         <b class="pname">${esc(p.name)}</b>
         ${p.admin?'<span class="pill adm">Admin</span>':""}
         <span class="pspace"></span>
-        ${gw!==null?`<button class="btn btn-sm" onclick="toggleOut(${gw},'${pid}')">${out?'<span class="pill out">Out</span>':'<span class="pill in">In</span>'}</button>`:""}
+        ${gw!==null?`<button class="btn btn-sm" onclick="toggleOut(${gw},'${pid}')" title="${out ? "Tap to bring them back in from GW " + gw : "Tap to sit them out from GW " + gw + " until you bring them back"}">${out?`<span class="pill out">Out${p.outFrom != null && gw >= p.outFrom ? " since GW" + p.outFrom : ""}</span>`:'<span class="pill in">In</span>'}</button>`:""}
       </div>
       <div class="pline">
         ${code?`<span class="codecell">${esc(fmtCode(code))}</span>
@@ -3907,11 +3913,29 @@ async function toggleUnlock(gw){
   await DB.collection("gameweeks").doc("gw"+gw).set({ unlocked: !cur }, { merge:true });
   adminMsg(cur ? `GW ${gw} re-locked — normal deadline rules apply.` : `GW ${gw} <b>unlocked</b> for testing — remember to re-lock it.`);
 }
+// Sitting out is sticky: marking someone out from a week keeps them out of
+// every later week too, until they're marked back in. Bringing them back
+// writes the weeks they missed onto those weeks' out lists, so history stays put.
 async function toggleOut(gw, pid){
-  const ref = DB.collection("gameweeks").doc("gw"+gw);
-  const cur = GAMEWEEKS["gw"+gw]?.out || [];
-  const out = cur.includes(pid) ? cur.filter(x=>x!==pid) : [...cur, pid];
-  await ref.set({ out }, { merge:true });
+  const from = PLAYERS[pid]?.outFrom;
+  const writes = [];
+  const setOut = (g, list) => writes.push(DB.collection("gameweeks").doc("gw"+g).set({ out: list }, { merge:true }));
+  if (isOut(gw, pid)){
+    if (from !== undefined && from !== null && gw >= from){
+      for (const g of allGws()) if (g >= from && g < gw){
+        const cur = GAMEWEEKS["gw"+g]?.out || [];
+        if (!cur.includes(pid)) setOut(g, [...cur, pid]);
+      }
+      writes.push(DB.collection("players").doc(pid).set({ outFrom: firebase.firestore.FieldValue.delete() }, { merge:true }));
+    }
+    for (const g of allGws()) if (g >= gw){
+      const cur = GAMEWEEKS["gw"+g]?.out || [];
+      if (cur.includes(pid)) setOut(g, cur.filter(x => x !== pid));
+    }
+  } else {
+    writes.push(DB.collection("players").doc(pid).set({ outFrom: gw }, { merge:true }));
+  }
+  await Promise.all(writes);
 }
 async function saveOverrides(gw){
   const fx = gwFixtures(gw), overrides = { ...(GAMEWEEKS["gw"+gw]?.overrides || {}) };

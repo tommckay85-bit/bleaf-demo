@@ -339,7 +339,8 @@ assert.deepStrictEqual(sg.list.map(r => r.pid), ['gaz','sam','dave'], 'straggler
 assert.strictEqual(sg.total, 5);
 assert.ok(sg.left > 4.9 * 3600e3 && sg.left <= 5 * 3600e3, 'time left to deadline');
 const nag = run('nagText(3, stragglers(3))');
-assert.ok(nag.includes('GW 3') && nag.includes('Gaz (nothing)') && nag.includes('Dave (1/5)') && /locks in [45]h/.test(nag), 'nag message names and counts: ' + nag);
+assert.ok(nag.includes('GW 3') && nag.includes('Still waiting on: Gaz, Sam, Dave.'), 'nag names the stragglers: ' + nag);
+assert.ok(!/\((nothing|\d+\/\d+)\)/.test(nag) && /locks in [45]h/.test(nag), 'no (nothing)/(1/5) counts in the nag: ' + nag);
 assert.ok(run('nagBannerHtml(3)').includes('Copy nag'), 'banner renders with copy button');
 assert.strictEqual(run('stragglers(3, Date.now() - 20 * 3600e3)'), null, 'no nag more than 24h out');
 run(`GAMEWEEKS.gw3 = { out:['gaz','sam','dave'] }`);
@@ -560,5 +561,13 @@ assert.strictEqual(run('lmsNudgeHtml()'), '', 'no nag about GW4 while GW3 is sti
 run(`FEED.fixtures = FEED.fixtures.filter(f => f.id !== 401); FEED.fixtures.filter(f => f.gw === 3).forEach(f => { f.kickoff = f._ko3; delete f._ko3; });
 LMS = { enabled:false, buyIn:5, round:null, history:[] }; LMS_PICKS = {}`);
 console.log('LMS NUDGE-TIMING TESTS PASSED');
+
+// --- sticky sitting out ---
+run(`GAMEWEEKS = { gw2: { out:['dave'] } }; PLAYERS = { tom:{ name:'Tom', active:true }, dave:{ name:'Dave', active:true }, sam:{ name:'Sam', active:true, outFrom:2 } }`);
+assert.strictEqual(run(`isOut(1, 'sam')`), false, 'sitting out starts from its week');
+assert.strictEqual(run(`isOut(2, 'sam') && isOut(3, 'sam')`), true, 'and sticks for every later week');
+assert.strictEqual(run(`isOut(2, 'dave') && !isOut(3, 'dave')`), true, 'a one-week out list still works');
+assert.deepStrictEqual(runJ('scoreWeek(3).map(r => r.pid).sort()'), ['dave','tom'], 'sticky-out player left out of the week');
+console.log('STICKY-OUT TESTS PASSED');
 
 console.log('\nALL LOGIC SUITES PASSED');
