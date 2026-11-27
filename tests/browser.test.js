@@ -776,6 +776,35 @@ const FIREBASE_STUB = `
   assert(admR.includes('Put in') && admR.includes('£10'), 'admin sees what each player has put into the rolling pot');
   await page.evaluate(() => { LMS = { enabled:false, buyIn:5, round:null, history:[] }; LMS_PICKS = {}; setTab('predict'); });
 
+  // ---- head animations ----
+  await page.evaluate(() => {
+    const mk = col => { const c = document.createElement('canvas'); c.width = 60; c.height = 72; const g = c.getContext('2d');
+      g.fillStyle = col; g.beginPath(); g.ellipse(30,36,24,32,0,0,Math.PI*2); g.fill(); return c.toDataURL('image/png'); };
+    window._avA = AVATARS; AVATARS = { tom: mk('#e0a37e'), dave: mk('#b77b56'), sam: mk('#d9a27f') };
+    crownFace('win-face', ['tom']); flushFace('roast-face', ['dave']);
+    showToast({ fid: 0, title: 'goal', lines: ['x'], faces: [{ pid:'tom', mood:'lead' }, { pid:'dave', mood:'joy' }, { pid:'sam', mood:'sad' }] });
+  });
+  assert(!!(await page.$('#win-face .crownst.play .cr-crown')), 'winner card: crown drop + champagne');
+  assert(!!(await page.$('#roast-face .flush.play .fl-toilet')), 'loser card: flushed');
+  assert((await page.$$('#toasts .tface')).length === 3, 'goal toast shows the heads it affects');
+  assert(!!(await page.$('#toasts .tface.sad')) && !!(await page.$('#toasts .tface.joy')) && !!(await page.$('#toasts .tface.lead')), 'joy / face-plant / crowned reactions');
+  await page.evaluate(() => { document.getElementById('toasts').remove(); renderAll(); });
+  await page.click('[data-tab=board]'); await page.waitForTimeout(200);
+  const fight = await page.$eval('#tab-board .h2hcard', el => el.className);
+  assert(/fight-(a|b|draw)/.test(fight), 'head-to-head card is a boxing match (' + fight + ')');
+  assert((await page.$$('#tab-board .h2hcard .glove')).length === 2, 'both fighters have gloves');
+  await page.evaluate(() => {
+    LMS = { enabled:true, buyIn:5, history:[], round:{ id:'rT', no:1, startGw:1, entrants:['tom','dave','sam'], paid:{} } };
+    LMS_PICKS = { rT_gw1_tom:{ round:'rT', gw:1, pid:'tom', team:1 }, rT_gw1_dave:{ round:'rT', gw:1, pid:'dave', team:5 }, rT_gw1_sam:{ round:'rT', gw:1, pid:'sam', team:4 },
+                  rT_gw2_tom:{ round:'rT', gw:2, pid:'tom', team:5 }, rT_gw2_dave:{ round:'rT', gw:2, pid:'dave', team:6 } };
+    try { localStorage.removeItem('lefuck_trap_rT_2'); } catch(e){}
+    renderChrome(); setTab('lms');
+  });
+  await page.waitForTimeout(200);
+  assert(!!(await page.$('#tab-lms .trapstage')), 'Last Man tab has the trapdoor stage');
+  assert((await page.textContent('#tab-lms .trapcap')).length > 5, 'trapdoor caption says who fell');
+  await page.evaluate(() => { AVATARS = window._avA; LMS = { enabled:false, buyIn:5, round:null, history:[] }; LMS_PICKS = {}; setTab('predict'); });
+
   // ---- mobile ----
   await page.setViewportSize({ width: 390, height: 844 });
   await page.click('[data-tab=predict]'); await page.waitForTimeout(200);
