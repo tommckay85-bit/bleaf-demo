@@ -640,7 +640,7 @@ const FIREBASE_STUB = `
   await page.click('[data-tab=week]'); await page.waitForTimeout(250);
   const wkFinal = await page.textContent('#tab-week');
   assert(wkFinal.includes('Superlatives') && wkFinal.includes('Lone genius'), 'superlatives panel on the finalised week');
-  await page.click('#tab-week .sharerow .btn');
+  await page.click('#tab-week .sharerow .btn:not(.btn-gold)');
   await page.waitForTimeout(800);
   assert(await page.isVisible('#card-overlay'), 'share falls back to an image preview where the share sheet is unavailable');
   const cardDims = await page.$eval('#card-img', i => [i.naturalWidth, i.naturalHeight]);
@@ -649,6 +649,16 @@ const FIREBASE_STUB = `
   fs.writeFileSync(OUT + '/shot-15-result-card.png', Buffer.from(cardShot, 'base64'));
   await page.screenshot({ path: OUT + '/shot-16-card-preview.png' });
   await page.click('#card-overlay .btn:not(.btn-gold)');
+  // animated video version of the card, recorded in the browser
+  await page.click('#tab-week .sharerow .btn-gold');
+  await page.waitForTimeout(600);
+  assert(await page.isVisible('#vid-overlay canvas.vidcanvas'), 'video card: recording shows live on screen');
+  await page.screenshot({ path: OUT + '/shot-29-card-video-recording.png' });
+  await page.waitForSelector('#vid-overlay video', { timeout: 15000 });
+  const vidInfo = await page.evaluate(() => { const v = CARD_VIDEO[2]; return v ? { size: v.blob.size, ext: v.ext } : null; });
+  assert(vidInfo && vidInfo.size > 20000, 'video card recorded (' + JSON.stringify(vidInfo) + ')');
+  assert(await page.isVisible('#vid-dl'), 'video can be saved');
+  await page.click('#vid-overlay .btn:not(.btn-gold):not(#vid-dl)');
   // the roast card has its own share button
   await page.evaluate(() => { CARD_GW = 2; $('roast-overlay').classList.remove('hidden'); });
   assert(await page.isVisible('#roast-overlay .sharebtn'), 'roast card offers a share button');
