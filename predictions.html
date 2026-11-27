@@ -399,6 +399,9 @@ th.colme .deadwrap{margin:0 0 2px auto}
 .lmswinface{font-size:60px;line-height:1}
 .lmswinface .ava-h2h{height:110px;max-width:120px}
 .lmslate{border-color:var(--gold)}
+.lms-rebuy{background:#12291c;color:#8fd8ac;border:1px solid var(--green)}
+.lmswipe{border-color:var(--red)}
+.lmswipe .lbl{color:var(--red)}
 .lms-brink{background:#3a2a10;color:var(--gold);border:1px dashed var(--gold)}
 /* one-time hints */
 .hint{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#0c1a2e;border:1px dashed var(--steel);color:#8fe3ff;border-radius:10px;padding:7px 8px 7px 12px;font-size:12.5px;font-weight:600;margin:0 0 10px}
@@ -2691,8 +2694,22 @@ const LMS_DEAD = ["draw", "lose", "nopick"];
 function lmsEntrants(){
   return (LMS.round?.entrants || []).filter(pid => PLAYERS[pid]);
 }
-function lmsPot(){
-  return round2(lmsEntrants().length * (+LMS.buyIn || 0));
+// Pot = money rolled over from wiped-out rounds + this round's buy-ins.
+function lmsBuyIns(){ return round2(lmsEntrants().length * (+LMS.buyIn || 0)); }
+function lmsRollover(){ return round2(+LMS.round?.rollover || 0); }
+function lmsPot(){ return round2(lmsRollover() + lmsBuyIns()); }
+// The rollover chain: consecutive wiped-out rounds feeding the current pot.
+function lmsChainRounds(){
+  const r = LMS.round; if (!r) return [];
+  const start = r.chainStart ?? r.no ?? 1;
+  return (LMS.history || []).filter(h => h.rolled && (h.no || 0) >= start);
+}
+// What a player has put into the current pot: buy-ins across the chain.
+function lmsPutIn(pid){
+  let n = 0, amt = 0;
+  for (const h of lmsChainRounds()) if ((h.pids || []).includes(pid)){ n++; amt += +(h.buyIn ?? LMS.buyIn) || 0; }
+  if ((LMS.round?.entrants || []).includes(pid)){ n++; amt += +LMS.buyIn || 0; }
+  return { n, amt: round2(amt) };
 }
 // Replay the round week by week from its start gameweek.
 function lmsState(){
@@ -2704,7 +2721,7 @@ function lmsState(){
   const out = {};     // pid -> { gw, team, outcome }
   const brink = {};   // already lost/drew in a week still in play: out once it's done
   const weeks = [];   // { gw, res: {pid: {team, outcome}}, done, reprieve }
-  let winners = null, endGw = null;
+  let winners = null, endGw = null, wipeout = false;
   if (entrants.length >= 2){
     for (const gw of gws){
       if (!gwLocked(gw)) break;
@@ -2723,14 +2740,20 @@ function lmsState(){
         break;
       }
       const dead = alive.filter(p => LMS_DEAD.includes(res[p].outcome));
-      if (dead.length && dead.length === alive.length){ wk.reprieve = true; continue; }
+      if (dead.length && dead.length === alive.length){
+        // everyone left went out in the same week: they're all out, nobody
+        // wins, and the whole pot rolls over into the next round
+        dead.forEach(p => out[p] = { gw, ...res[p] });
+        alive = []; winners = []; endGw = gw; wipeout = true;
+        break;
+      }
       dead.forEach(p => out[p] = { gw, ...res[p] });
       alive = alive.filter(p => !dead.includes(p));
       if (alive.length <= 1){ winners = alive; endGw = gw; break; }
     }
   }
   const pickGw = winners ? null : (gws.find(g => !gwLocked(g)) ?? null);
-  return { entrants, alive, out, brink, weeks, winners, endGw, pickGw, pot: lmsPot() };
+  return { entrants, alive, out, brink, weeks, winners, endGw, pickGw, wipeout, pot: lmsPot(), rollover: lmsRollover(), buyIns: lmsBuyIns() };
 }
 // Late pass: the admin can let named players pick for a gameweek whose
 // deadline has passed — only teams whose game hasn't kicked off, so nobody
@@ -2827,14 +2850,23 @@ function renderLms(){
   const st = lmsState();
   const n = st.entrants.length;
   html += `<div class="panel pulsestrip">
-    <div class="pcell"><div class="pv" style="color:var(--gold)">${fmtMoney(st.pot)}</div><div class="pk">side pot</div></div>
-    <div class="pcell"><div class="pv">${st.winners ? st.winners.length : st.alive.length} <small>/ ${n}</small></div><div class="pk">${st.winners ? "winner" : "still standing"}</div></div>
+    <div class="pcell"><div class="pv" style="color:var(--gold)">${fmtMoney(st.pot)}</div><div class="pk">${st.rollover ? `🔥 pot · ${fmtMoney(st.rollover)} rolled + ${fmtMoney(st.buyIns)}` : "side pot"}</div></div>
+    <div class="pcell"><div class="pv">${st.wipeout ? 0 : st.winners ? st.winners.length : st.alive.length} <small>/ ${n}</small></div><div class="pk">${st.wipeout ? "everyone out" : st.winners ? "winner" : "still standing"}</div></div>
     <div class="pcell"><div class="pv">${r.no || 1} <small>· GW${r.startGw}+</small></div><div class="pk">round</div></div>
     <div class="pcell"><div class="pv">${fmtMoney(+LMS.buyIn || 0)}</div><div class="pk">buy-in</div></div>
   </div>`;
   if (n < 2) html += `<div class="banner info">Waiting for the admin to add at least two players to this round.</div>`;
+  const chain = lmsChainRounds();
+  if (st.rollover && !st.winners) html += `<div class="banner warn">🔥 Rollover${chain.length > 1 ? " ×" + chain.length : ""}: ${fmtMoney(st.rollover)} carried over from round${chain.length > 1 ? "s" : ""} ${chain.map(h => h.no).join(", ")} where everyone went out — plus ${fmtMoney(st.buyIns)} in buy-ins this round.</div>`;
+  if (st.wipeout){
+    html += `<div class="panel lmswin lmswipe"><div class="lmswinface">💥</div>
+      <div class="lbl">EVERYONE'S OUT · GW ${st.endGw}</div>
+      <div class="name">Nobody wins</div>
+      <div class="muted">The whole pot — <b style="color:var(--gold)">${fmtMoney(st.pot)}</b> — rolls over into round ${(r.no || 1) + 1}. Buy back in and go again.</div></div>`;
+  }
   if (st.winners && st.winners.length){
     const w = st.winners[0];
+    // (the winner takes everything that rolled into the pot too)
     html += `<div class="panel lmswin"><div class="lmswinface">${avatarImg(w, "ava-h2h") || "👑"}</div>
       <div class="lbl">🪓 LAST MAN STANDING · GW ${st.endGw}</div>
       <div class="name">${esc(PLAYERS[w]?.name || "")}</div>
@@ -2870,15 +2902,13 @@ function renderLms(){
     }
     const status = won ? `<span class="ptsbadge pts-exact">👑 winner</span>`
       : o ? `<span class="ptsbadge pts-wrong">out GW${o.gw}</span>`
-      : st.brink[pid] ? `<span class="ptsbadge lms-brink" title="Their team didn't win — out once GW${st.brink[pid].gw} finishes (unless everyone left goes out too)">going out</span>`
+      : st.brink[pid] ? `<span class="ptsbadge lms-brink" title="Their team didn't win — out once GW${st.brink[pid].gw} finishes">going out</span>`
       : `<span class="ptsbadge pts-result">standing</span>`;
     html += `<div class="lmsrow ${o ? "lmsout" : ""} ${pid === MYPID ? "me" : ""}">
-      <div class="lmsname">${faceOrDead(pid, "ava-sm", !!o, true)}<b>${esc(pid === MYPID ? "You" : (PLAYERS[pid]?.name || "?"))}</b> ${status}</div>
+      <div class="lmsname">${faceOrDead(pid, "ava-sm", !!o, true)}<b>${esc(pid === MYPID ? "You" : (PLAYERS[pid]?.name || "?"))}</b> ${status}${(() => { const pi = lmsPutIn(pid); return pi.n > 1 ? ` <span class="ptsbadge lms-rebuy" title="${pi.n} buy-ins into this pot (${fmtMoney(pi.amt)})">💸 rebuy${pi.n > 2 ? " ×" + (pi.n - 1) : ""}</span>` : ""; })()}</div>
       <div class="lmschips">${chips.join("") || '<span class="faint">no picks yet</span>'}</div></div>`;
   }
-  const rep = st.weeks.filter(w => w.reprieve).map(w => w.gw);
-  html += `${rep.length ? `<p class="faint" style="margin-top:8px">🙏 Everyone left went out in GW ${rep.join(", ")} — so nobody did.</p>` : ""}
-    <p class="faint" style="margin-top:8px">Picks are hidden (✓) until each gameweek's deadline.</p></div>`;
+  html += `<p class="faint" style="margin-top:8px">Picks are hidden (✓) until each gameweek's deadline. If everyone left goes out in the same week, nobody wins and the pot rolls over.</p></div>`;
   html += lmsHistoryHtml();
   el.innerHTML = html;
 }
@@ -2888,7 +2918,7 @@ function lmsHistoryHtml(){
   return `<div class="panel"><h2>Past rounds</h2><div class="tbl-scroll"><table>
     <tr><th>Round</th><th>Gameweeks</th><th>Winner</th><th class="num">Pot</th></tr>
     ${h.map(x => `<tr><td>${x.no}</td><td>GW ${x.startGw}${x.endGw ? "–" + x.endGw : ""}</td>
-      <td>${x.winners?.length ? esc(x.winners.map(w => w.name).join(" & ")) : '<span class="faint">no winner (reset)</span>'}</td>
+      <td>${x.winners?.length ? esc(x.winners.map(w => w.name).join(" & ")) : x.rolled ? `💥 everyone out — <b style="color:var(--gold)">rolled over</b>` : '<span class="faint">no winner (reset)</span>'}</td>
       <td class="num">${fmtMoney(x.pot || 0)}</td></tr>`).join("")}</table></div></div>`;
 }
 // ---- admin ----
@@ -2913,18 +2943,20 @@ function lmsAdminHtml(roster){
   const lateGw = lmsLateGw(), latePids = r.late?.gw === lateGw ? (r.late.pids || []) : [];
   const nIn = ins.size, nPaid = [...ins].filter(p => paid[p]).length;
   html += `<p class="muted" style="margin:10px 0 6px">Round ${r.no || 1} · from GW ${r.startGw} · pot <b style="color:var(--gold)">${fmtMoney(lmsPot())}</b> · collected ${fmtMoney(nPaid * (+LMS.buyIn || 0))} (${nPaid}/${nIn} paid)
-    ${st?.winners?.length ? ` · <b style="color:var(--green)">won by ${esc(st.winners.map(p => PLAYERS[p]?.name).join(" & "))} (GW ${st.endGw})</b>` : st ? ` · ${st.alive.length} standing` : ""}</p>
+    ${st?.rollover ? ` · <b style="color:var(--gold)">🔥 includes ${fmtMoney(st.rollover)} rolled over</b>` : ""}
+    ${st?.wipeout ? ` · <b style="color:var(--red)">💥 everyone out GW ${st.endGw} — roll it over</b>` : st?.winners?.length ? ` · <b style="color:var(--green)">won by ${esc(st.winners.map(p => PLAYERS[p]?.name).join(" & "))} (GW ${st.endGw})</b>` : st ? ` · ${st.alive.length} standing` : ""}</p>
     ${lateGw !== null ? `<p class="faint" style="margin:6px 0">🔓 <b style="color:var(--ink)">Late pass</b> — GW ${lateGw}'s deadline has passed. Tick anyone who forgot to let them pick now (only teams whose game hasn't kicked off; it lapses once every game has started).${latePids.length ? ` <b style="color:var(--gold)">Open for ${esc(latePids.map(p => PLAYERS[p]?.name.split(" ")[0]).join(", "))}.</b>` : ""}</p>` : ""}
-    <div class="tbl-scroll"><table><tr><th>Player</th><th class="num">In</th><th class="num">Paid</th>${lateGw !== null ? `<th class="num">Late GW${lateGw}</th>` : ""}<th>Status</th></tr>
+    <div class="tbl-scroll"><table><tr><th>Player</th><th class="num">In</th><th class="num">Paid</th>${lateGw !== null ? `<th class="num">Late GW${lateGw}</th>` : ""}<th>Status</th>${lmsChainRounds().length ? `<th class="num" title="Buy-ins into this pot across rollovers">Put in</th>` : ""}</tr>
     ${roster.map(([pid,p]) => `<tr><td>${avatarImg(pid, "ava-sm")}${esc(p.name)}</td>
       <td class="num"><input type="checkbox" ${ins.has(pid) ? "checked" : ""} onchange="lmsSetIn('${pid}', this.checked)"></td>
       <td class="num"><input type="checkbox" ${paid[pid] ? "checked" : ""} ${ins.has(pid) ? "" : "disabled"} onchange="lmsSetPaid('${pid}', this.checked)"></td>
       ${lateGw !== null ? `<td class="num"><input type="checkbox" ${latePids.includes(pid) ? "checked" : ""} ${ins.has(pid) && !st?.out[pid] && !st?.winners ? "" : "disabled"} onchange="lmsSetLate('${pid}', ${lateGw}, this.checked)">${ins.has(pid) && !st?.out[pid] && lmsPickOf(pid, lateGw) === null ? ' <span class="faint" title="no pick for this week">⚠</span>' : ""}</td>` : ""}
-      <td>${!ins.has(pid) ? '<span class="faint">—</span>' : st?.winners?.includes(pid) ? "👑 winner" : st?.out[pid] ? `💀 out GW${st.out[pid].gw}` : "standing"}${ins.has(pid) && !paid[pid] ? ' <span class="ptsbadge pts-wrong">owes</span>' : ""}</td></tr>`).join("")}
+      <td>${!ins.has(pid) ? '<span class="faint">—</span>' : st?.winners?.includes(pid) ? "👑 winner" : st?.out[pid] ? `💀 out GW${st.out[pid].gw}` : "standing"}${ins.has(pid) && !paid[pid] ? ' <span class="ptsbadge pts-wrong">owes</span>' : ""}</td>${lmsChainRounds().length ? `<td class="num">${(() => { const pi = lmsPutIn(pid); return pi.n ? `${fmtMoney(pi.amt)} <span class="faint">· ${pi.n}×</span>` : '<span class="faint">—</span>'; })()}</td>` : ""}</tr>`).join("")}
     </table></div>
     <div class="cfgrow" style="margin-top:12px"><div class="field"><label>New round starts</label>${startSel}</div>
-      <button class="btn ${st?.winners?.length ? "btn-gold" : ""}" onclick="lmsNewRound()">${st?.winners?.length ? "🏁 Bank it & start round " + ((r.no || 1) + 1) : "↺ Reset — start a new round"}</button></div>
-    <p class="faint">Starting a new round records this one in Past rounds (with its winner, if there is one), keeps the same players ticked in, and clears who's paid. Picks start from scratch.</p></div>`;
+      <button class="btn ${st?.winners ? "btn-gold" : ""}" onclick="lmsNewRound()">${st?.wipeout ? `🔁 Roll over ${fmtMoney(st.pot)} & start round ${(r.no || 1) + 1}` : st?.winners?.length ? "🏁 Bank it & start round " + ((r.no || 1) + 1) : "↺ Reset — start a new round"}</button></div>
+    <p class="faint">Starting a new round records this one in Past rounds, keeps the same players ticked in (untick anyone not buying back in) and clears who's paid. Picks start from scratch.
+      If everyone went out, the whole pot rolls into the new round. A reset mid-round (no winner, not everyone out) does <b>not</b> roll the pot over — settle that one yourselves.</p></div>`;
   return html;
 }
 async function saveLms(patch){
@@ -2957,14 +2989,19 @@ async function lmsNewRound(){
   const r = LMS.round, st = lmsState();
   const history = [...(LMS.history || [])];
   if (r){
-    const won = st?.winners?.length;
-    if (!confirm(won ? `Bank round ${r.no || 1} (won by ${st.winners.map(p => PLAYERS[p]?.name).join(" & ")}, ${fmtMoney(st.pot)}) and start round ${(r.no || 1) + 1} from GW ${startGw}?`
-                     : `Round ${r.no || 1} has no winner yet. Reset it anyway and start round ${(r.no || 1) + 1} from GW ${startGw}? (Recorded as "no winner".)`)) return;
+    const won = st?.winners?.length, wiped = !!st?.wipeout;
+    if (!confirm(wiped ? `Everyone went out in GW ${st.endGw}. Roll the ${fmtMoney(st.pot)} pot into round ${(r.no || 1) + 1}, starting GW ${startGw}?\n\nEveryone stays ticked In — untick anyone not buying back in.`
+               : won ? `Bank round ${r.no || 1} (won by ${st.winners.map(p => PLAYERS[p]?.name).join(" & ")}, ${fmtMoney(st.pot)}) and start round ${(r.no || 1) + 1} from GW ${startGw}?`
+                     : `Round ${r.no || 1} has no winner yet. Reset it anyway and start round ${(r.no || 1) + 1} from GW ${startGw}? (Recorded as "no winner"; the pot does NOT roll over.)`)) return;
     history.push({ no: r.no || 1, startGw: r.startGw, endGw: st?.endGw ?? null, pot: st?.pot ?? 0,
-      entrants: (r.entrants || []).length, winners: (st?.winners || []).map(p => ({ pid: p, name: PLAYERS[p]?.name || p })) });
+      rollover: st?.rollover || 0, buyIn: +LMS.buyIn || 0, rolled: wiped,
+      entrants: (r.entrants || []).length, pids: [...(r.entrants || [])],
+      winners: (st?.winners || []).map(p => ({ pid: p, name: PLAYERS[p]?.name || p })) });
+    var rolledPot = wiped ? (st.pot || 0) : 0, chainStart = wiped ? (r.chainStart ?? r.no ?? 1) : (r.no || 0) + 1;
   }
   const round = { id: "r" + Date.now().toString(36), no: (r?.no || 0) + 1, startGw,
-    entrants: r ? [...(r.entrants || [])] : [], paid: {} };
+    entrants: r ? [...(r.entrants || [])] : [], paid: {},
+    rollover: r ? rolledPot : 0, chainStart: r ? chainStart : 1 };
   await saveLms({ round, history });
 }
 
@@ -3736,7 +3773,7 @@ function renderAdmin(){
   adminSections(el, {
     gameweek: `GW ${gw} · ${gwDoc?.finalized ? "finalised ✓" : !gwLocked(gw) ? "open for picks" : gwFixtures(gw).every(f => fixtureResult(gw, f)) ? "ready to finalise" : "in play"}`,
     players: `${roster.length} active`,
-    lms: !LMS.enabled ? "off" : !LMS.round ? "on · no round" : lst?.winners?.length ? "won — start a new round" : `on · ${lst?.alive.length ?? 0} standing`,
+    lms: !LMS.enabled ? "off" : !LMS.round ? "on · no round" : lst?.wipeout ? "everyone out — roll it over" : lst?.winners?.length ? "won — start a new round" : `on · ${lst?.alive.length ?? 0} standing · ${fmtMoney(lst?.pot ?? 0)}`,
     settings: `${CONFIG.result}/${CONFIG.exact} pts · ${fmtMoney(CONFIG.stake)} stake`,
     banter: `${["winner","loser","stillin","out"].reduce((n,k) => n + (MSGS[k]||[]).length, 0)} custom lines`,
   });

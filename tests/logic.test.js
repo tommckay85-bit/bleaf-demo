@@ -475,8 +475,22 @@ run(`LMS.round = { id:'rB', no:2, startGw:1, entrants:['tom','sam'], paid:{} }; 
 const Q = (gw, pid, team) => LMS_PICKS['rB_gw'+gw+'_'+pid] = { round:'rB', gw, pid, team };
 Q(1,'tom',4); Q(1,'sam',6); Q(2,'tom',2); Q(2,'sam',10);`);
 ls = runJ('lmsState()');
-assert.strictEqual(ls.weeks[0].reprieve, true, 'all out together = reprieve');
-assert.deepStrictEqual(ls.winners, ['tom'], 'then tom wins GW2');
+assert.strictEqual(ls.wipeout, true, 'all out together = everyone out (no reprieve)');
+assert.deepStrictEqual(ls.winners, [], 'nobody wins');
+assert.strictEqual(ls.endGw, 1, 'round ends in the wipeout week');
+assert.deepStrictEqual(Object.keys(ls.out).sort(), ['sam','tom'], 'both knocked out');
+assert.strictEqual(ls.pickGw, null, 'no more picks in a dead round');
+// rollover: the wiped-out pot carries into the next round and rebuys are tracked
+run(`LMS.buyIn = 10; LMS.history = [{ no:2, rolled:true, pot:20, buyIn:10, pids:['tom','sam'], winners:[] }];
+LMS.round = { id:'rB2', no:3, startGw:2, entrants:['tom','sam','dave'], paid:{}, rollover:20, chainStart:2 }; LMS_PICKS = {}`);
+assert.strictEqual(run('lmsPot()'), 50, 'pot = £20 rolled over + 3 x £10 buy-ins');
+assert.deepStrictEqual(runJ(`lmsPutIn('tom')`), { n:2, amt:20 }, 'tom bought back in: 2 buy-ins, £20 into this pot');
+assert.deepStrictEqual(runJ(`lmsPutIn('dave')`), { n:1, amt:10 }, 'dave is new this round');
+assert.strictEqual(runJ('lmsState()').rollover, 20);
+// a round started fresh after a win isn't part of the chain
+run(`LMS.round.chainStart = 3`);
+assert.strictEqual(run('lmsChainRounds().length'), 0, 'chain starts again after a fresh round');
+run(`LMS.buyIn = 10; LMS.history = []`);
 // a gameweek still in play holds everything after it
 run(`LMS.round = { id:'rC', no:3, startGw:3, entrants:['tom','sam'], paid:{} }; LMS_PICKS = {
   rC_gw3_tom: { round:'rC', gw:3, pid:'tom', team:5 }, rC_gw3_sam: { round:'rC', gw:3, pid:'sam', team:3 } }`);
@@ -571,3 +585,27 @@ assert.deepStrictEqual(runJ('scoreWeek(3).map(r => r.pid).sort()'), ['dave','tom
 console.log('STICKY-OUT TESTS PASSED');
 
 console.log('\nALL LOGIC SUITES PASSED');
+
+// --- LMS: starting the next round after a wipeout rolls the pot over ---
+(async () => {
+  run(`GAMEWEEKS = {}; PLAYERS = { tom:{ name:'Tom', active:true }, sam:{ name:'Sam', active:true } };
+  LMS = { enabled:true, buyIn:5, history:[], round:{ id:'rW', no:4, startGw:1, entrants:['tom','sam'], paid:{ tom:true } } };
+  LMS_PICKS = { rW_gw1_tom:{ round:'rW', gw:1, pid:'tom', team:4 }, rW_gw1_sam:{ round:'rW', gw:1, pid:'sam', team:6 } };
+  lmsAdminStartGw = 3; saveLms = async p => { saved = p; };`);
+  await run('lmsNewRound()');
+  const sv = runJ('saved');
+  assert.strictEqual(sv.round.no, 5);
+  assert.strictEqual(sv.round.rollover, 10, 'wiped-out £10 pot rolls into round 5');
+  assert.strictEqual(sv.round.chainStart, 4, 'chain tracked from round 4');
+  assert.deepStrictEqual(sv.round.entrants, ['tom','sam'], 'everyone stays ticked in for the rebuy');
+  assert.deepStrictEqual(sv.round.paid, {}, 'paid cleared');
+  assert.ok(sv.history[0].rolled && sv.history[0].pids.length === 2, 'history records the rollover and who was in');
+  // a mid-round reset (nobody out yet) does not roll over
+  run(`LMS = { enabled:true, buyIn:5, history:[], round:{ id:'rX2', no:6, startGw:1, entrants:['tom','sam'], paid:{} } }; LMS_PICKS = {
+    rX2_gw1_tom:{ round:'rX2', gw:1, pid:'tom', team:1 }, rX2_gw1_sam:{ round:'rX2', gw:1, pid:'sam', team:5 } }`);
+  await run('lmsNewRound()');
+  assert.strictEqual(runJ('saved').round.rollover, 0, 'a reset with survivors does not roll the pot over');
+  run(`LMS = { enabled:false, buyIn:5, round:null, history:[] }; LMS_PICKS = {}`);
+  console.log('LMS ROLLOVER TESTS PASSED');
+  console.log('\nALL LOGIC SUITES PASSED (incl. async)');
+})().catch(e => { console.error(e); process.exit(1); });
