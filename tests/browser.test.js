@@ -815,6 +815,36 @@ const FIREBASE_STUB = `
   assert((await page.textContent('#tab-lms .trapcap')).length > 5, 'trapdoor caption says who fell');
   await page.evaluate(() => { AVATARS = window._avA; LMS = { enabled:false, buyIn:5, round:null, history:[] }; LMS_PICKS = {}; setTab('predict'); });
 
+  // ---- late entry: missed the deadline, started games = 0-0, others' picks hidden until saved ----
+  await page.evaluate(() => {
+    FEED.fixtures.filter(f => f.gw === 3).forEach((f,i) => { f._koE = f.kickoff; f.kickoff = new Date(Date.now() + (i === 0 ? -1800e3 : (i + 1) * 3600e3)).toISOString();
+      f._hE = f.hs; f._aE = f.as; f._fE = f.finished; f.hs = i === 0 ? 1 : null; f.as = i === 0 ? 0 : null; f.finished = false; });
+    window._ovE = GAMEWEEKS.gw3.overrides; window._outE = GAMEWEEKS.gw3.out; GAMEWEEKS.gw3.overrides = {}; GAMEWEEKS.gw3.out = [];
+    window._predsE = PREDS[3]; PREDS[3] = { dave:{ pid:'dave', picks:{ 301:{h:2,a:0}, 302:{h:1,a:1}, 303:{h:0,a:1}, 304:{h:2,a:2}, 305:{h:3,a:0} } } };
+    window._savedE = null;
+    window._dbColE = DB.collection.bind(DB);
+    DB.collection = name => { const c = window._dbColE(name); if (name !== 'predictions') return c;
+      return { ...c, doc: id => ({ set: async d => { window._savedE = d; } }) }; };
+    viewGw = 3; setTab('predict');
+  });
+  await page.waitForTimeout(200);
+  assert((await page.textContent('#tab-predict')).includes('You missed the deadline'), 'late entrant gets the late-entry banner');
+  const autoBoxes = await page.$$eval('#tab-predict input.pk-auto', els => els.map(e => e.value + (e.disabled ? 'd' : '')));
+  assert(autoBoxes.length === 2 && autoBoxes.every(v => v === '0d'), 'game already under way locked in at 0-0 (' + autoBoxes + ')');
+  assert((await page.$$('#tab-predict .predgrid input[type=number]:not([disabled])')).length === 8, 'the other four games are open to predict');
+  assert((await page.$$('#tab-predict .predgrid td .ptsbadge')).length === 0, "others' picks hidden until the late entry is saved");
+  const opens = await page.$$('#tab-predict .predgrid input[type=number]:not([disabled])');
+  for (const o of opens){ await o.fill('1'); }
+  await page.click('#save-btn'); await page.waitForTimeout(250);
+  const savedE = await page.evaluate(() => window._savedE);
+  assert(savedE && savedE.picks[301].h === 0 && savedE.picks[301].a === 0 && Object.keys(savedE.picks).length === 5, 'late save stores 0-0 for the started game plus the new picks');
+  assert((await page.$$('#tab-predict .predgrid td .ptsbadge')).length > 0, "once saved, everyone's picks are revealed");
+  await page.evaluate(() => {
+    DB.collection = window._dbColE;
+    FEED.fixtures.filter(f => f.gw === 3).forEach(f => { f.kickoff = f._koE; f.hs = f._hE; f.as = f._aE; f.finished = f._fE; });
+    GAMEWEEKS.gw3.overrides = window._ovE; GAMEWEEKS.gw3.out = window._outE; PREDS[3] = window._predsE; renderAll();
+  });
+
   // ---- mobile ----
   await page.setViewportSize({ width: 390, height: 844 });
   await page.click('[data-tab=predict]'); await page.waitForTimeout(200);

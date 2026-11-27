@@ -584,6 +584,20 @@ assert.strictEqual(run(`isOut(2, 'dave') && !isOut(3, 'dave')`), true, 'a one-we
 assert.deepStrictEqual(runJ('scoreWeek(3).map(r => r.pid).sort()'), ['dave','tom'], 'sticky-out player left out of the week');
 console.log('STICKY-OUT TESTS PASSED');
 
+// --- late entry after the deadline ---
+run(`GAMEWEEKS = {}; MYPID = 'sam';
+PLAYERS = { tom:{ name:'Tom', active:true }, sam:{ name:'Sam', active:true }, dave:{ name:'Dave', active:true } };
+FEED.fixtures.filter(f => f.gw === 3).forEach((f, i) => { f._koL = f.kickoff; f.kickoff = new Date(Date.now() + (i === 0 ? -3600e3 : (i + 1) * 3600e3)).toISOString(); });
+PREDS[3] = { tom:{ pid:'tom', picks:{ 301:{h:1,a:0} } } };`);
+assert.strictEqual(run(`lateEntryOpen(3, 'sam')`), true, 'no picks in after the deadline, games left: late entry open');
+assert.strictEqual(run(`lateEntryOpen(3, 'tom')`), false, 'already predicted: no late entry');
+run(`GAMEWEEKS.gw3 = { out:['sam'] }`);
+assert.strictEqual(run(`lateEntryOpen(3, 'sam')`), false, 'out this week: no late entry');
+run(`GAMEWEEKS = {}; FEED.fixtures.filter(f => f.gw === 3).forEach(f => { f.kickoff = new Date(Date.now() - 3600e3).toISOString(); })`);
+assert.strictEqual(run(`lateEntryOpen(3, 'sam')`), false, 'every game started: too late');
+run(`FEED.fixtures.filter(f => f.gw === 3).forEach(f => { f.kickoff = f._koL; delete f._koL; }); PREDS[3] = {}`);
+console.log('LATE-ENTRY TESTS PASSED');
+
 console.log('\nALL LOGIC SUITES PASSED');
 
 // --- LMS: starting the next round after a wipeout rolls the pot over ---
