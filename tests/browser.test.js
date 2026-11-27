@@ -747,6 +747,35 @@ const FIREBASE_STUB = `
     GAMEWEEKS.gw3.overrides = window._ov2; LMS = { enabled:false, buyIn:5, round:null, history:[] }; LMS_PICKS = {}; setTab('predict');
   });
 
+  // ---- last man standing: wipeout + rollover + rebuys ----
+  await page.evaluate(() => {
+    LMS = { enabled:true, buyIn:5, history:[], round:{ id:'rW', no:2, startGw:1, entrants:['tom','dave','sam'], paid:{ tom:true, dave:true, sam:true } } };
+    LMS_PICKS = { rW_gw1_tom:{ round:'rW', gw:1, pid:'tom', team:4 }, rW_gw1_dave:{ round:'rW', gw:1, pid:'dave', team:6 }, rW_gw1_sam:{ round:'rW', gw:1, pid:'sam', team:2 } };
+    renderChrome(); setTab('lms');
+  });
+  await page.waitForTimeout(200);
+  assert(await page.isVisible('#tab-lms .lmswipe'), 'everyone out in the same week: wipeout card, nobody wins');
+  assert((await page.textContent('#tab-lms .lmswipe')).includes('£15'), 'wipeout card shows the pot that rolls over');
+  await page.screenshot({ path: OUT + '/shot-27-lms-wipeout.png', fullPage: true });
+  await page.evaluate(() => setTab('admin')); await page.waitForTimeout(200);
+  assert((await page.textContent('#tab-admin')).includes('Roll over £15 & start round 3'), 'admin gets a roll-over button');
+  await page.evaluate(() => {
+    LMS = { enabled:true, buyIn:5, history:[{ no:2, startGw:1, endGw:1, rolled:true, pot:15, buyIn:5, pids:['tom','dave','sam'], winners:[] }],
+      round:{ id:'rR', no:3, startGw:4, entrants:['tom','dave','sam','gaz'], paid:{ tom:true }, rollover:15, chainStart:2 } };
+    LMS_PICKS = {}; setTab('lms');
+  });
+  await page.waitForTimeout(200);
+  const lmsR = await page.textContent('#tab-lms');
+  assert(lmsR.includes('£35') && lmsR.includes('£15 rolled'), 'pot strip: £35 = £15 rolled + this round buy-ins');
+  assert(lmsR.includes('Rollover'), 'rollover banner explains where the money came from');
+  assert((await page.$$('#tab-lms .lms-rebuy')).length === 3, 'three players bought back in (rebuy badge)');
+  assert(lmsR.includes('everyone out') && lmsR.includes('rolled over'), 'past rounds show the rollover');
+  await page.screenshot({ path: OUT + '/shot-28-lms-rollover.png', fullPage: true });
+  await page.evaluate(() => setTab('admin')); await page.waitForTimeout(200);
+  const admR = await page.textContent('#tab-admin');
+  assert(admR.includes('Put in') && admR.includes('£10'), 'admin sees what each player has put into the rolling pot');
+  await page.evaluate(() => { LMS = { enabled:false, buyIn:5, round:null, history:[] }; LMS_PICKS = {}; setTab('predict'); });
+
   // ---- mobile ----
   await page.setViewportSize({ width: 390, height: 844 });
   await page.click('[data-tab=predict]'); await page.waitForTimeout(200);

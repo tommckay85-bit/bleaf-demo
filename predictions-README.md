@@ -35,10 +35,13 @@ league with your mates. No app to install — it runs in the browser from GitHub
 - **Admins** — you're the admin; you can nominate (and demote) other admins any time.
 - **Last Man Standing side pot** (optional, off by default) — switch it on in Admin and a
   *Last Man* tab appears. Each week every survivor picks one team to win; each team once
-  per round; a draw, a defeat or no pick by the gameweek deadline and you're out (if everyone
-  left goes out the same week, they all survive it). Admin ticks who's in and who's paid,
-  sets the buy-in (pot = buy-in × players in), and banks the round / starts a new one — e.g.
-  when someone wins early. Past rounds are kept. Needs the `lmsPicks` rules block below.
+  per round; a draw, a defeat or no pick by the gameweek deadline and you're out. If everyone
+  left goes out in the same week, nobody wins and the whole pot **rolls over** into the next
+  round, which anyone can buy back into — the pot keeps growing until there's a genuine last
+  man standing. Admin ticks who's in and who's paid, sets the buy-in (pot = rollover + buy-in ×
+  players in), sees what each player has put into a rolling pot, can give late passes to
+  anyone who missed a deadline, and banks / rolls over / resets rounds. Past rounds are kept.
+  Needs the `lmsPicks` rules block below.
 - **Banter features** — all computed in the app, nothing to set up:
   - *Shame the stragglers*: from 24h before the deadline the Predictions tab names everyone
     who hasn't finished their picks, with a 📋 Copy nag / 💬 Send to WhatsApp button.
