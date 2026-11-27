@@ -20,7 +20,8 @@ league with your mates. No app to install — it runs in the browser from GitHub
 - **History** — season and per-month leaderboards ranked by weekly wins, then total points,
   plus exact scores and correct results; and a week-by-week roll of honour.
 - **Monthly in/out** — players pay monthly (you collect the money yourself); toggle anyone
-  **Out** for any gameweek they haven't paid for and they're excluded from that week.
+  **Out** and they're excluded from that gameweek *and every one after it* (sticky) until you
+  toggle them back **In** — the weeks they missed stay recorded as out.
 - **The pot** — a money ledger (no real payments): stake per player per week (default £5,
   configurable, per-week override available). The pot for the week shows on everyone's
   Predictions tab. On finalise the winner takes the whole pot (joint first splits it
@@ -191,7 +192,7 @@ Hit **📋 Copy** next to a player for a ready-made WhatsApp invite (link + code
 ## Running the league (your weekly routine)
 
 1. **Before the weekend** — check everyone who's paid is **In** for the gameweek (Admin →
-   Players). Toggle anyone unpaid to **Out**. Everyone defaults to In each week.
+   Players). Toggle anyone not playing to **Out** — they stay out until you bring them back.
 2. **Players predict** — any time up to each match's kickoff.
 3. **After the weekend** — results arrive automatically from the feed (within a few hours
    of full time). Check the table in **This Week**, then Admin → **Finalise GW** to declare
