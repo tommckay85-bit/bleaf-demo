@@ -361,6 +361,8 @@ tr.pos2 td{background:linear-gradient(90deg,rgba(154,167,181,.10),transparent 70
 .predgrid.hasyou .colme{border-right:none;width:auto;min-width:0;max-width:none}
 .predgrid .colyou{position:sticky;z-index:2;background:var(--panel);border-right:2px solid var(--steel);min-width:52px}
 .predgrid th.colyou{z-index:4}
+.predgrid input.pk-auto{opacity:1;border-style:dashed;color:var(--ink-dim);-webkit-text-fill-color:var(--ink-dim)}
+.predgrid .ko.autozero{color:var(--gold)}
 .predgrid input.pk-tbc{opacity:1;border-style:dashed}
 .predgrid input.pk-tbc::placeholder{color:var(--ink-faint);opacity:1}
 .predgrid tr.done td.colyou{background:var(--bg);border-right-color:var(--steel-dim)}
@@ -1236,6 +1238,18 @@ function gwLocked(gw){
   if (GAMEWEEKS["gw"+gw]?.unlocked) return false; // admin override (testing)
   const d = gwDeadline(gw);
   return d ? new Date() >= d : false;
+}
+// Late entry: a player with no predictions in by the deadline can still get in
+// while games remain. Anything already kicked off counts as 0–0 for them, and
+// everyone else's picks stay hidden from them until they've saved.
+function lateEntryOpen(gw, pid){
+  pid = pid ?? MYPID;
+  if (!pid || gw === null || gw === undefined || !gwLocked(gw) || GAMEWEEKS["gw"+gw]?.finalized || isOut(gw, pid)) return false;
+  if (!PLAYERS[pid] || PLAYERS[pid].active === false) return false;
+  const preds = PREDS[gw];
+  if (!preds) return false; // still loading
+  if (Object.keys(preds[pid]?.picks || {}).length) return false;
+  return gwFixtures(gw).some(f => !kickedOffLive(f));
 }
 function kickedOffLive(f){ return f.kickoff && new Date(f.kickoff) <= new Date(); }
 function gwUnlockedByAdmin(gw){
@@ -2327,6 +2341,7 @@ function maybeShowStillIn(){
   const gw = currentGw();
   if (gw === null || GAMEWEEKS["gw"+gw]?.finalized || !gwLocked(gw) || isOut(gw, MYPID)) return;
   if (!PREDS[gw]) return; // predictions still loading
+  if (lateEntryOpen(gw)) return;
   const fx = gwFixtures(gw);
   const done = fx.filter(f => fixtureResult(gw, f)).length;
   if (done < 4 || done >= fx.length) return;
@@ -2529,7 +2544,7 @@ function showToast(t){
 }
 function flashGoals(){
   const fl = goalFlashes();
-  if (ME) fl.forEach(showToast);
+  if (ME && !lateEntryOpen(currentGw())) fl.forEach(showToast);
 }
 
 /* ---------- badges & superlatives ---------- */
@@ -3499,7 +3514,8 @@ function renderPredict(){
   const gw = viewGw, fx = gwFixtures(gw);
   const mine = (PREDS[gw]||{})[MYPID]?.picks || {};
   const out = isOut(gw, MYPID);
-  const locked = gwLocked(gw), deadline = gwDeadline(gw);
+  const late = lateEntryOpen(gw);
+  const locked = gwLocked(gw) && !late, deadline = gwDeadline(gw);
   const myCount = Object.keys(mine).length;
   // keep half-typed scores across re-renders (e.g. someone else's save
   // refreshes the grid); ids embed fixture ids so stale values never collide.
@@ -3511,6 +3527,7 @@ function renderPredict(){
   let html = gwNavHtml("view", gw);
   if (out) html += `<div class="banner warn">You're <b>out</b> this gameweek — predictions won't count.</div>`;
   else if (gwUnlockedByAdmin(gw)) html += `<div class="banner warn">🔓 Admin unlocked — editable past the deadline.</div>`;
+  else if (late) html += `<div class="banner warn">⏰ <b>You missed the deadline — but you can still get in.</b> Games that have already kicked off count as <b>0–0</b> for you; predict the rest and save. Everyone else's picks stay hidden until you do.</div>`;
   else if (locked && !myCount) html += `<div class="banner err">🔒 Deadline passed — no picks in, you've missed this week.</div>`;
   // the tab follows the week: before kickoff it's for entering picks (entry
   // strip, grid, save, who's in); once locked it's for following the action
@@ -3523,7 +3540,7 @@ function renderPredict(){
     const mc = myCount >= fx.length ? "var(--green)" : myCount ? "var(--gold)" : "var(--red)";
     html += `<div class="panel pulsestrip">
       <div class="pcell"><div class="pv" style="color:${mc}">${myCount}<small> / ${fx.length}</small></div><div class="pk">${myCount >= fx.length ? "all in ✓" : "your picks"}</div></div>
-      <div class="pcell"><div class="pv">${left !== null ? fmtLeft(left) : "—"}</div><div class="pk">${deadline ? "locks " + deadline.toLocaleDateString("en-GB",{weekday:"short"}) + " " + deadline.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}) : "no deadline"}</div></div>
+      <div class="pcell"><div class="pv" ${late ? 'style="color:var(--red)"' : ""}>${late ? "LATE" : left !== null ? fmtLeft(left) : "—"}</div><div class="pk">${late ? "started games = 0–0" : deadline ? "locks " + deadline.toLocaleDateString("en-GB",{weekday:"short"}) + " " + deadline.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}) : "no deadline"}</div></div>
       <div class="pcell"><div class="pv">${done}<small> / ${field}</small></div><div class="pk">mates all in</div></div>
       <div class="pcell"><div class="pv" style="color:var(--gold)">${fmtMoney(potNow)}</div><div class="pk">pot</div></div>
     </div>`;
@@ -3561,7 +3578,7 @@ function renderPredict(){
     // player to the right (horizontal scroll). Before the deadline their
     // cells only show ✓/— (predicted or not); scores appear at the deadline.
     const preds = PREDS[gw] || {};
-    const revealed = gwLocked(gw); // admin unlock also re-hides picks
+    const revealed = gwLocked(gw) && !late; // admin unlock (and a late entry) keep picks hidden
     // header tally: current points under each name, medal for the top three
     // while the week is in play, skull for anyone mathematically out
     const wkRows = scoreWeek(gw, { live:true }); // provisional: in-play goals count as they stand
@@ -3609,7 +3626,8 @@ function renderPredict(){
     for (const f of fx){
       const pk = mine[f.id] || {};
       const dvH = domVals["pk-"+f.id+"-h"], dvA = domVals["pk-"+f.id+"-a"];
-      const vH = dvH !== undefined ? dvH : (pk.h ?? ""), vA = dvA !== undefined ? dvA : (pk.a ?? "");
+      const started = late && kickedOffLive(f); // late entry: already under way = 0–0
+      const vH = started ? 0 : dvH !== undefined ? dvH : (pk.h ?? ""), vA = started ? 0 : dvA !== undefined ? dvA : (pk.a ?? "");
       if (vH !== "" && vA !== "") effPicks[f.id] = { h: Math.max(0,Math.min(15,+vH)), a: Math.max(0,Math.min(15,+vA)) };
       const res = fixtureResult(gw, f);
       const lv = res ? null : liveScore(f);
@@ -3636,14 +3654,15 @@ function renderPredict(){
         <td class="colme ${swap ? "tapcell" : ""}" title="${esc(teamName(f.h))} v ${esc(teamName(f.a))}" ${swap ? `onclick="showFacts(${f.id})"` : ""}>
           ${statusRow}<div class="myrow">
             <span class="tstack">${crestSm(f.h)}<b>${esc(teamShort(f.h))}</b></span>
-            <input type="number" min="0" max="15" id="pk-${f.id}-h" class="${boxCls}" value="${bH}" ${tbc ? 'placeholder="–"' : ""} ${locked||out?"disabled":""}>
+            <input type="number" min="0" max="15" id="pk-${f.id}-h" class="${boxCls} ${started ? "pk-auto" : ""}" value="${bH}" ${tbc ? 'placeholder="–"' : ""} ${locked||out||started?"disabled":""}>
             <span class="dash">–</span>
-            <input type="number" min="0" max="15" id="pk-${f.id}-a" class="${boxCls}" value="${bA}" ${tbc ? 'placeholder="–"' : ""} ${locked||out?"disabled":""}>
+            <input type="number" min="0" max="15" id="pk-${f.id}-a" class="${boxCls} ${started ? "pk-auto" : ""}" value="${bA}" ${tbc ? 'placeholder="–"' : ""} ${locked||out||started?"disabled":""}>
             <span class="tstack">${crestSm(f.a)}<b>${esc(teamShort(f.a))}</b></span>
           </div>
           ${youCol ? (swap ? "" : `<span class="ko">${fmtKo(f.kickoff)}</span>`)
             : res ? `<div class="subrow ft tapscore" onclick="showFacts(${f.id})"><span class="sub-l">Pred<span class="lbl-x">iction</span></span>${chip(pk.h)}<span class="sdash">–</span>${chip(pk.a)}<span class="sub-r">${marker}</span></div>`
             : lv ? `<div class="subrow live tapscore" onclick="showFacts(${f.id})"><span class="sub-l">Pred<span class="lbl-x">iction</span></span>${chip(pk.h)}<span class="sdash">–</span>${chip(pk.a)}<span class="sub-r">${marker}</span></div>`
+            : started ? `<span class="ko autozero">auto 0–0 · ${fixtureResult(gw, f) ? "played" : "under way"}</span>`
             : `<span class="ko">${fmtKo(f.kickoff)}</span>`}
         </td>${youCol ? `<td class="colyou ${swap ? "tapcell" : ""}" ${swap ? `onclick="showFacts(${f.id})"` : ""}>${lozenge(mine[f.id], eff)}</td>` : ""}`;
       for (const [pid] of others){
@@ -3674,7 +3693,7 @@ function renderPredict(){
   }
   html += `</div>`;
   // endgame: with 1-2 games left, spell out each contender's path to the pot
-  const wp = winPaths(gw);
+  const wp = late ? null : winPaths(gw);
   if (wp){
     html += `<div class="panel"><h2>🎯 Who can still win <span class="tag">${wp.remaining.length} game${wp.remaining.length > 1 ? "s" : ""} left</span></h2>`;
     for (const p of wp.players){
@@ -3725,7 +3744,8 @@ function whoPredictedHtml(gw){
 }
 
 async function savePicks(gw){
-  if (gwLocked(gw)){
+  const late = lateEntryOpen(gw);
+  if (gwLocked(gw) && !late){
     const m = $("save-msg"); if (m){ m.textContent = "Deadline passed — predictions are locked."; m.style.color = "var(--red)"; }
     renderAll();
     return;
@@ -3733,6 +3753,7 @@ async function savePicks(gw){
   const fx = gwFixtures(gw);
   const picks = {};
   for (const f of fx){
+    if (late && kickedOffLive(f)){ picks[f.id] = { h: 0, a: 0 }; continue; } // late entry: started = 0–0
     const h = $("pk-"+f.id+"-h").value, a = $("pk-"+f.id+"-a").value;
     if (h === "" || a === "") continue;
     picks[f.id] = { h: Math.max(0,Math.min(15,+h)), a: Math.max(0,Math.min(15,+a)) };
@@ -3750,6 +3771,11 @@ async function savePicks(gw){
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     predDirty = false;
+    if (late){ // their entry is in: lock it and show everyone's picks straight away
+      PREDS[gw] = { ...(PREDS[gw] || {}), [MYPID]: { ...((PREDS[gw] || {})[MYPID] || {}), gw, pid: MYPID, name: ME.name, picks } };
+      renderAll();
+      return;
+    }
     const m = $("save-msg"); if (m){ m.textContent = "Saved " + new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}); m.style.color = "var(--green)"; }
     const b = $("save-btn"), n = Object.keys(picks).length;
     if (b && n > 0){
@@ -3818,7 +3844,7 @@ function renderWeek(){
 
   html += `<div class="panel"><h2>Fixtures &amp; picks</h2><p class="faint" style="margin-bottom:8px">Everyone's predictions are revealed once the first match of the gameweek kicks off.</p>`;
   const preds = PREDS[gw] || {};
-  const revealed = gwLocked(gw);
+  const revealed = gwLocked(gw) && !lateEntryOpen(gw);
   for (const f of fx){
     const res = fixtureResult(gw, f);
     const lv = res ? null : liveScore(f);

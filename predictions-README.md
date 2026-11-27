@@ -9,7 +9,9 @@ league with your mates. No app to install — it runs in the browser from GitHub
   in the gameweek. The whole gameweek locks at the kickoff of its first match: no late
   entries and no edits after that (miss the deadline and you score 0 that week). Before
   the deadline everyone can see *who* has predicted, but not the scores; all picks are
-  revealed once the first match kicks off.
+  revealed once the first match kicks off. **Late entry:** anyone with no picks in by the
+  deadline can still enter while games remain — games already kicked off count as 0–0 for
+  them, and everyone else's picks stay hidden from them until they've saved.
 - **Scoring** — correct result = **6 pts**, exact scoreline = **10 pts** (both configurable
   in the Admin tab; changes never affect weeks already finalised).
 - **Automatic fixtures & results** — a GitHub Action pulls fixtures and full-time scores
