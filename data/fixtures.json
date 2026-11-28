@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-28T16:26:08Z",
+  "updated": "2026-11-28T16:26:44Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -3890,16 +3890,16 @@
       "kickoff": "2026-11-28T15:00:00Z",
       "h": 13,
       "a": 7,
-      "hs": 2,
+      "hs": 3,
       "as": 0,
-      "min": 63,
+      "min": 67,
       "finished": false,
       "stats": [
         {
           "k": "goals_scored",
           "h": [
             {
-              "value": 1,
+              "value": 2,
               "element": 339
             },
             {
@@ -3919,7 +3919,7 @@
       "a": 4,
       "hs": 0,
       "as": 2,
-      "min": 61,
+      "min": 67,
       "finished": false,
       "stats": [
         {
