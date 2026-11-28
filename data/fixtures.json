@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-28T15:46:04Z",
+  "updated": "2026-11-28T15:46:40Z",
   "source": "fantasy.premierleague.com",
   "teams": {
     "1": {
@@ -219,6 +219,7 @@
     "335": "Stach",
     "336": "Okafor",
     "337": "Aaronson",
+    "339": "Longstaff",
     "346": "Calvert-Lewin",
     "366": "Wirtz",
     "367": "Gakpo",
@@ -3889,10 +3890,26 @@
       "kickoff": "2026-11-28T15:00:00Z",
       "h": 13,
       "a": 7,
-      "hs": 0,
+      "hs": 2,
       "as": 0,
-      "min": 40,
-      "finished": false
+      "min": 45,
+      "finished": false,
+      "stats": [
+        {
+          "k": "goals_scored",
+          "h": [
+            {
+              "value": 1,
+              "element": 339
+            },
+            {
+              "value": 1,
+              "element": 346
+            }
+          ],
+          "a": []
+        }
+      ]
     },
     {
       "id": 118,
@@ -3902,7 +3919,7 @@
       "a": 4,
       "hs": 0,
       "as": 2,
-      "min": 40,
+      "min": 45,
       "finished": false,
       "stats": [
         {
